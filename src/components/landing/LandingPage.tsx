@@ -86,14 +86,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
 
   const handleFetchDailyPreview = async () => {
     setLoadingDaily(true);
-    const daily = await fetchLeetCodeDaily();
-    setQuickDaily(daily);
-    setLoadingDaily(false);
-    setToast({
-      title: "Today's Official Daily Challenge",
-      message: `"${daily.title}" (${daily.difficulty})`,
-      type: 'info',
-    });
+    try {
+      const daily = await fetchLeetCodeDaily();
+      if (daily && daily.title) {
+        setQuickDaily(daily);
+        setToast({
+          title: "Today's Official Daily Challenge",
+          message: `"${daily.title}" (${daily.difficulty || 'Medium'})`,
+          type: 'info',
+        });
+      }
+    } catch {
+      setToast({
+        title: 'LeetCode Daily Challenge',
+        message: 'Could not fetch latest challenge. Please try again.',
+        type: 'warning',
+      });
+    } finally {
+      setLoadingDaily(false);
+    }
   };
 
   return (

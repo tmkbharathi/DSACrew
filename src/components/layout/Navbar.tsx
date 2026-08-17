@@ -1,29 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { PostProblemModal } from '../problem/PostProblemModal';
-import { InviteModal } from '../room/InviteModal';
-import { NotificationDrawer } from '../notifications/NotificationDrawer';
-import { UserProfileModal } from '../profile/UserProfileModal';
-import { Tooltip } from '../ui/Tooltip';
 import {
-  Code2,
   Bell,
   Volume2,
   VolumeX,
   Plus,
   Share2,
   ChevronDown,
-  RotateCcw,
-  Layers,
-  ShieldCheck,
   UserCheck,
+  ShieldCheck,
+  RotateCcw,
+  Sparkles,
+  ExternalLink,
   Trash2,
-  AlertTriangle,
-  LogOut,
-  User as UserIcon,
   Search,
-  PlusCircle,
+  LogOut,
+  Layers,
+  Menu,
 } from 'lucide-react';
+import { PostProblemModal } from '../problem/PostProblemModal';
+import { InviteModal } from '../room/InviteModal';
+import { NotificationDrawer } from '../notifications/NotificationDrawer';
+import { UserProfileModal } from '../profile/UserProfileModal';
+import { Tooltip } from '../ui/Tooltip';
 
 interface NavbarProps {
   onMobileMenuToggle?: () => void;
@@ -31,14 +30,12 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
   const {
+    currentUser,
     activeRoom,
     rooms,
-    activeRoomId,
     switchActiveRoom,
-    notifications,
-    currentUser,
+    unreadCount,
     isAdmin,
-    toggleAdminRole,
     soundEnabled,
     setSoundEnabled,
     resetToDefault,
@@ -58,8 +55,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
   const roomDropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
   // Handle outside click for dropdowns
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -74,105 +69,105 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  const handleResetWorkspace = () => {
-    resetToDefault();
-    setShowResetConfirm(false);
-  };
-
   const filteredRooms = rooms.filter((r) =>
-    r.name.toLowerCase().includes(roomSearch.toLowerCase()) ||
-    r.code.toLowerCase().includes(roomSearch.toLowerCase())
+    r.name.toLowerCase().includes(roomSearch.toLowerCase())
+  );
+
+  const isRoomHost = Boolean(
+    activeRoom && (activeRoom.creatorId === currentUser.id || currentUser.role === 'Admin')
   );
 
   return (
     <>
-      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-3.5 sm:px-6 h-[64px] bg-[#101418]/90 backdrop-blur-md border-b border-[#3d4a3e]">
-        <div className="max-w-7xl w-full mx-auto flex items-center justify-between gap-2 sm:gap-4">
-          {/* Logo & Workspace Switcher */}
+      <header className="sticky top-0 z-50 w-full bg-[#101418] border-b border-[#3d4a3e] px-3 sm:px-6 py-2.5 sm:py-3 transition-colors">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
+          {/* Brand & Room Switcher Group */}
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            {/* Mobile Sidebar Hamburger Toggle */}
+            {/* Mobile Menu Button */}
             {onMobileMenuToggle && (
               <button
                 onClick={onMobileMenuToggle}
-                className="md:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#1c2024]"
-                aria-label="Toggle Navigation Menu"
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#1c2024] lg:hidden"
+                aria-label="Open Mobile Drawer"
               >
-                <Layers className="w-5 h-5 text-[#4ade80]" />
+                <Menu className="w-5 h-5" />
               </button>
             )}
 
-            {/* Brand Logo */}
-            <button
+            {/* Logo */}
+            <div
+              className="flex items-center gap-2 select-none shrink-0 cursor-pointer"
               onClick={() => {
-                if ((window as any).__setLandingView) (window as any).__setLandingView(true);
+                if (typeof (window as any).__setLandingView === 'function') {
+                  (window as any).__setLandingView(true);
+                }
               }}
-              className="flex items-center gap-2 text-left group shrink-0"
-              title="Return to LeetTracker Home"
+              title="Return to Landing Page Overview"
             >
-              <div className="w-9 h-9 rounded-lg border border-[#4ade80]/30 flex items-center justify-center bg-[#1c2024] shadow-sm group-hover:border-[#4ade80]/60 transition-colors">
-                <Code2 className="w-5 h-5 text-[#4ade80]" />
+              <div className="w-8 h-8 rounded-lg bg-[#1c2024] border border-[#3d4a3e] flex items-center justify-center text-[#4ade80] font-mono font-bold text-sm shadow-sm">
+                &lt;/&gt;
               </div>
-              <div className="hidden sm:block">
-                <span className="font-extrabold text-base sm:text-lg tracking-tight text-white font-sans">
-                  Leet<span className="text-[#4ade80]">Tracker</span>
-                </span>
-              </div>
-            </button>
+              <span className="font-bold text-base sm:text-lg tracking-tight text-white hidden md:inline font-sans">
+                Leet<span className="text-[#4ade80]">Tracker</span>
+              </span>
+            </div>
 
-            {/* Divider */}
-            <div className="hidden sm:block h-5 w-[1px] bg-[#3d4a3e]" />
-
-            {/* Room / Workspace Switcher Dropdown */}
+            {/* Room Switcher Dropdown */}
             <div className="relative min-w-0" ref={roomDropdownRef}>
               <button
                 onClick={() => setIsRoomDropdownOpen(!isRoomDropdownOpen)}
-                className="bg-[#1c2024] hover:bg-[#262a2f] border border-[#3d4a3e] px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 sm:gap-2 text-xs font-semibold text-white transition-all shadow-sm max-w-full"
-                aria-haspopup="true"
-                aria-expanded={isRoomDropdownOpen}
+                className="flex items-center gap-1.5 sm:gap-2 bg-[#1c2024] hover:bg-[#262a2f] border border-[#3d4a3e] rounded-lg px-2.5 sm:px-3 py-1.5 transition-colors text-left max-w-[180px] xs:max-w-[220px] sm:max-w-[280px]"
+                aria-label="Switch Practice Room"
               >
-                <Layers className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
-                <span className="truncate max-w-[80px] xs:max-w-[120px] sm:max-w-[180px] md:max-w-[220px]">
-                  {activeRoom?.name || 'Select Room'}
+                <div className="w-2 h-2 rounded-full bg-[#4ade80] shrink-0 animate-pulse" />
+                <span className="font-semibold text-xs sm:text-sm text-white truncate">
+                  {activeRoom ? activeRoom.name : 'Select Room'}
                 </span>
-                <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${
+                    isRoomDropdownOpen ? 'rotate-180' : ''
+                  }`}
+                />
               </button>
 
+              {/* Room Menu Modal/Dropdown */}
               {isRoomDropdownOpen && (
-                <div className="absolute top-full mt-2 left-0 w-[calc(100vw-2rem)] max-w-xs sm:w-72 bg-[#1c2024] border border-[#3d4a3e] rounded-xl shadow-2xl p-2 z-50 space-y-1">
-                  {/* Search / Filter input */}
-                  {rooms.length > 3 && (
-                    <div className="relative p-1">
-                      <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-3" />
+                <div className="absolute top-full left-0 mt-2 w-72 sm:w-80 bg-[#1c2024] border border-[#3d4a3e] rounded-xl shadow-2xl p-2 z-50 animate-in fade-in-50 zoom-in-95">
+                  <div className="p-2 border-b border-[#3d4a3e]">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
                       <input
                         type="text"
+                        placeholder="Search rooms..."
                         value={roomSearch}
                         onChange={(e) => setRoomSearch(e.target.value)}
-                        placeholder="Search rooms..."
-                        className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#4ade80]"
+                        className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#4ade80]"
                       />
                     </div>
-                  )}
-
-                  <div className="text-[10px] font-mono text-slate-400 uppercase px-2 py-1 flex items-center justify-between">
-                    <span>Practice Rooms</span>
-                    {isAdmin && <span className="text-[9px] text-purple-400 font-bold">Admin Controls</span>}
                   </div>
 
-                  <div className="max-h-56 overflow-y-auto space-y-1 pr-0.5">
+                  <div className="max-h-60 overflow-y-auto py-1 space-y-1">
                     {filteredRooms.map((room) => (
-                      <div key={room.id} className="flex items-center justify-between group rounded-lg hover:bg-[#262a2f] p-1">
-                        <button
-                          onClick={() => {
-                            switchActiveRoom(room.id);
-                            setIsRoomDropdownOpen(false);
-                          }}
-                          className={`flex-1 text-left px-2 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between transition-colors min-w-0 ${
-                            room.id === activeRoomId ? 'text-[#4ade80] font-bold bg-[#4ade80]/10' : 'text-slate-300'
-                          }`}
-                        >
+                      <div
+                        key={room.id}
+                        onClick={() => {
+                          switchActiveRoom(room.id);
+                          setIsRoomDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors group ${
+                          activeRoom?.id === room.id
+                            ? 'bg-[#4ade80]/15 text-[#4ade80] font-bold border border-[#4ade80]/30'
+                            : 'hover:bg-[#262a2f] text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <div
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              activeRoom?.id === room.id ? 'bg-[#4ade80]' : 'bg-slate-500'
+                            }`}
+                          />
                           <span className="truncate">{room.name}</span>
-                          <span className="text-[10px] font-mono text-slate-500 ml-1.5 shrink-0">{room.code}</span>
-                        </button>
+                        </div>
 
                         {isAdmin && rooms.length > 1 && (
                           <button
@@ -196,39 +191,37 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
 
           {/* Right Header Actions Group */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            {/* System Role Switcher Badge */}
-            <Tooltip content={isAdmin ? 'Switch to Member Mode' : 'Switch to Admin Mode'}>
-              <button
-                onClick={toggleAdminRole}
-                className={`text-xs px-2.5 py-1.5 rounded-lg font-bold border transition-all flex items-center gap-1.5 ${
-                  isAdmin
+            {/* Room Host / Member Role Badge */}
+            <Tooltip content={isRoomHost ? 'You are the Host & Creator of this Room' : 'You are a Member of this Room'}>
+              <div
+                className={`text-xs px-2.5 py-1.5 rounded-lg font-bold border flex items-center gap-1.5 select-none font-mono ${
+                  isRoomHost
                     ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 shadow-sm'
-                    : 'bg-[#1c2024] text-slate-400 border-[#3d4a3e] hover:text-white'
+                    : 'bg-[#1c2024] text-slate-400 border-[#3d4a3e]'
                 }`}
-                aria-label="Toggle Admin/Member Role"
               >
-                {isAdmin ? (
+                {isRoomHost ? (
                   <>
                     <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
-                    <span className="hidden md:inline text-[11px]">Admin</span>
+                    <span className="text-[11px]">HOST</span>
                   </>
                 ) : (
                   <>
                     <UserCheck className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="hidden md:inline text-[11px]">Member</span>
+                    <span className="text-[11px]">MEMBER</span>
                   </>
                 )}
-              </button>
+              </div>
             </Tooltip>
 
-            {/* Post Problem Primary Action Button */}
+            {/* Post Problem Action Button */}
             <button
               onClick={() => setIsPostOpen(true)}
               className="bg-[#4ade80] text-[#005e2d] hover:bg-[#6dfe9c] active:bg-[#3bc26f] px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-colors shadow-sm"
-              title="Add Problem for Practice"
+              title="Add Daily Challenge"
             >
               <Plus className="w-4 h-4 text-[#005e2d] stroke-[2.5]" />
-              <span className="hidden xs:inline">Post</span>
+              <span className="hidden xs:inline font-sans">Post</span>
             </button>
 
             {/* Invite Button */}
@@ -236,7 +229,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
               <Tooltip content="Share Room Invite Code">
                 <button
                   onClick={() => setIsInviteOpen(true)}
-                  className="bg-[#1c2024] hover:bg-[#262a2f] text-slate-200 text-xs px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg font-semibold border border-[#3d4a3e] flex items-center gap-1.5 transition-colors hidden sm:flex"
+                  className="bg-[#1c2024] hover:bg-[#262a2f] text-slate-200 text-xs px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg font-semibold border border-[#3d4a3e] flex items-center gap-1.5 transition-colors hidden sm:flex font-sans"
                 >
                   <Share2 className="w-3.5 h-3.5 text-[#4ade80]" />
                   <span>Invite</span>
@@ -244,97 +237,130 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
               </Tooltip>
             )}
 
-            {/* Notification Bell */}
-            <Tooltip content="Notifications">
+            {/* Notifications Bell */}
+            <Tooltip content="Room Notifications">
               <button
                 onClick={() => setIsNotifOpen(true)}
                 className="relative p-2 text-slate-400 hover:text-white rounded-lg hover:bg-[#1c2024] transition-colors"
-                aria-label="View Notifications"
+                aria-label="Notifications"
               >
                 <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-2 sm:w-2.5 h-2 sm:h-2.5 bg-[#4ade80] rounded-full animate-ping-once" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#ea580c] ring-2 ring-[#101418]" />
                 )}
               </button>
             </Tooltip>
 
             {/* Sound Toggle */}
-            <Tooltip content={soundEnabled ? 'Mute Sound Effects' : 'Enable Sound Effects'}>
+            <Tooltip content={soundEnabled ? 'Disable Notification Sounds' : 'Enable Notification Sounds'}>
               <button
                 onClick={() => setSoundEnabled(!soundEnabled)}
-                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-[#1c2024] transition-colors hidden md:block"
+                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-[#1c2024] transition-colors hidden sm:block"
                 aria-label="Toggle Sound"
               >
                 {soundEnabled ? <Volume2 className="w-4 h-4 text-[#4ade80]" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
               </button>
             </Tooltip>
 
-            {/* Reset Workspace Confirmation Trigger */}
-            <Tooltip content="Reset Workspace to Defaults">
-              <button
-                onClick={() => setShowResetConfirm(true)}
-                className="p-2 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-[#1c2024] transition-colors hidden lg:block"
-                aria-label="Reset Workspace"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-            </Tooltip>
-
-            {/* User Profile Avatar & Dropdown */}
+            {/* User Profile Avatar / Menu */}
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center gap-2 p-1 rounded-lg hover:bg-[#1c2024] transition-colors border border-transparent hover:border-[#3d4a3e]"
-                aria-haspopup="true"
-                aria-expanded={isUserMenuOpen}
+                className="flex items-center gap-1 p-0.5 rounded-full ring-2 ring-[#3d4a3e] hover:ring-[#4ade80] transition-all"
+                aria-label="User Profile Menu"
               >
                 <img
                   src={currentUser.avatar}
                   alt={currentUser.name}
-                  className="w-8 h-8 rounded-full object-cover border border-[#3d4a3e]"
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover"
                 />
-                <ChevronDown className="w-3 h-3 text-slate-400 hidden sm:block" />
               </button>
 
+              {/* User Dropdown Menu */}
               {isUserMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-[#1c2024] border border-[#3d4a3e] rounded-xl shadow-2xl p-2 z-50 space-y-1">
-                  <div className="px-3 py-2 border-b border-[#3d4a3e]/60">
-                    <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
-                    <p className="text-[11px] font-mono text-[#4ade80] truncate">@{currentUser.username}</p>
+                <div className="absolute right-0 mt-2 w-64 bg-[#1c2024] border border-[#3d4a3e] rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in-50 zoom-in-95">
+                  <div className="p-3 border-b border-[#3d4a3e] flex items-center gap-3">
+                    <img
+                      src={currentUser.avatar}
+                      alt={currentUser.name}
+                      className="w-10 h-10 rounded-full object-cover border border-[#3d4a3e]"
+                    />
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-white truncate flex items-center gap-1">
+                        {currentUser.name}
+                        {isRoomHost && (
+                          <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1 rounded border border-purple-500/30">
+                            HOST
+                          </span>
+                        )}
+                      </div>
+                      {currentUser.username && (
+                        <div className="text-[10px] text-cyan-400 font-mono truncate">
+                          @{currentUser.username}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setIsProfileOpen(true);
-                      setIsUserMenuOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-[#262a2f] rounded-lg flex items-center gap-2 transition-colors"
-                  >
-                    <UserIcon className="w-3.5 h-3.5 text-[#4ade80]" />
-                    <span>View Profile & Stats</span>
-                  </button>
+                  <div className="py-1 space-y-0.5 text-xs font-medium text-slate-300">
+                    <button
+                      onClick={() => {
+                        setIsProfileOpen(true);
+                        setIsUserMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#262a2f] text-left transition-colors"
+                    >
+                      <Sparkles className="w-4 h-4 text-[#4ade80]" />
+                      <span>LeetCode Profile &amp; Stats</span>
+                    </button>
 
-                  <button
-                    onClick={() => {
-                      if ((window as any).__setLandingView) (window as any).__setLandingView(true);
-                      setIsUserMenuOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-[#262a2f] rounded-lg flex items-center gap-2 transition-colors"
-                  >
-                    <PlusCircle className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Switch / Create Account</span>
-                  </button>
+                    <button
+                      onClick={() => {
+                        if (typeof (window as any).__setLandingView === 'function') {
+                          (window as any).__setLandingView(true);
+                        }
+                        setIsUserMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#262a2f] text-left transition-colors"
+                    >
+                      <Layers className="w-4 h-4 text-cyan-400" />
+                      <span>Switch Room / Overview</span>
+                    </button>
 
-                  <button
-                    onClick={() => {
-                      signOut();
-                      setIsUserMenuOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2 text-xs text-rose-400 hover:bg-rose-500/10 rounded-lg flex items-center gap-2 transition-colors border-t border-[#3d4a3e]/40 mt-1 pt-2"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Sign Out</span>
-                  </button>
+                    <a
+                      href={`https://leetcode.com/${currentUser.username || ''}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#262a2f] text-left transition-colors text-slate-300"
+                    >
+                      <ExternalLink className="w-4 h-4 text-slate-400" />
+                      <span>Open LeetCode.com</span>
+                    </a>
+
+                    <div className="border-t border-[#3d4a3e] my-1" />
+
+                    <button
+                      onClick={() => {
+                        setShowResetConfirm(true);
+                        setIsUserMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-rose-950/30 text-rose-400 text-left transition-colors"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Reset Demo Data</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setIsUserMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#262a2f] text-slate-400 hover:text-white text-left transition-colors"
+                    >
+                      <LogOut className="w-4 h-4 text-slate-400" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -342,34 +368,39 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
         </div>
       </header>
 
-      {/* Modals & Drawers */}
+      {/* Modals */}
       <PostProblemModal isOpen={isPostOpen} onClose={() => setIsPostOpen(false)} />
-      {activeRoom && <InviteModal room={activeRoom} isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} />}
+      {activeRoom && (
+        <InviteModal
+          room={activeRoom}
+          isOpen={isInviteOpen}
+          onClose={() => setIsInviteOpen(false)}
+        />
+      )}
       <NotificationDrawer isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
       <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
 
-      {/* Reset Confirmation Modal */}
+      {/* Reset Confirmation Dialog */}
       {showResetConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowResetConfirm(false)} />
-          <div className="relative w-full max-w-md bg-[#1c2024] border border-[#3d4a3e] rounded-xl p-6 shadow-2xl z-10 space-y-4">
-            <div className="flex items-center gap-3 text-amber-400">
-              <AlertTriangle className="w-6 h-6 shrink-0" />
-              <h3 className="font-bold text-lg text-white">Reset Workspace Data?</h3>
-            </div>
-            <p className="text-xs text-slate-300 leading-relaxed font-sans">
-              This will restore the original demo rooms, problems, and members. Any custom rooms or local submissions will be refreshed.
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="bg-[#1c2024] border border-[#3d4a3e] rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <h4 className="font-bold text-base text-white">Reset Workspace Data?</h4>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              This will restore all default practice rooms, reset problem submissions, and clear local state cache.
             </p>
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setShowResetConfirm(false)}
-                className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white rounded-lg hover:bg-[#262a2f]"
+                className="flex-1 px-3 py-2 rounded-lg border border-[#3d4a3e] hover:bg-[#262a2f] text-xs font-semibold text-white transition-colors"
               >
                 Cancel
               </button>
               <button
-                onClick={handleResetWorkspace}
-                className="px-4 py-2 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg shadow-md"
+                onClick={() => {
+                  resetToDefault();
+                  setShowResetConfirm(false);
+                }}
+                className="flex-1 px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white transition-colors"
               >
                 Confirm Reset
               </button>

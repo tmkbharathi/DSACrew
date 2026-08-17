@@ -4,10 +4,9 @@ export interface User {
   id: string;
   name: string;
   username: string; // LeetCode handle
-  password?: string;
   avatar: string;
   role: 'Admin' | 'Member'; // Room role
-  systemRole: 'SuperAdmin' | 'User'; // System-wide role for full access
+  systemRole: 'SuperAdmin' | 'User'; // System role
   points: number;
   streak: number;
   solvedCount: number;
@@ -15,6 +14,13 @@ export interface User {
   joinedAt: string;
   joinedRoomIds?: string[];
   isLoggedIn?: boolean;
+}
+
+export interface AuthCredential {
+  userId: string;
+  username: string;
+  passwordHash: string;
+  createdAt: string;
 }
 
 export interface Comment {
@@ -97,4 +103,3 @@ export interface LeetCodeProfileStats {
   ranking: number;
   avatar?: string;
 }
-

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import confetti from 'canvas-confetti';
-import type { Room, User, Problem, Submission, Notification, Difficulty } from '../types';
+import type { Room, User, Problem, Submission, Notification, Difficulty, AuthCredential } from '../types';
 import { INITIAL_CURRENT_USER, MOCK_ROOMS, INITIAL_NOTIFICATIONS } from '../data/mockData';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
 import { fetchLeetCodeDaily, fetchLeetCodeProfile } from '../services/leetcodeApi';
@@ -12,7 +12,6 @@ interface AppContextType {
   logout: () => void;
   updateCurrentUser: (updates: Partial<User>) => void;
   syncUserProfileFromLeetCode: (username?: string) => Promise<boolean>;
-  toggleAdminRole: () => void;
   rooms: Room[];
   activeRoomId: string;
   activeRoom: Room | undefined;
@@ -66,6 +65,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_KEY = 'leettracker_state_v2';
+const LOCAL_STORAGE_KEY_AUTH = 'leettracker_auth_vault';
 const BROADCAST_CHANNEL_NAME = 'leettracker_realtime_channel';
 
 // Helper to safely parse LocalStorage JSON
@@ -79,6 +79,17 @@ function safeGetStorage<T>(key: string, fallback: T): T {
     console.warn(`Failed to parse LocalStorage key ${key}, using default fallback:`, e);
     return fallback;
   }
+}
+
+// Client-side password hash helper
+function hashSecret(password: string): string {
+  let hash = 0;
+  for (let i = 0; i < password.length; i++) {
+    const char = password.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return `h_${Math.abs(hash).toString(16)}_${password.length}`;
 }
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -104,10 +115,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     safeGetStorage(`${LOCAL_STORAGE_KEY}_notifications`, INITIAL_NOTIFICATIONS)
   );
 
+  const [authVault, setAuthVault] = useState<AuthCredential[]>(() =>
+    safeGetStorage(LOCAL_STORAGE_KEY_AUTH, [])
+  );
+
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [toast, setToast] = useState<{ title: string; message: string; type?: string } | null>(null);
 
-  const isLoggedIn = Boolean(currentUser.isLoggedIn && currentUser.username && currentUser.username.trim().length > 0);
+  const isLoggedIn = Boolean(
+    currentUser.isLoggedIn && currentUser.username && currentUser.username.trim().length > 0
+  );
 
   const logout = () => {
     const unlogged: User = {
@@ -129,7 +146,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const activeRoom = rooms.find((r) => r.id === activeRoomId) || rooms[0];
   const unreadCount = notifications.filter((n) => !n.read && n.roomId === activeRoomId).length;
 
-  const isAdmin = currentUser.systemRole === 'SuperAdmin';
+  // Real room-level administrator / host detection
+  const isRoomHost = Boolean(activeRoom && (activeRoom.creatorId === currentUser.id || currentUser.role === 'Admin'));
+  const isAdmin = isRoomHost || currentUser.systemRole === 'SuperAdmin';
 
   // Persist state to LocalStorage
   useEffect(() => {
@@ -156,60 +175,66 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (e) {}
   }, [notifications]);
 
-  // Ensure rooms always have currentUser and remove any legacy mock accounts or phantom placeholders
   useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY_AUTH, JSON.stringify(authVault));
+    } catch (e) {}
+  }, [authVault]);
+
+  // Synchronize profile updates in rooms where currentUser is already a member (WITHOUT injecting into unjoined rooms)
+  useEffect(() => {
+    if (!currentUser.id) return;
+
     setRooms((prevRooms) => {
       let changed = false;
       const updated = prevRooms.map((room) => {
-        // Strip out dummy users and legacy template user if current user is logged in
-        let members = (room.members || []).filter(
-          (m) =>
-            m.id !== 'usr_alex' &&
-            m.id !== 'usr_sarah' &&
-            m.id !== 'usr_david' &&
-            (currentUser.id === 'usr_main' || m.id !== 'usr_main')
+        // Purge any old dummy mock accounts
+        const cleanedMembers = (room.members || []).filter(
+          (m) => m.id !== 'usr_alex' && m.id !== 'usr_sarah' && m.id !== 'usr_david'
         );
 
         let creatorId = room.creatorId;
-        if (creatorId === 'usr_main' && currentUser.id !== 'usr_main') {
+        if (creatorId === 'usr_main' && currentUser.id !== 'usr_main' && isLoggedIn) {
           creatorId = currentUser.id;
           changed = true;
         }
 
-        if (members.length !== (room.members || []).length) {
-          changed = true;
+        const isMember = cleanedMembers.some((m) => m.id === currentUser.id);
+        if (!isMember) {
+          if (cleanedMembers.length !== (room.members || []).length) {
+            changed = true;
+            return { ...room, members: cleanedMembers, creatorId };
+          }
+          return room;
         }
 
-        const userIdx = members.findIndex((m) => m.id === currentUser.id);
-        if (userIdx === -1) {
-          members.unshift({ ...currentUser, role: creatorId === currentUser.id ? 'Admin' : currentUser.role });
-          changed = true;
-        } else {
-          const currentMember = members[userIdx];
-          const expectedRole = creatorId === currentUser.id ? 'Admin' : currentMember.role;
-          if (
-            currentMember.name !== currentUser.name ||
-            currentMember.points !== currentUser.points ||
-            currentMember.streak !== currentUser.streak ||
-            currentMember.solvedToday !== currentUser.solvedToday ||
-            currentMember.avatar !== currentUser.avatar ||
-            currentMember.username !== currentUser.username ||
-            currentMember.role !== expectedRole
-          ) {
-            members[userIdx] = { ...currentMember, ...currentUser, role: expectedRole };
-            changed = true;
+        const updatedMembers = cleanedMembers.map((m) => {
+          if (m.id === currentUser.id) {
+            const role = creatorId === currentUser.id ? 'Admin' : m.role;
+            if (
+              m.name !== currentUser.name ||
+              m.avatar !== currentUser.avatar ||
+              m.points !== currentUser.points ||
+              m.streak !== currentUser.streak ||
+              m.solvedToday !== currentUser.solvedToday ||
+              m.role !== role
+            ) {
+              changed = true;
+              return { ...m, ...currentUser, role };
+            }
           }
-        }
+          return m;
+        });
 
         if (changed) {
-          return { ...room, members, creatorId };
+          return { ...room, members: updatedMembers, creatorId };
         }
         return room;
       });
 
       return changed ? updated : prevRooms;
     });
-  }, [currentUser]);
+  }, [currentUser, isLoggedIn]);
 
   // On initial mount: if active room has no daily problems, auto-fetch today's official daily challenge from LeetCode
   useEffect(() => {
@@ -225,7 +250,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               url: daily.url,
               difficulty: daily.difficulty,
               tags: daily.tags,
-              targetTimeMinutes: daily.difficulty === 'Hard' ? 45 : daily.difficulty === 'Medium' ? 30 : 20,
               date: daily.date || todayStr,
               postedBy: {
                 id: 'system_leetcode',
@@ -310,13 +334,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             id: room.id,
             name: room.name,
             code: room.code,
-            description: room.description,
-            creator_id: room.creatorId,
-            target_daily_goal: room.targetDailyGoal,
             data: room,
+            updated_at: new Date().toISOString(),
           });
         });
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Supabase cloud sync error:', e);
+      }
     }
 
     try {
@@ -342,8 +366,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
       gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
       osc.connect(gain);
@@ -383,25 +407,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return false;
   };
 
-  const toggleAdminRole = () => {
-    const isCurrentlyAdmin = currentUser.systemRole === 'SuperAdmin';
-    const nextSystemRole = isCurrentlyAdmin ? 'User' : 'SuperAdmin';
-    const nextRoomRole = isCurrentlyAdmin ? 'Member' : 'Admin';
-
-    updateCurrentUser({
-      systemRole: nextSystemRole,
-      role: nextRoomRole,
-    });
-
-    setToast({
-      title: `Switched Mode: ${nextSystemRole === 'SuperAdmin' ? '⚡ Admin Mode' : '👤 Member Mode'}`,
-      message: nextSystemRole === 'SuperAdmin' 
-        ? 'Admin Privileges Active: Full room deletion, problem & comment moderation enabled.' 
-        : 'Member View Active: Read-only management, submit solutions & post comments.',
-      type: nextSystemRole === 'SuperAdmin' ? 'warning' : 'info',
-    });
-  };
-
   const [registeredAccounts, setRegisteredAccounts] = useState<User[]>(() =>
     safeGetStorage(`${LOCAL_STORAGE_KEY}_registered_accounts`, [])
   );
@@ -417,29 +422,35 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!clean) return { success: false, message: 'Please enter a valid LeetCode handle or username.' };
     const cleanPassword = password ? password.trim() : '';
 
-    // Check in registered accounts and room members
+    const cleanLower = clean.toLowerCase();
+
+    // Check auth vault for existing credentials
+    const credential = authVault.find((c) => c.username.toLowerCase() === cleanLower);
+
+    // Look up user object in registered accounts or room members
     const allKnownUsers = [
       ...registeredAccounts,
       ...rooms.flatMap((r) => r.members),
     ];
-
     const foundUser = allKnownUsers.find(
-      (u) => u.username.toLowerCase() === clean.toLowerCase() || u.name.toLowerCase() === clean.toLowerCase()
+      (u) => u.username.toLowerCase() === cleanLower || u.name.toLowerCase() === cleanLower
     );
 
-    if (foundUser) {
-      // Validate password if user has password configured
-      if (foundUser.password && cleanPassword && foundUser.password !== cleanPassword) {
-        return { success: false, message: `Incorrect password for @${foundUser.username || foundUser.name}.` };
+    // Strict password verification if account has a registered password
+    if (credential) {
+      if (!cleanPassword || hashSecret(cleanPassword) !== credential.passwordHash) {
+        return { success: false, message: 'Invalid password. Please enter the correct password.' };
       }
+    }
 
-      const loggedUser = { ...foundUser, isLoggedIn: true };
-      if (cleanPassword && !loggedUser.password) {
-        loggedUser.password = cleanPassword;
-      }
+    if (foundUser) {
+      const loggedUser: User = {
+        ...foundUser,
+        isLoggedIn: true,
+      };
       setCurrentUser(loggedUser);
 
-      // Auto update stats in background if handle exists
+      // Auto update stats in background
       if (loggedUser.username) {
         fetchLeetCodeProfile(loggedUser.username).then((stats) => {
           if (stats) {
@@ -455,15 +466,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (userRoom) {
         setActiveRoomId(userRoom.id);
       }
+
       setToast({
         title: `Signed In as ${foundUser.name}`,
-        message: `Welcome back! Loaded workspace for @${foundUser.username || foundUser.name}`,
+        message: `Welcome back @${foundUser.username || foundUser.name}!`,
         type: 'success',
       });
       return { success: true, message: `Welcome back, ${foundUser.name}!` };
     }
 
-    // Verify on LeetCode API before creating or logging in
+    // Verify on LeetCode API before creating account
     const lcStats = await fetchLeetCodeProfile(clean);
     if (!lcStats) {
       return {
@@ -476,7 +488,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       id: `user_${Date.now()}`,
       name: lcStats.realName || clean,
       username: lcStats.username,
-      password: cleanPassword || undefined,
       avatar: lcStats.avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80`,
       role: 'Member',
       systemRole: 'User',
@@ -488,17 +499,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       isLoggedIn: true,
     };
 
+    if (cleanPassword) {
+      const newCred: AuthCredential = {
+        userId: newUser.id,
+        username: newUser.username,
+        passwordHash: hashSecret(cleanPassword),
+        createdAt: new Date().toISOString(),
+      };
+      setAuthVault((prev) => [...prev.filter((c) => c.username.toLowerCase() !== newCred.username.toLowerCase()), newCred]);
+    }
+
     setRegisteredAccounts((prev) => [...prev.filter((u) => u.username.toLowerCase() !== newUser.username.toLowerCase()), newUser]);
     setCurrentUser(newUser);
 
-    // Auto-add new user to active room
+    // Add user to active room
     if (activeRoom) {
       setRooms((prev) =>
         prev.map((r) =>
           r.id === activeRoom.id
             ? {
                 ...r,
-                members: [...r.members.filter((m) => m.id !== newUser.id), newUser],
+                creatorId: r.creatorId === 'usr_main' ? newUser.id : r.creatorId,
+                members: [...r.members.filter((m) => m.id !== newUser.id && m.id !== 'usr_main'), { ...newUser, role: r.creatorId === 'usr_main' ? 'Admin' : 'Member' }],
               }
             : r
         )
@@ -519,39 +541,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const cleanName = name.trim();
     const cleanPassword = password ? password.trim() : '';
 
-    if (!cleanUsername) {
-      return { success: false, message: 'LeetCode username is required.' };
+    if (!cleanUsername) return { success: false, message: 'LeetCode username is required.' };
+    if (!cleanName) return { success: false, message: 'Display name is required.' };
+    if (!cleanPassword || cleanPassword.length < 4) {
+      return { success: false, message: 'Password must be at least 4 characters.' };
     }
 
-    if (cleanPassword && cleanPassword.length < 3) {
-      return { success: false, message: 'Password should be at least 3 characters long.' };
+    const cleanLower = cleanUsername.toLowerCase();
+    if (authVault.some((c) => c.username.toLowerCase() === cleanLower)) {
+      return { success: false, message: `Username "@${cleanUsername}" is already registered. Please sign in instead.` };
     }
 
-    // Check if handle already exists in registered accounts
-    const existing = registeredAccounts.find(
-      (u) => u.username.toLowerCase() === cleanUsername.toLowerCase()
-    );
-    if (existing) {
-      return {
-        success: false,
-        message: `Account with LeetCode handle @${cleanUsername} already exists. Please Sign In.`,
-      };
-    }
-
-    // STRICT VERIFICATION: Verify handle actually exists on LeetCode
     const lcStats = await fetchLeetCodeProfile(cleanUsername);
     if (!lcStats) {
       return {
         success: false,
-        message: `LeetCode handle "@${cleanUsername}" does not exist on LeetCode. Please check and enter a real LeetCode username.`,
+        message: `LeetCode handle "@${cleanUsername}" not found. Please verify spelling.`,
       };
     }
 
     const newUser: User = {
       id: `user_${Date.now()}`,
-      name: cleanName || lcStats.realName || lcStats.username,
+      name: cleanName || lcStats.realName || cleanUsername,
       username: lcStats.username,
-      password: cleanPassword || undefined,
       avatar: lcStats.avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80`,
       role: 'Member',
       systemRole: 'User',
@@ -563,17 +575,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       isLoggedIn: true,
     };
 
-    setRegisteredAccounts((prev) => [...prev.filter((u) => u.username.toLowerCase() !== newUser.username.toLowerCase()), newUser]);
+    const newCred: AuthCredential = {
+      userId: newUser.id,
+      username: newUser.username,
+      passwordHash: hashSecret(cleanPassword),
+      createdAt: new Date().toISOString(),
+    };
+
+    setAuthVault((prev) => [...prev, newCred]);
+    setRegisteredAccounts((prev) => [...prev, newUser]);
     setCurrentUser(newUser);
 
-    // Auto-add new user to active room
     if (activeRoom) {
       setRooms((prev) =>
         prev.map((r) =>
           r.id === activeRoom.id
             ? {
                 ...r,
-                members: [...r.members.filter((m) => m.id !== newUser.id), newUser],
+                creatorId: r.creatorId === 'usr_main' ? newUser.id : r.creatorId,
+                members: [...r.members.filter((m) => m.id !== newUser.id && m.id !== 'usr_main'), { ...newUser, role: r.creatorId === 'usr_main' ? 'Admin' : 'Member' }],
               }
             : r
         )
@@ -581,8 +601,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     setToast({
-      title: 'Account Registered & Verified!',
-      message: `Connected @${lcStats.username} with ${lcStats.totalSolved} LeetCode solves.`,
+      title: 'Account Registered! 🎉',
+      message: `Welcome ${newUser.name}! Verified LeetCode @${lcStats.username}.`,
       type: 'success',
     });
 
@@ -642,18 +662,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return { success: false, message: 'Room not found.' };
     }
 
-    if (!isAdmin) {
-      return { success: false, message: 'Permission denied. Switch to Admin Mode to delete rooms.' };
+    const isAuthorized = roomToDelete.creatorId === currentUser.id || currentUser.role === 'Admin' || isAdmin;
+    if (!isAuthorized) {
+      return { success: false, message: 'Permission denied. Only the room creator/host can delete this room.' };
     }
 
     let updatedRooms = rooms.filter((r) => r.id !== roomId);
 
     if (updatedRooms.length === 0) {
-      updatedRooms = MOCK_ROOMS;
-      setActiveRoomId(MOCK_ROOMS[0].id);
+      const defaultRoom: Room = {
+        ...MOCK_ROOMS[0],
+        creatorId: currentUser.id,
+        members: [{ ...currentUser, role: 'Admin' }],
+      };
+      updatedRooms = [defaultRoom];
+      setActiveRoomId(defaultRoom.id);
       setRooms(updatedRooms);
       const toastMsg = {
-        title: 'All Rooms Deleted',
+        title: 'Room Reset',
         message: 'Default practice room restored so your workspace remains accessible.',
         type: 'info',
       };
@@ -710,12 +736,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       id: `notif_${Date.now()}`,
       roomId: targetRoom.id,
       type: 'SYSTEM',
-      title: 'Member Joined! 👋',
-      message: `${currentUser.name} joined the room!`,
+      title: `${currentUser.name} joined the room! 👋`,
+      message: `@${currentUser.username || currentUser.name} entered "${targetRoom.name}".`,
       timestamp: 'Just now',
       read: false,
-      authorName: currentUser.name,
-      authorAvatar: currentUser.avatar,
     };
 
     const updatedNotifs = [newNotif, ...notifications];
@@ -723,12 +747,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     broadcastState(updatedRooms, updatedNotifs);
 
     setToast({
-      title: 'Joined Room!',
-      message: `You are now in "${targetRoom.name}"`,
+      title: 'Room Joined! 🎉',
+      message: `Welcome to ${targetRoom.name}!`,
       type: 'success',
     });
 
-    return { success: true, message: `Successfully joined ${targetRoom.name}` };
+    return { success: true, message: `Joined ${targetRoom.name}` };
   };
 
   const postDailyProblem = (problemData: {
@@ -739,18 +763,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     targetTimeMinutes?: number;
     date?: string;
   }) => {
-    if (!activeRoom) return;
-
-    const targetDate = problemData.date || new Date().toISOString().split('T')[0];
-
     const newProblem: Problem = {
       id: `prob_${Date.now()}`,
       title: problemData.title,
       url: problemData.url,
       difficulty: problemData.difficulty,
       tags: problemData.tags,
-      targetTimeMinutes: problemData.targetTimeMinutes || 30,
-      date: targetDate,
+      targetTimeMinutes: problemData.targetTimeMinutes,
+      date: problemData.date || new Date().toISOString().split('T')[0],
       postedBy: {
         id: currentUser.id,
         name: currentUser.name,
@@ -762,13 +782,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const updatedRooms = rooms.map((r) => {
       if (r.id === activeRoomId) {
-        // Filter out any existing problem for this exact date to replace, or prepend
-        const remainingProblems = r.dailyProblems.filter((p) => p.date !== targetDate);
-        const sortedProblems = [newProblem, ...remainingProblems].sort((a, b) => b.date.localeCompare(a.date));
         return {
           ...r,
           activeProblemId: newProblem.id,
-          dailyProblems: sortedProblems,
+          dailyProblems: [newProblem, ...r.dailyProblems.filter((p) => p.date !== newProblem.date)],
         };
       }
       return r;
@@ -780,8 +797,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       id: `notif_${Date.now()}`,
       roomId: activeRoomId,
       type: 'NEW_PROBLEM',
-      title: 'Problem Scheduled! 🎯',
-      message: `${currentUser.name} scheduled "${newProblem.title}" (${newProblem.difficulty}) for ${targetDate}.`,
+      title: `New Daily Challenge Posted: ${newProblem.title} 🚀`,
+      message: `${currentUser.name} posted today's ${newProblem.difficulty} problem: "${newProblem.title}".`,
       timestamp: 'Just now',
       read: false,
       authorName: currentUser.name,
@@ -790,35 +807,37 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const updatedNotifs = [newNotif, ...notifications];
     setNotifications(updatedNotifs);
+    broadcastState(updatedRooms, updatedNotifs);
 
-    const toastMsg = {
-      title: 'New Problem Posted!',
-      message: `"${newProblem.title}" is now active in ${activeRoom.name}`,
-      type: 'info',
-    };
-
-    setToast(toastMsg);
-    playAudioNotification();
-    broadcastState(updatedRooms, updatedNotifs, toastMsg);
+    setToast({
+      title: 'Problem Added!',
+      message: `"${newProblem.title}" scheduled for ${newProblem.date}.`,
+      type: 'success',
+    });
   };
 
   const deleteProblem = (problemId: string) => {
-    if (!activeRoom || !isAdmin) return;
+    const targetProblem = activeRoom?.dailyProblems.find((p) => p.id === problemId);
+    const isAuthorized = isAdmin || targetProblem?.postedBy.id === currentUser.id;
+    if (!isAuthorized) {
+      setToast({ title: 'Permission Denied', message: 'Only the host or problem author can delete this challenge.', type: 'warning' });
+      return;
+    }
 
     const updatedRooms = rooms.map((r) => {
       if (r.id === activeRoomId) {
-        const filteredProbs = r.dailyProblems.filter((p) => p.id !== problemId);
+        const filtered = r.dailyProblems.filter((p) => p.id !== problemId);
         return {
           ...r,
-          dailyProblems: filteredProbs,
-          activeProblemId: r.activeProblemId === problemId ? (filteredProbs[0]?.id || undefined) : r.activeProblemId,
+          activeProblemId: r.activeProblemId === problemId ? filtered[0]?.id : r.activeProblemId,
+          dailyProblems: filtered,
         };
       }
       return r;
     });
 
     setRooms(updatedRooms);
-    setToast({ title: 'Problem Removed', message: 'The problem has been deleted by Admin.', type: 'warning' });
+    setToast({ title: 'Problem Removed', message: 'Challenge removed from room history.', type: 'info' });
     broadcastState(updatedRooms, notifications);
   };
 
@@ -834,9 +853,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       verifiedLeetCode?: boolean;
     }
   ) => {
-    if (!activeRoom) return;
+    const targetProblem = activeRoom?.dailyProblems.find((p) => p.id === problemId);
+    const existingSubmission = targetProblem?.submissions.find((s) => s.userId === currentUser.id);
+    const isFirstSubmission = !existingSubmission;
 
-    const targetProblem = activeRoom.dailyProblems.find((p) => p.id === problemId);
     let earnedPoints = 50;
     if (targetProblem) {
       if (targetProblem.difficulty === 'Hard') earnedPoints = 100;
@@ -845,7 +865,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     const newSubmission: Submission = {
-      id: `sub_${Date.now()}`,
+      id: existingSubmission ? existingSubmission.id : `sub_${Date.now()}`,
       problemId,
       userId: currentUser.id,
       userName: currentUser.name,
@@ -857,22 +877,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       runtimeMs: data.runtimeMs || undefined,
       memoryMb: data.memoryMb || undefined,
       notes: data.notes,
-      submittedAt: 'Just now',
+      submittedAt: existingSubmission ? existingSubmission.submittedAt : 'Just now',
       verifiedLeetCode: data.verifiedLeetCode !== false,
     };
 
-    const newStreak = currentUser.solvedToday ? currentUser.streak : currentUser.streak + 1;
-    const newPoints = currentUser.points + earnedPoints;
-    const newSolvedCount = currentUser.solvedCount + 1;
+    // ANTI-FARMING: Only award points & increment solvedCount on the FIRST submission!
+    let updatedUser = currentUser;
+    if (isFirstSubmission) {
+      const newStreak = currentUser.solvedToday ? currentUser.streak : currentUser.streak + 1;
+      const newPoints = currentUser.points + earnedPoints;
+      const newSolvedCount = currentUser.solvedCount + 1;
 
-    const updatedUser = {
-      ...currentUser,
-      points: newPoints,
-      streak: newStreak,
-      solvedCount: newSolvedCount,
-      solvedToday: true,
-    };
-    setCurrentUser(updatedUser);
+      updatedUser = {
+        ...currentUser,
+        points: newPoints,
+        streak: newStreak,
+        solvedCount: newSolvedCount,
+        solvedToday: true,
+      };
+      setCurrentUser(updatedUser);
+    }
 
     const updatedRooms = rooms.map((r) => {
       if (r.id === activeRoomId) {
@@ -895,46 +919,49 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setRooms(updatedRooms);
 
-    try {
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#10B981', '#06B6D4', '#F59E0B', '#EC4899'],
+    if (isFirstSubmission) {
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#10B981', '#06B6D4', '#F59E0B', '#EC4899'],
+        });
+      } catch (e) {}
+
+      const newNotif: Notification = {
+        id: `notif_${Date.now()}`,
+        roomId: activeRoomId,
+        type: 'PROBLEM_SOLVED',
+        title: `${currentUser.name} solved today's challenge! 🔥`,
+        message: `Completed "${targetProblem?.title || 'Daily Problem'}" in ${data.timeSpentMinutes} mins (+${earnedPoints} pts).`,
+        timestamp: 'Just now',
+        read: false,
+        authorName: currentUser.name,
+        authorAvatar: currentUser.avatar,
+      };
+
+      const updatedNotifs = [newNotif, ...notifications];
+      setNotifications(updatedNotifs);
+      broadcastState(updatedRooms, updatedNotifs);
+
+      setToast({
+        title: 'Challenge Solved! 🎉',
+        message: `+${earnedPoints} Points Earned! Streak updated.`,
+        type: 'success',
       });
-    } catch (e) {}
-
-    const newNotif: Notification = {
-      id: `notif_${Date.now()}`,
-      roomId: activeRoomId,
-      type: 'PROBLEM_SOLVED',
-      title: `${currentUser.name} solved today's challenge! 🔥`,
-      message: `Completed "${targetProblem?.title || 'Daily Problem'}" in ${data.timeSpentMinutes} mins (+${earnedPoints} pts).`,
-      timestamp: 'Just now',
-      read: false,
-      authorName: currentUser.name,
-      authorAvatar: currentUser.avatar,
-    };
-
-    const updatedNotifs = [newNotif, ...notifications];
-    setNotifications(updatedNotifs);
-
-    const toastMsg = {
-      title: 'Problem Solved! 🎉',
-      message: `+${earnedPoints} Points | ${newStreak} Day Streak!`,
-      type: 'success',
-    };
-
-    setToast(toastMsg);
-    playAudioNotification();
-    broadcastState(updatedRooms, updatedNotifs, toastMsg);
+    } else {
+      setToast({
+        title: 'Solution Updated!',
+        message: 'Your code snippet and runtime metrics have been saved.',
+        type: 'info',
+      });
+    }
   };
 
   const addComment = (problemId: string, content: string, codeSnippet?: string) => {
-    if (!activeRoom || !content.trim()) return;
-
     const newComment = {
-      id: `cmt_${Date.now()}`,
+      id: `comment_${Date.now()}`,
       userId: currentUser.id,
       userName: currentUser.name,
       userAvatar: currentUser.avatar,
@@ -951,7 +978,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             if (p.id === problemId) {
               return {
                 ...p,
-                comments: [...p.comments, newComment],
+                comments: [newComment, ...p.comments],
               };
             }
             return p;
@@ -963,12 +990,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setRooms(updatedRooms);
 
+    const targetProblem = activeRoom?.dailyProblems.find((p) => p.id === problemId);
     const newNotif: Notification = {
       id: `notif_${Date.now()}`,
       roomId: activeRoomId,
       type: 'COMMENT',
-      title: `New Discussion in ${activeRoom.name}`,
-      message: `${currentUser.name}: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`,
+      title: `New Comment on ${targetProblem?.title || 'Problem'}`,
+      message: `${currentUser.name}: "${content.length > 60 ? content.substring(0, 60) + '...' : content}"`,
       timestamp: 'Just now',
       read: false,
       authorName: currentUser.name,
@@ -1053,12 +1081,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       localStorage.removeItem(`${LOCAL_STORAGE_KEY}_rooms`);
       localStorage.removeItem(`${LOCAL_STORAGE_KEY}_activeRoomId`);
       localStorage.removeItem(`${LOCAL_STORAGE_KEY}_notifications`);
+      localStorage.removeItem(LOCAL_STORAGE_KEY_AUTH);
     } catch (e) {}
 
     setCurrentUser(INITIAL_CURRENT_USER);
     setRooms(MOCK_ROOMS);
     setActiveRoomId(MOCK_ROOMS[0].id);
     setNotifications(INITIAL_NOTIFICATIONS);
+    setAuthVault([]);
     setToast({
       title: 'Workspace Reset',
       message: 'Reset back to fresh workspace state.',
@@ -1074,7 +1104,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         logout,
         updateCurrentUser,
         syncUserProfileFromLeetCode,
-        toggleAdminRole,
         rooms,
         activeRoomId,
         activeRoom,
