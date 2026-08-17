@@ -69,51 +69,51 @@ const MainContent: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col md:flex-row gap-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 md:p-6 flex flex-col md:flex-row gap-4 sm:gap-6">
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Dynamic Main Workspace View */}
-        <div className="flex-1 space-y-6 min-w-0">
+        <div className="flex-1 space-y-4 sm:space-y-6 min-w-0">
           {/* Top Quick Stats Banner */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="glass-panel bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-2xl flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
-                <Flame className="w-5 h-5 text-orange-400 fill-orange-400" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+            <div className="glass-panel bg-slate-900/60 border border-slate-800/80 p-2.5 sm:p-3.5 rounded-2xl flex items-center gap-2.5 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
+                <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400 fill-orange-400" />
               </div>
-              <div>
-                <div className="text-[10px] uppercase font-bold text-slate-400">Current Streak</div>
-                <div className="text-base font-black text-orange-400">{currentUser.streak} Days</div>
-              </div>
-            </div>
-
-            <div className="glass-panel bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-2xl flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                <Trophy className="w-5 h-5 text-amber-400" />
-              </div>
-              <div>
-                <div className="text-[10px] uppercase font-bold text-slate-400">Total Points</div>
-                <div className="text-base font-black text-amber-400">{currentUser.points} pts</div>
+              <div className="min-w-0">
+                <div className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 truncate">Streak</div>
+                <div className="text-xs sm:text-base font-black text-orange-400 truncate">{currentUser.streak} Days</div>
               </div>
             </div>
 
-            <div className="glass-panel bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-2xl flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                <Zap className="w-5 h-5 text-emerald-400" />
+            <div className="glass-panel bg-slate-900/60 border border-slate-800/80 p-2.5 sm:p-3.5 rounded-2xl flex items-center gap-2.5 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+                <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
               </div>
-              <div>
-                <div className="text-[10px] uppercase font-bold text-slate-400">Problems Solved</div>
-                <div className="text-base font-black text-emerald-400">{currentUser.solvedCount}</div>
+              <div className="min-w-0">
+                <div className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 truncate">Points</div>
+                <div className="text-xs sm:text-base font-black text-amber-400 truncate">{currentUser.points} pts</div>
               </div>
             </div>
 
-            <div className="glass-panel bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-2xl flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-5 h-5 text-cyan-400" />
+            <div className="glass-panel bg-slate-900/60 border border-slate-800/80 p-2.5 sm:p-3.5 rounded-2xl flex items-center gap-2.5 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
               </div>
-              <div>
-                <div className="text-[10px] uppercase font-bold text-slate-400">Today Status</div>
-                <div className={`text-xs font-black ${currentUser.solvedToday ? 'text-emerald-400' : 'text-slate-400'}`}>
-                  {currentUser.solvedToday ? '✓ Completed' : 'Pending Solved'}
+              <div className="min-w-0">
+                <div className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 truncate">Solved</div>
+                <div className="text-xs sm:text-base font-black text-emerald-400 truncate">{currentUser.solvedCount}</div>
+              </div>
+            </div>
+
+            <div className="glass-panel bg-slate-900/60 border border-slate-800/80 p-2.5 sm:p-3.5 rounded-2xl flex items-center gap-2.5 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 truncate">Today</div>
+                <div className={`text-xs sm:text-xs font-black truncate ${currentUser.solvedToday ? 'text-emerald-400' : 'text-slate-400'}`}>
+                  {currentUser.solvedToday ? '✓ Done' : 'Pending'}
                 </div>
               </div>
             </div>
@@ -121,7 +121,7 @@ const MainContent: React.FC = () => {
 
           {/* Tab Views */}
           {activeTab === 'dashboard' && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <DailyProblemHero problem={activeProblem} />
               <LeaderboardTable />
               <ProblemDiscussion problem={activeProblem} />

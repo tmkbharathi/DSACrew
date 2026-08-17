@@ -135,8 +135,8 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1">Language</label>
                 <div className="relative">
@@ -173,7 +173,7 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
             </div>
 
             {/* Optional Actual Metrics */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1">Runtime (Optional)</label>
                 <div className="relative">
