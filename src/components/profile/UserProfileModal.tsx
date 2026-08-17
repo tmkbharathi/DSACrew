@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { fetchLeetCodeProfile } from '../../services/leetcodeApi';
 import type { LeetCodeProfileStats } from '../../types';
 import { X, User, Code2, RefreshCw, CheckCircle2, Award, Zap, Flame, Trophy, AlertCircle } from 'lucide-react';
+import { Button } from '../ui/Button';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -74,26 +75,27 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
       <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md" onClick={onClose} />
 
-      <div className="relative w-full max-w-lg glass-panel bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 z-10 overflow-hidden">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-5">
+      <div className="relative w-full max-w-lg bg-[#1c2024] border border-[#3d4a3e] rounded-2xl shadow-2xl p-6 z-10 overflow-hidden mx-3">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[#3d4a3e] pb-3 mb-4">
           <div className="flex items-center gap-2">
-            <User className="w-5 h-5 text-emerald-400" />
-            <h3 className="font-bold text-lg text-white">Your Profile Settings</h3>
+            <User className="w-5 h-5 text-[#4ade80]" />
+            <h3 className="font-bold text-base sm:text-lg text-white font-sans">Profile & Settings</h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#262a2f]">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Avatar selection */}
+          {/* Avatar Selection */}
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-2">Avatar</label>
+            <label className="block text-xs font-mono text-slate-400 mb-2">Avatar</label>
             <div className="flex items-center gap-3">
               <img
                 src={avatar}
                 alt="Current Avatar"
-                className="w-14 h-14 rounded-full object-cover border-2 border-emerald-500/50 shadow-md"
+                className="w-14 h-14 rounded-full object-cover border-2 border-[#4ade80]/60 shadow-md"
               />
               <div className="flex gap-2 flex-wrap">
                 {AVATAR_OPTIONS.map((imgUrl, i) => (
@@ -103,7 +105,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                     alt=""
                     onClick={() => setAvatar(imgUrl)}
                     className={`w-9 h-9 rounded-full object-cover cursor-pointer border-2 transition-all ${
-                      avatar === imgUrl ? 'border-emerald-400 scale-110' : 'border-transparent opacity-60 hover:opacity-100'
+                      avatar === imgUrl ? 'border-[#4ade80] scale-105' : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   />
                 ))}
@@ -113,20 +115,20 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
 
           {/* Display Name */}
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Display Name</label>
+            <label className="block text-xs font-mono text-slate-400 mb-1">Display Name</label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-[#4ade80]"
               placeholder="Your Name"
             />
           </div>
 
           {/* LeetCode Handle */}
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">LeetCode Username / Handle</label>
+            <label className="block text-xs font-mono text-slate-400 mb-1">LeetCode Username / Handle</label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Code2 className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
@@ -137,19 +139,20 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                     setUsername(e.target.value);
                     setSyncError('');
                   }}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-mono"
+                  className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#4ade80] font-mono"
                   placeholder="e.g. touriste, neal_wu"
                 />
               </div>
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 type="button"
                 onClick={handleSyncLeetCode}
                 disabled={loadingSync}
-                className="bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs px-3 py-2.5 rounded-xl font-medium border border-emerald-500/30 flex items-center gap-1.5 transition-colors shrink-0"
+                leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${loadingSync ? 'animate-spin' : ''}`} />}
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${loadingSync ? 'animate-spin' : ''}`} />
-                {loadingSync ? 'Syncing...' : 'Sync LeetCode'}
-              </button>
+                {loadingSync ? 'Syncing...' : 'Sync LC'}
+              </Button>
             </div>
             {syncError && (
               <p className="text-xs text-rose-400 mt-1 flex items-center gap-1">
@@ -159,43 +162,43 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
             )}
           </div>
 
-          {/* Stats summary */}
-          <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 grid grid-cols-3 gap-2 text-center">
+          {/* Stats Summary */}
+          <div className="bg-[#101418] border border-[#3d4a3e] rounded-xl p-3.5 grid grid-cols-3 gap-2 text-center">
             <div>
-              <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
+              <div className="text-[10px] font-mono text-slate-400 flex items-center justify-center gap-1">
                 <Award className="w-3 h-3 text-amber-400" /> Points
               </div>
               <div className="text-sm font-bold text-amber-400 mt-0.5">{currentUser.points}</div>
             </div>
             <div>
-              <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
-                <Flame className="w-3 h-3 text-orange-400" /> Streak
+              <div className="text-[10px] font-mono text-slate-400 flex items-center justify-center gap-1">
+                <Flame className="w-3 h-3 text-[#ea580c]" /> Streak
               </div>
-              <div className="text-sm font-bold text-orange-400 mt-0.5">{currentUser.streak} Days</div>
+              <div className="text-sm font-bold text-[#ea580c] mt-0.5">{currentUser.streak} Days</div>
             </div>
             <div>
-              <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
-                <Zap className="w-3 h-3 text-emerald-400" /> Solved
+              <div className="text-[10px] font-mono text-slate-400 flex items-center justify-center gap-1">
+                <Zap className="w-3 h-3 text-[#4ade80]" /> Solved
               </div>
-              <div className="text-sm font-bold text-emerald-400 mt-0.5">
+              <div className="text-sm font-bold text-[#4ade80] mt-0.5">
                 {lcStats ? lcStats.totalSolved : currentUser.solvedCount}
               </div>
             </div>
           </div>
 
           {lcStats && (
-            <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-300 space-y-1">
-              <div className="flex items-center gap-2 font-bold text-emerald-400">
+            <div className="bg-[#101418] border border-[#4ade80]/30 rounded-xl p-3 text-xs text-[#4ade80] space-y-1">
+              <div className="flex items-center gap-2 font-bold">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>Verified @{lcStats.username}</span>
                 {lcStats.ranking > 0 && (
-                  <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300 ml-auto flex items-center gap-1">
-                    <Trophy className="w-3 h-3 text-amber-400" /> Rank #{lcStats.ranking.toLocaleString()}
+                  <span className="text-[10px] bg-[#1c2024] px-2 py-0.5 rounded text-slate-300 ml-auto flex items-center gap-1 font-mono">
+                    <Trophy className="w-3 h-3 text-[#eab308]" /> Rank #{lcStats.ranking.toLocaleString()}
                   </span>
                 )}
               </div>
-              <div className="text-[11px] text-slate-300 pt-1 flex gap-3 flex-wrap">
-                <span className="text-emerald-400 font-semibold">Easy: {lcStats.easySolved}</span>
+              <div className="text-[11px] text-slate-300 pt-1 flex gap-3 flex-wrap font-mono">
+                <span className="text-[#4ade80] font-semibold">Easy: {lcStats.easySolved}</span>
                 <span className="text-amber-400 font-semibold">Med: {lcStats.mediumSolved}</span>
                 <span className="text-rose-400 font-semibold">Hard: {lcStats.hardSolved}</span>
                 <span className="text-cyan-400 font-bold">Total: {lcStats.totalSolved}</span>
@@ -203,20 +206,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
             </div>
           )}
 
-          <div className="pt-3 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
-            >
+          <div className="pt-2 flex justify-end gap-2">
+            <Button variant="secondary" size="md" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl transition-colors shadow-lg shadow-emerald-500/20"
-            >
+            </Button>
+            <Button variant="primary" size="md" type="submit">
               Save Profile
-            </button>
+            </Button>
           </div>
         </form>
       </div>

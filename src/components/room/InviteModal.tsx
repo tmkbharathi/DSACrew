@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Room } from '../../types';
 import { X, Copy, Check, Share2, Key } from 'lucide-react';
+import { Button } from '../ui/Button';
 
 interface InviteModalProps {
   room: Room;
@@ -31,65 +32,64 @@ export const InviteModal: React.FC<InviteModalProps> = ({ room, isOpen, onClose 
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
       <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md" onClick={onClose} />
 
-      <div className="relative w-full max-w-md glass-panel bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 z-10 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-5">
+      <div className="relative w-full max-w-md bg-[#1c2024] border border-[#3d4a3e] rounded-2xl shadow-2xl p-6 z-10 max-h-[90vh] overflow-y-auto mx-3 space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[#3d4a3e] pb-3 mb-2">
           <div className="flex items-center gap-2">
-            <Share2 className="w-5 h-5 text-emerald-400" />
-            <h3 className="font-bold text-lg text-white">Invite Teammates to Room</h3>
+            <Share2 className="w-5 h-5 text-[#4ade80]" />
+            <h3 className="font-bold text-base sm:text-lg text-white font-sans">Invite Teammates</h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#262a2f]">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="space-y-4">
-          <p className="text-xs text-slate-300">
-            Share this room code with your friends or colleagues. Anyone with the code can join <span className="text-emerald-400 font-semibold">{room.name}</span>!
-          </p>
+        <p className="text-xs text-slate-300 leading-relaxed font-sans">
+          Share this room code with your friends or colleagues. Anyone with the code can join <span className="text-[#4ade80] font-semibold">{room.name}</span>!
+        </p>
 
-          {/* Code box */}
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-center">
-            <div className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1 flex items-center justify-center gap-1">
-              <Key className="w-3 h-3 text-emerald-400" /> Room Invite Code
-            </div>
-            <div className="text-2xl font-mono font-bold tracking-widest text-emerald-400 my-1">{room.code}</div>
-            <button
-              onClick={() => copyToClipboard(room.code, 'code')}
-              className="mt-2 text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg font-medium inline-flex items-center gap-1.5 transition-colors"
-            >
-              {copiedCode ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copiedCode ? 'Code Copied!' : 'Copy Code'}
-            </button>
+        {/* Code Box */}
+        <div className="bg-[#101418] border border-[#3d4a3e] rounded-xl p-4 text-center space-y-2">
+          <div className="text-[10px] text-slate-400 font-mono uppercase tracking-widest font-semibold flex items-center justify-center gap-1.5">
+            <Key className="w-3 h-3 text-[#4ade80]" /> Room Invite Code
           </div>
+          <div className="text-3xl font-mono font-extrabold tracking-widest text-[#4ade80] my-1">
+            {room.code}
+          </div>
+          <button
+            onClick={() => copyToClipboard(room.code, 'code')}
+            className="text-xs bg-[#4ade80]/15 hover:bg-[#4ade80]/25 text-[#4ade80] border border-[#4ade80]/30 px-3.5 py-1.5 rounded-lg font-bold inline-flex items-center gap-1.5 transition-colors font-mono"
+          >
+            {copiedCode ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copiedCode ? 'Code Copied!' : 'Copy Code'}</span>
+          </button>
+        </div>
 
-          {/* Link box */}
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Shareable Join Link</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                readOnly
-                value={joinLink}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 font-mono truncate focus:outline-none"
-              />
-              <button
-                onClick={() => copyToClipboard(joinLink, 'link')}
-                className="bg-slate-800 hover:bg-slate-700 text-white text-xs px-3 py-2 rounded-xl font-medium border border-slate-700 flex items-center gap-1 shrink-0 transition-colors"
-              >
-                {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                {copiedLink ? 'Copied!' : 'Copy Link'}
-              </button>
-            </div>
+        {/* Link Box */}
+        <div className="space-y-1.5">
+          <label className="block text-xs font-mono text-slate-400">Shareable Invite Link</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              readOnly
+              value={joinLink}
+              className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg px-3 py-2 text-xs text-slate-300 font-mono truncate focus:outline-none"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => copyToClipboard(joinLink, 'link')}
+              leftIcon={copiedLink ? <Check className="w-3.5 h-3.5 text-[#4ade80]" /> : <Copy className="w-3.5 h-3.5" />}
+            >
+              {copiedLink ? 'Copied' : 'Copy'}
+            </Button>
           </div>
         </div>
 
-        <div className="pt-5 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-colors"
-          >
+        <div className="pt-2 flex justify-end">
+          <Button variant="primary" size="md" onClick={onClose}>
             Done
-          </button>
+          </Button>
         </div>
       </div>
     </div>

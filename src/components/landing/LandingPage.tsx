@@ -26,10 +26,11 @@ import {
 } from 'lucide-react';
 
 interface LandingPageProps {
-  onEnterRoom: () => void;
+  onEnterRoom?: () => void;
+  onEnterWorkspace?: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWorkspace }) => {
   const { joinRoomByCode, setToast, currentUser, isLoggedIn, login, logout } = useApp();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -47,6 +48,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom }) => {
   const [quickDaily, setQuickDaily] = useState<any>(null);
   const [loadingDaily, setLoadingDaily] = useState(false);
 
+  const handleEnter = () => {
+    if (onEnterRoom) onEnterRoom();
+    if (onEnterWorkspace) onEnterWorkspace();
+  };
+
   const handleHeroLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginHandleInput.trim()) return;
@@ -59,7 +65,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom }) => {
     if (res.success) {
       setLoginHandleInput('');
       setLoginPasswordInput('');
-      onEnterRoom();
+      handleEnter();
     } else {
       setLoginError(res.message);
     }
@@ -72,7 +78,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom }) => {
 
     const res = joinRoomByCode(roomCode);
     if (res.success) {
-      onEnterRoom();
+      handleEnter();
     } else {
       setJoinError(res.message);
     }
@@ -120,7 +126,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom }) => {
             {isLoggedIn ? (
               <div className="flex items-center gap-2">
                 <button
-                  onClick={onEnterRoom}
+                  onClick={handleEnter}
                   className="px-4 py-2 rounded-lg bg-[#4ade80] hover:bg-[#6bfb9a] text-[#0A0E12] font-semibold text-xs transition-colors flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
                 >
                   <Layers className="w-4 h-4" />
@@ -306,7 +312,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom }) => {
               </div>
 
               <button
-                onClick={onEnterRoom}
+                onClick={handleEnter}
                 className="bg-[#4ade80] hover:bg-[#6bfb9a] text-[#0A0E12] font-bold text-xs px-3 py-1 rounded-lg transition-colors flex items-center gap-1 shadow-md shadow-emerald-500/20"
               >
                 Enter Workspace <ArrowRight className="w-3 h-3" />
@@ -484,7 +490,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom }) => {
                     onClick={() => {
                       setTourStep(null);
                       if (isLoggedIn) {
-                        onEnterRoom();
+                        handleEnter();
                       } else {
                         setIsAuthOpen(true);
                       }

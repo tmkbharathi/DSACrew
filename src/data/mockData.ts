@@ -2,7 +2,7 @@ import type { Room, User, Notification } from '../types';
 
 export const INITIAL_CURRENT_USER: User = {
   id: 'usr_main',
-  name: 'LeetCode Engineer',
+  name: 'You',
   username: '', // Ready for user to link their real LeetCode handle
   avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
   role: 'Admin',
@@ -12,7 +12,7 @@ export const INITIAL_CURRENT_USER: User = {
   solvedCount: 0,
   solvedToday: false,
   joinedAt: new Date().toISOString().split('T')[0],
-  isLoggedIn: false,
+  isLoggedIn: true,
 };
 
 export const MOCK_USERS: User[] = [

@@ -59,6 +59,8 @@ interface AppContextType {
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   resetDemoData: () => void;
+  resetToDefault: () => void;
+  signOut: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -80,9 +82,13 @@ function safeGetStorage<T>(key: string, fallback: T): T {
 }
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User>(() =>
-    safeGetStorage(`${LOCAL_STORAGE_KEY}_user`, INITIAL_CURRENT_USER)
-  );
+  const [currentUser, setCurrentUser] = useState<User>(() => {
+    const saved = safeGetStorage(`${LOCAL_STORAGE_KEY}_user`, INITIAL_CURRENT_USER);
+    if (saved && (saved.name === 'LeetCode Engineer' || !saved.name)) {
+      return { ...saved, name: 'You' };
+    }
+    return saved;
+  });
 
   const [rooms, setRooms] = useState<Room[]>(() => {
     const loaded = safeGetStorage(`${LOCAL_STORAGE_KEY}_rooms`, MOCK_ROOMS);
@@ -149,6 +155,61 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_notifications`, JSON.stringify(notifications));
     } catch (e) {}
   }, [notifications]);
+
+  // Ensure rooms always have currentUser and remove any legacy mock accounts or phantom placeholders
+  useEffect(() => {
+    setRooms((prevRooms) => {
+      let changed = false;
+      const updated = prevRooms.map((room) => {
+        // Strip out dummy users and legacy template user if current user is logged in
+        let members = (room.members || []).filter(
+          (m) =>
+            m.id !== 'usr_alex' &&
+            m.id !== 'usr_sarah' &&
+            m.id !== 'usr_david' &&
+            (currentUser.id === 'usr_main' || m.id !== 'usr_main')
+        );
+
+        let creatorId = room.creatorId;
+        if (creatorId === 'usr_main' && currentUser.id !== 'usr_main') {
+          creatorId = currentUser.id;
+          changed = true;
+        }
+
+        if (members.length !== (room.members || []).length) {
+          changed = true;
+        }
+
+        const userIdx = members.findIndex((m) => m.id === currentUser.id);
+        if (userIdx === -1) {
+          members.unshift({ ...currentUser, role: creatorId === currentUser.id ? 'Admin' : currentUser.role });
+          changed = true;
+        } else {
+          const currentMember = members[userIdx];
+          const expectedRole = creatorId === currentUser.id ? 'Admin' : currentMember.role;
+          if (
+            currentMember.name !== currentUser.name ||
+            currentMember.points !== currentUser.points ||
+            currentMember.streak !== currentUser.streak ||
+            currentMember.solvedToday !== currentUser.solvedToday ||
+            currentMember.avatar !== currentUser.avatar ||
+            currentMember.username !== currentUser.username ||
+            currentMember.role !== expectedRole
+          ) {
+            members[userIdx] = { ...currentMember, ...currentUser, role: expectedRole };
+            changed = true;
+          }
+        }
+
+        if (changed) {
+          return { ...room, members, creatorId };
+        }
+        return room;
+      });
+
+      return changed ? updated : prevRooms;
+    });
+  }, [currentUser]);
 
   // On initial mount: if active room has no daily problems, auto-fetch today's official daily challenge from LeetCode
   useEffect(() => {
@@ -949,7 +1010,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const removeMember = (roomId: string, memberId: string) => {
-    if (!isAdmin) return;
+    const targetRoom = rooms.find((r) => r.id === roomId);
+    if (!targetRoom) return;
+
+    const isHost = targetRoom.creatorId === currentUser.id || currentUser.role === 'Admin' || isAdmin;
+    if (!isHost) {
+      setToast({ title: 'Permission Denied', message: 'Only the room host can remove members.', type: 'warning' });
+      return;
+    }
+
+    if (memberId === currentUser.id) {
+      setToast({ title: 'Notice', message: 'You cannot remove yourself from your own room.', type: 'info' });
+      return;
+    }
 
     const updatedRooms = rooms.map((r) => {
       if (r.id === roomId) {
@@ -962,7 +1035,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
 
     setRooms(updatedRooms);
-    setToast({ title: 'Member Removed', message: 'Member was removed from the room by Admin.', type: 'warning' });
+    setToast({ title: 'Member Removed', message: 'Member was removed from the room.', type: 'warning' });
     broadcastState(updatedRooms, notifications);
   };
 
@@ -1028,6 +1101,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         markNotificationRead,
         markAllNotificationsRead,
         resetDemoData,
+        resetToDefault: resetDemoData,
+        signOut: logout,
       }}
     >
       {children}
