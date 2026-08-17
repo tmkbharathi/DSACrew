@@ -107,7 +107,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [toast, setToast] = useState<{ title: string; message: string; type?: string } | null>(null);
 
-  const isLoggedIn = Boolean(currentUser.isLoggedIn || (currentUser.username && currentUser.username.trim().length > 0));
+  const isLoggedIn = Boolean(currentUser.isLoggedIn && currentUser.username && currentUser.username.trim().length > 0);
 
   const logout = () => {
     const unlogged: User = {

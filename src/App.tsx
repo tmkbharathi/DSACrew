@@ -13,7 +13,7 @@ import { LandingPage } from './components/landing/LandingPage';
 import { Flame, Trophy, Zap, Target } from 'lucide-react';
 
 export const App = () => {
-  const { activeRoom, currentUser } = useApp();
+  const { activeRoom, currentUser, isLoggedIn } = useApp();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showLanding, setShowLanding] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
@@ -21,11 +21,15 @@ export const App = () => {
   // Allow global switching back to landing page demo
   (window as any).__setLandingView = setShowLanding;
 
-  if (!currentUser.isLoggedIn || showLanding) {
+  if (!isLoggedIn || showLanding) {
     return (
       <LandingPage
-        onEnterRoom={() => setShowLanding(false)}
-        onEnterWorkspace={() => setShowLanding(false)}
+        onEnterRoom={() => {
+          if (isLoggedIn) setShowLanding(false);
+        }}
+        onEnterWorkspace={() => {
+          if (isLoggedIn) setShowLanding(false);
+        }}
       />
     );
   }
