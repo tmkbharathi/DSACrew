@@ -74,43 +74,57 @@ const MainContent: React.FC = () => {
 
         {/* Dynamic Main Workspace View */}
         <main className="flex-1 bg-[#101418] overflow-y-auto p-3.5 sm:p-6 md:p-8 flex flex-col gap-4 sm:gap-6 md:gap-8 relative min-w-0 pb-16 md:pb-8">
-          {/* Top Quick Stats Grid (4 cards matching reference) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 relative z-10">
+          {/* Top Quick Stats Grid (Compact Slim Section) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 relative z-10">
             {/* 1. STREAK */}
-            <div className="bg-[#1c2024] rounded-xl p-3 sm:p-4 md:p-6 border border-[#3d4a3e] flex flex-col gap-1.5 sm:gap-2 shadow-lg hover:border-[#ea580c]/40 transition-colors">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#ea580c]/10 text-[#ea580c] flex items-center justify-center mb-0.5 sm:mb-1 border border-[#ea580c]/20">
-                <Flame className="w-4 h-4 sm:w-5 sm:h-5 fill-[#ea580c] text-[#ea580c]" />
+            <div className="bg-[#1c2024] rounded-xl px-3 py-2 sm:px-3.5 sm:py-2.5 border border-[#3d4a3e] flex items-center gap-2.5 shadow-sm hover:border-[#ea580c]/40 transition-colors">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#ea580c]/10 text-[#ea580c] flex items-center justify-center shrink-0 border border-[#ea580c]/20">
+                <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-[#ea580c] text-[#ea580c]" />
               </div>
-              <div className="text-[10px] sm:text-xs font-mono text-slate-400 uppercase tracking-wider font-semibold">STREAK</div>
-              <div className="text-base sm:text-xl md:text-2xl font-bold text-[#ea580c] font-sans truncate">{currentUser.streak} Days</div>
+              <div className="min-w-0">
+                <div className="text-[9px] sm:text-[10px] font-mono text-slate-400 uppercase tracking-wider font-semibold leading-tight">STREAK</div>
+                <div className="text-xs sm:text-sm font-bold text-[#ea580c] font-sans truncate leading-tight mt-0.5">
+                  {currentUser.streak} Days
+                </div>
+              </div>
             </div>
 
             {/* 2. POINTS */}
-            <div className="bg-[#1c2024] rounded-xl p-3 sm:p-4 md:p-6 border border-[#3d4a3e] flex flex-col gap-1.5 sm:gap-2 shadow-lg hover:border-[#eab308]/40 transition-colors">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#eab308]/10 text-[#eab308] flex items-center justify-center mb-0.5 sm:mb-1 border border-[#eab308]/20">
-                <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-[#eab308]" />
+            <div className="bg-[#1c2024] rounded-xl px-3 py-2 sm:px-3.5 sm:py-2.5 border border-[#3d4a3e] flex items-center gap-2.5 shadow-sm hover:border-[#eab308]/40 transition-colors">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#eab308]/10 text-[#eab308] flex items-center justify-center shrink-0 border border-[#eab308]/20">
+                <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#eab308]" />
               </div>
-              <div className="text-[10px] sm:text-xs font-mono text-slate-400 uppercase tracking-wider font-semibold">POINTS</div>
-              <div className="text-base sm:text-xl md:text-2xl font-bold text-[#eab308] font-sans truncate">{currentUser.points} pts</div>
+              <div className="min-w-0">
+                <div className="text-[9px] sm:text-[10px] font-mono text-slate-400 uppercase tracking-wider font-semibold leading-tight">POINTS</div>
+                <div className="text-xs sm:text-sm font-bold text-[#eab308] font-sans truncate leading-tight mt-0.5">
+                  {currentUser.points} pts
+                </div>
+              </div>
             </div>
 
             {/* 3. SOLVED */}
-            <div className="bg-[#1c2024] rounded-xl p-3 sm:p-4 md:p-6 border border-[#3d4a3e] flex flex-col gap-1.5 sm:gap-2 shadow-lg hover:border-[#4ade80]/40 transition-colors">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#4ade80]/10 text-[#4ade80] flex items-center justify-center mb-0.5 sm:mb-1 border border-[#4ade80]/20">
-                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-[#4ade80]" />
+            <div className="bg-[#1c2024] rounded-xl px-3 py-2 sm:px-3.5 sm:py-2.5 border border-[#3d4a3e] flex items-center gap-2.5 shadow-sm hover:border-[#4ade80]/40 transition-colors">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#4ade80]/10 text-[#4ade80] flex items-center justify-center shrink-0 border border-[#4ade80]/20">
+                <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#4ade80]" />
               </div>
-              <div className="text-[10px] sm:text-xs font-mono text-slate-400 uppercase tracking-wider font-semibold">SOLVED</div>
-              <div className="text-base sm:text-xl md:text-2xl font-bold text-[#4ade80] font-sans truncate">{currentUser.solvedCount}</div>
+              <div className="min-w-0">
+                <div className="text-[9px] sm:text-[10px] font-mono text-slate-400 uppercase tracking-wider font-semibold leading-tight">SOLVED</div>
+                <div className="text-xs sm:text-sm font-bold text-[#4ade80] font-sans truncate leading-tight mt-0.5">
+                  {currentUser.solvedCount}
+                </div>
+              </div>
             </div>
 
             {/* 4. TODAY */}
-            <div className="bg-[#1c2024] rounded-xl p-3 sm:p-4 md:p-6 border border-[#3d4a3e] flex flex-col gap-1.5 sm:gap-2 shadow-lg hover:border-[#3b82f6]/40 transition-colors">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#3b82f6]/10 text-[#3b82f6] flex items-center justify-center mb-0.5 sm:mb-1 border border-[#3b82f6]/20">
-                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#3b82f6]" />
+            <div className="bg-[#1c2024] rounded-xl px-3 py-2 sm:px-3.5 sm:py-2.5 border border-[#3d4a3e] flex items-center gap-2.5 shadow-sm hover:border-[#3b82f6]/40 transition-colors">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#3b82f6]/10 text-[#3b82f6] flex items-center justify-center shrink-0 border border-[#3b82f6]/20">
+                <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#3b82f6]" />
               </div>
-              <div className="text-[10px] sm:text-xs font-mono text-slate-400 uppercase tracking-wider font-semibold">TODAY</div>
-              <div className={`text-base sm:text-xl md:text-2xl font-bold font-sans truncate ${currentUser.solvedToday ? 'text-[#4ade80]' : 'text-slate-200'}`}>
-                {currentUser.solvedToday ? '✓ Solved' : 'Pending'}
+              <div className="min-w-0">
+                <div className="text-[9px] sm:text-[10px] font-mono text-slate-400 uppercase tracking-wider font-semibold leading-tight">TODAY</div>
+                <div className={`text-xs sm:text-sm font-bold font-sans truncate leading-tight mt-0.5 ${currentUser.solvedToday ? 'text-[#4ade80]' : 'text-slate-300'}`}>
+                  {currentUser.solvedToday ? '✓ Solved' : 'Pending'}
+                </div>
               </div>
             </div>
           </div>

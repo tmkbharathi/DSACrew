@@ -38,6 +38,7 @@ interface AppContextType {
     difficulty: Difficulty;
     tags: string[];
     targetTimeMinutes?: number;
+    date?: string;
   }) => void;
   deleteProblem: (problemId: string) => void;
   submitSolution: (
@@ -675,8 +676,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     difficulty: Difficulty;
     tags: string[];
     targetTimeMinutes?: number;
+    date?: string;
   }) => {
     if (!activeRoom) return;
+
+    const targetDate = problemData.date || new Date().toISOString().split('T')[0];
 
     const newProblem: Problem = {
       id: `prob_${Date.now()}`,
@@ -685,7 +689,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       difficulty: problemData.difficulty,
       tags: problemData.tags,
       targetTimeMinutes: problemData.targetTimeMinutes || 30,
-      date: new Date().toISOString().split('T')[0],
+      date: targetDate,
       postedBy: {
         id: currentUser.id,
         name: currentUser.name,
@@ -697,10 +701,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const updatedRooms = rooms.map((r) => {
       if (r.id === activeRoomId) {
+        // Filter out any existing problem for this exact date to replace, or prepend
+        const remainingProblems = r.dailyProblems.filter((p) => p.date !== targetDate);
+        const sortedProblems = [newProblem, ...remainingProblems].sort((a, b) => b.date.localeCompare(a.date));
         return {
           ...r,
           activeProblemId: newProblem.id,
-          dailyProblems: [newProblem, ...r.dailyProblems],
+          dailyProblems: sortedProblems,
         };
       }
       return r;
@@ -712,8 +719,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       id: `notif_${Date.now()}`,
       roomId: activeRoomId,
       type: 'NEW_PROBLEM',
-      title: 'New Daily Problem Posted! 🎯',
-      message: `${currentUser.name} posted "${newProblem.title}" (${newProblem.difficulty}) for today.`,
+      title: 'Problem Scheduled! 🎯',
+      message: `${currentUser.name} scheduled "${newProblem.title}" (${newProblem.difficulty}) for ${targetDate}.`,
       timestamp: 'Just now',
       read: false,
       authorName: currentUser.name,
