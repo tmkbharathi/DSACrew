@@ -66,62 +66,58 @@ const MainContent: React.FC = () => {
   const activeProblem = activeRoom.dailyProblems.find((p) => p.id === activeRoom.activeProblemId) || activeRoom.dailyProblems[0];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
+    <div className="min-h-screen bg-[#101418] text-[#e0e2e8] flex flex-col font-sans selection:bg-[#4ade80]/20 selection:text-[#4ade80]">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 md:p-6 flex flex-col md:flex-row gap-4 sm:gap-6">
+      <div className="flex-1 flex flex-col md:flex-row pt-[60px] sm:pt-[72px] min-h-screen md:h-screen md:overflow-hidden">
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Dynamic Main Workspace View */}
-        <div className="flex-1 space-y-4 sm:space-y-6 min-w-0">
-          {/* Top Quick Stats Banner */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
-            <div className="glass-panel bg-slate-900/60 border border-slate-800/80 p-2.5 sm:p-3.5 rounded-2xl flex items-center gap-2.5 sm:gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
-                <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400 fill-orange-400" />
+        <main className="flex-1 bg-[#101418] overflow-y-auto p-3.5 sm:p-6 md:p-8 flex flex-col gap-4 sm:gap-6 md:gap-8 relative min-w-0 pb-16 md:pb-8">
+          {/* Top Quick Stats Grid (4 cards matching reference) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 relative z-10">
+            {/* 1. STREAK */}
+            <div className="bg-[#1c2024] rounded-xl p-3 sm:p-4 md:p-6 border border-[#3d4a3e] flex flex-col gap-1.5 sm:gap-2 shadow-lg hover:border-[#ea580c]/40 transition-colors">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#ea580c]/10 text-[#ea580c] flex items-center justify-center mb-0.5 sm:mb-1 border border-[#ea580c]/20">
+                <Flame className="w-4 h-4 sm:w-5 sm:h-5 fill-[#ea580c] text-[#ea580c]" />
               </div>
-              <div className="min-w-0">
-                <div className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 truncate">Streak</div>
-                <div className="text-xs sm:text-base font-black text-orange-400 truncate">{currentUser.streak} Days</div>
-              </div>
+              <div className="text-[10px] sm:text-xs font-mono text-slate-400 uppercase tracking-wider font-semibold">STREAK</div>
+              <div className="text-base sm:text-xl md:text-2xl font-bold text-[#ea580c] font-sans truncate">{currentUser.streak} Days</div>
             </div>
 
-            <div className="glass-panel bg-slate-900/60 border border-slate-800/80 p-2.5 sm:p-3.5 rounded-2xl flex items-center gap-2.5 sm:gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+            {/* 2. POINTS */}
+            <div className="bg-[#1c2024] rounded-xl p-3 sm:p-4 md:p-6 border border-[#3d4a3e] flex flex-col gap-1.5 sm:gap-2 shadow-lg hover:border-[#eab308]/40 transition-colors">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#eab308]/10 text-[#eab308] flex items-center justify-center mb-0.5 sm:mb-1 border border-[#eab308]/20">
+                <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-[#eab308]" />
               </div>
-              <div className="min-w-0">
-                <div className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 truncate">Points</div>
-                <div className="text-xs sm:text-base font-black text-amber-400 truncate">{currentUser.points} pts</div>
-              </div>
+              <div className="text-[10px] sm:text-xs font-mono text-slate-400 uppercase tracking-wider font-semibold">POINTS</div>
+              <div className="text-base sm:text-xl md:text-2xl font-bold text-[#eab308] font-sans truncate">{currentUser.points} pts</div>
             </div>
 
-            <div className="glass-panel bg-slate-900/60 border border-slate-800/80 p-2.5 sm:p-3.5 rounded-2xl flex items-center gap-2.5 sm:gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
+            {/* 3. SOLVED */}
+            <div className="bg-[#1c2024] rounded-xl p-3 sm:p-4 md:p-6 border border-[#3d4a3e] flex flex-col gap-1.5 sm:gap-2 shadow-lg hover:border-[#4ade80]/40 transition-colors">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#4ade80]/10 text-[#4ade80] flex items-center justify-center mb-0.5 sm:mb-1 border border-[#4ade80]/20">
+                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-[#4ade80]" />
               </div>
-              <div className="min-w-0">
-                <div className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 truncate">Solved</div>
-                <div className="text-xs sm:text-base font-black text-emerald-400 truncate">{currentUser.solvedCount}</div>
-              </div>
+              <div className="text-[10px] sm:text-xs font-mono text-slate-400 uppercase tracking-wider font-semibold">SOLVED</div>
+              <div className="text-base sm:text-xl md:text-2xl font-bold text-[#4ade80] font-sans truncate">{currentUser.solvedCount}</div>
             </div>
 
-            <div className="glass-panel bg-slate-900/60 border border-slate-800/80 p-2.5 sm:p-3.5 rounded-2xl flex items-center gap-2.5 sm:gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+            {/* 4. TODAY */}
+            <div className="bg-[#1c2024] rounded-xl p-3 sm:p-4 md:p-6 border border-[#3d4a3e] flex flex-col gap-1.5 sm:gap-2 shadow-lg hover:border-[#3b82f6]/40 transition-colors">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#3b82f6]/10 text-[#3b82f6] flex items-center justify-center mb-0.5 sm:mb-1 border border-[#3b82f6]/20">
+                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#3b82f6]" />
               </div>
-              <div className="min-w-0">
-                <div className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 truncate">Today</div>
-                <div className={`text-xs sm:text-xs font-black truncate ${currentUser.solvedToday ? 'text-emerald-400' : 'text-slate-400'}`}>
-                  {currentUser.solvedToday ? '✓ Done' : 'Pending'}
-                </div>
+              <div className="text-[10px] sm:text-xs font-mono text-slate-400 uppercase tracking-wider font-semibold">TODAY</div>
+              <div className={`text-base sm:text-xl md:text-2xl font-bold font-sans truncate ${currentUser.solvedToday ? 'text-[#4ade80]' : 'text-slate-200'}`}>
+                {currentUser.solvedToday ? '✓ Solved' : 'Pending'}
               </div>
             </div>
           </div>
 
           {/* Tab Views */}
           {activeTab === 'dashboard' && (
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-4 sm:space-y-6 md:space-y-8">
               <DailyProblemHero problem={activeProblem} />
               <LeaderboardTable />
               <ProblemDiscussion problem={activeProblem} />
@@ -129,7 +125,7 @@ const MainContent: React.FC = () => {
           )}
 
           {activeTab === 'leaderboard' && (
-            <div className="space-y-6">
+            <div className="space-y-6 sm:space-y-8">
               <LeaderboardTable />
               <CompletionMatrix />
               <AnalyticsCharts />
@@ -139,8 +135,8 @@ const MainContent: React.FC = () => {
           {activeTab === 'history' && <ProblemHistory />}
 
           {activeTab === 'discussion' && <ProblemDiscussion problem={activeProblem} />}
-        </div>
-      </main>
+        </main>
+      </div>
 
       <ToastContainer />
     </div>

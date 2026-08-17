@@ -7,17 +7,22 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  defaultRegisterMode?: boolean;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defaultRegisterMode = false }) => {
   const { currentUser, activeRoom, login, registerAccount } = useApp();
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(defaultRegisterMode);
   const [usernameInput, setUsernameInput] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  React.useEffect(() => {
+    setIsRegisterMode(defaultRegisterMode);
+  }, [defaultRegisterMode, isOpen]);
 
   if (!isOpen) return null;
 

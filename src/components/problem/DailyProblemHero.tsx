@@ -19,18 +19,18 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem }) =
 
   if (!problem) {
     return (
-      <div className="glass-panel rounded-2xl p-8 text-center border border-dashed border-slate-800 my-4">
-        <Sparkles className="w-12 h-12 text-emerald-400 mx-auto mb-3 opacity-60 animate-pulse" />
-        <h3 className="text-lg font-bold text-white mb-1">No Daily Problem Active Yet</h3>
-        <p className="text-xs text-slate-400 max-w-md mx-auto mb-4">
-          Be the hero for <span className="text-emerald-400">{activeRoom?.name || 'your room'}</span>! Post today's LeetCode problem or auto-fetch the official challenge.
+      <div className="bg-[#1c2024]/80 backdrop-blur-md rounded-2xl border border-[#3d4a3e] flex flex-col items-center justify-center py-16 sm:py-20 px-6 text-center shadow-lg relative z-10 min-h-[360px]">
+        <Sparkles className="w-14 h-14 text-[#4ade80] mb-5 opacity-90 animate-pulse" />
+        <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 font-sans">No Daily Problem Active Yet</h2>
+        <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto mb-6 leading-relaxed">
+          Be the hero for <span className="text-[#4ade80] font-semibold">{activeRoom?.name || 'your room'}</span>! Post today's LeetCode problem or auto-fetch the official challenge.
         </p>
         <button
           onClick={() => setIsPostOpen(true)}
-          className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-5 py-2.5 rounded-xl font-bold text-xs inline-flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
+          className="bg-[#4ade80] text-[#005e2d] hover:bg-[#6dfe9c] transition-all font-semibold px-6 py-3 rounded-lg flex items-center gap-2 shadow-[0_0_20px_rgba(74,222,128,0.15)] hover:shadow-[0_0_30px_rgba(74,222,128,0.3)] text-sm"
         >
           <PlusCircle className="w-4 h-4" />
-          Post Daily Problem
+          <span>Post Daily Problem</span>
         </button>
         <PostProblemModal isOpen={isPostOpen} onClose={() => setIsPostOpen(false)} />
       </div>
@@ -43,7 +43,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem }) =
   const getDiffBadge = (diff: string) => {
     switch (diff) {
       case 'Easy':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+        return 'bg-[#4ade80]/10 text-[#4ade80] border-[#4ade80]/30';
       case 'Hard':
         return 'bg-rose-500/10 text-rose-400 border-rose-500/30';
       default:
@@ -54,21 +54,21 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem }) =
   return (
     <div className="space-y-4">
       {/* Daily Challenge Card */}
-      <div className="glass-panel bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-emerald-950/30 border border-slate-800 rounded-2xl p-4 sm:p-6 relative overflow-hidden shadow-xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -z-0 pointer-events-none" />
+      <div className="bg-[#1c2024] border border-[#3d4a3e] rounded-2xl p-5 sm:p-7 relative overflow-hidden shadow-xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#4ade80]/5 rounded-full blur-3xl -z-0 pointer-events-none" />
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-2">
-              <span className="bg-emerald-500/20 text-emerald-300 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md border border-emerald-500/30 flex items-center gap-1">
-                <Flame className="w-3 h-3 text-emerald-400" /> Daily Challenge
+              <span className="bg-[#4ade80]/20 text-[#4ade80] text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-md border border-[#4ade80]/30 flex items-center gap-1">
+                <Flame className="w-3 h-3 text-[#4ade80]" /> Daily Challenge
               </span>
-              <span className={`text-[11px] sm:text-xs font-semibold px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full border ${getDiffBadge(problem.difficulty)}`}>
+              <span className={`text-[11px] sm:text-xs font-semibold px-2.5 py-0.5 rounded-full border ${getDiffBadge(problem.difficulty)}`}>
                 {problem.difficulty}
               </span>
               {problem.targetTimeMinutes && (
-                <span className="text-[11px] sm:text-xs text-slate-400 flex items-center gap-1">
-                  <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {problem.targetTimeMinutes} mins
+                <span className="text-[11px] sm:text-xs text-slate-400 flex items-center gap-1 font-mono">
+                  <Clock className="w-3.5 h-3.5 text-slate-400" /> {problem.targetTimeMinutes} mins
                 </span>
               )}
             </div>
@@ -76,7 +76,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem }) =
             <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2 sm:gap-3 flex-wrap">
               <span className="break-words">{problem.title}</span>
               {isSolved && (
-                <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-0.5 rounded-full border border-emerald-500/40 flex items-center gap-1 font-semibold shrink-0">
+                <span className="bg-[#4ade80]/20 text-[#4ade80] text-xs px-2.5 py-0.5 rounded-full border border-[#4ade80]/40 flex items-center gap-1 font-semibold shrink-0">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Solved
                 </span>
               )}
@@ -84,13 +84,13 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem }) =
 
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mt-2.5 sm:mt-3">
               {problem.tags.map((tag, i) => (
-                <span key={i} className="bg-slate-800/80 text-slate-300 text-[11px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border border-slate-700/60 flex items-center gap-1">
-                  <Tag className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-400" /> {tag}
+                <span key={i} className="bg-[#101418] text-slate-300 text-[11px] sm:text-xs px-2.5 py-1 rounded-lg border border-[#3d4a3e] flex items-center gap-1">
+                  <Tag className="w-2.5 h-2.5 text-slate-400" /> {tag}
                 </span>
               ))}
             </div>
 
-            <div className="text-[11px] sm:text-xs text-slate-400 mt-2.5 sm:mt-3 flex items-center gap-1.5">
+            <div className="text-[11px] sm:text-xs text-slate-400 mt-3 flex items-center gap-1.5 font-mono">
               <span>Posted by:</span>
               <img src={problem.postedBy.avatar} alt="" className="w-4 h-4 rounded-full object-cover shrink-0" />
               <span className="text-slate-200 font-medium truncate">{problem.postedBy.name}</span>
@@ -103,7 +103,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem }) =
               href={problem.url}
               target="_blank"
               rel="noreferrer"
-              className="bg-slate-800 hover:bg-slate-700 text-white text-xs px-3.5 sm:px-4 py-2.5 rounded-xl font-semibold border border-slate-700 flex items-center justify-center gap-2 transition-all"
+              className="bg-[#101418] hover:bg-[#262a2f] text-white text-xs px-4 py-2.5 rounded-lg font-semibold border border-[#3d4a3e] flex items-center justify-center gap-2 transition-all"
             >
               Solve on LeetCode
               <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
@@ -112,7 +112,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem }) =
             {!isSolved ? (
               <button
                 onClick={() => setIsSubmitOpen(true)}
-                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs px-4 sm:px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all glow-emerald"
+                className="bg-[#4ade80] hover:bg-[#6dfe9c] text-[#005e2d] text-xs px-4 sm:px-5 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(74,222,128,0.15)] transition-all"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 Mark as Solved
@@ -120,7 +120,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem }) =
             ) : (
               <button
                 onClick={() => setIsSubmitOpen(true)}
-                className="bg-slate-800/80 hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 text-xs px-3.5 sm:px-4 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all"
+                className="bg-[#101418] hover:bg-[#262a2f] text-[#4ade80] border border-[#4ade80]/30 text-xs px-4 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all"
               >
                 <Code2 className="w-4 h-4" />
                 Update Submission
@@ -130,7 +130,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem }) =
             {isAdmin && (
               <button
                 onClick={() => deleteProblem(problem.id)}
-                className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs px-3 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-1 transition-all"
+                className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs px-3 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-1 transition-all"
                 title="Delete Problem (Admin)"
               >
                 <Trash2 className="w-4 h-4" />
@@ -140,16 +140,16 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem }) =
         </div>
 
         {/* Room completions status */}
-        <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-[#3d4a3e] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <UserCheck className="w-4 h-4 text-emerald-400" />
+            <UserCheck className="w-4 h-4 text-[#4ade80]" />
             <span className="text-xs font-semibold text-slate-300">Room Solved Status:</span>
-            <span className="text-xs text-emerald-400 font-bold">
+            <span className="text-xs text-[#4ade80] font-bold font-mono">
               {problem.submissions.length} / {activeRoom?.members.length || 1} Members Completed
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {problem.submissions.map((sub) => (
               <div
                 key={sub.id}
@@ -160,52 +160,53 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem }) =
                     lang: sub.language,
                   })
                 }
-                className="group relative cursor-pointer"
-                title={`${sub.userName} solved in ${sub.timeSpentMinutes}m (Click to view code)`}
+                className="flex items-center gap-1.5 bg-[#101418] border border-[#4ade80]/40 rounded-lg px-2 py-1 text-xs text-slate-200 cursor-pointer hover:border-[#4ade80] transition-colors"
+                title={`View solution by ${sub.userName}`}
               >
-                <img
-                  src={sub.userAvatar}
-                  alt={sub.userName}
-                  className="w-7 h-7 rounded-full object-cover border-2 border-emerald-500/80 group-hover:scale-110 transition-transform"
-                />
-                <span className="absolute -bottom-1 -right-1 bg-emerald-500 text-slate-950 text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold">
-                  ✓
-                </span>
+                <CheckCircle2 className="w-3 h-3 text-[#4ade80]" />
+                <span className="truncate max-w-[80px]">{sub.userName}</span>
+                {sub.runtimeMs && <span className="text-[10px] text-slate-400 font-mono">({sub.runtimeMs})</span>}
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Code Snippet Modal Viewer */}
+      {/* Code Snippet Modal */}
       {selectedCodeSnippet && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setSelectedCodeSnippet(null)} />
-          <div className="relative w-full max-w-2xl glass-panel bg-slate-900 border border-slate-800 rounded-2xl p-6 z-10 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-              <div>
-                <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Code2 className="w-4 h-4 text-emerald-400" /> Solution by {selectedCodeSnippet.name}
-                </h4>
-                <span className="text-[11px] text-slate-400 uppercase font-mono">{selectedCodeSnippet.lang}</span>
+          <div className="relative w-full max-w-2xl bg-[#1c2024] border border-[#3d4a3e] rounded-xl p-5 sm:p-6 shadow-2xl z-10 space-y-4 max-h-[85vh] flex flex-col mx-3">
+            <div className="flex items-center justify-between border-b border-[#3d4a3e] pb-3">
+              <div className="flex items-center gap-2">
+                <Code2 className="w-5 h-5 text-[#4ade80]" />
+                <h3 className="font-bold text-white text-sm sm:text-base">
+                  Solution by <span className="text-[#4ade80]">{selectedCodeSnippet.name}</span>
+                </h3>
               </div>
+              <span className="text-xs font-mono uppercase bg-[#101418] text-slate-400 px-2 py-0.5 rounded border border-[#3d4a3e]">
+                {selectedCodeSnippet.lang}
+              </span>
+            </div>
+
+            <div className="flex-1 overflow-auto bg-[#101418] border border-[#3d4a3e] rounded-lg p-4 font-mono text-xs text-[#4ade80] leading-relaxed">
+              <pre>{selectedCodeSnippet.code}</pre>
+            </div>
+
+            <div className="flex justify-end pt-1">
               <button
                 onClick={() => setSelectedCodeSnippet(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+                className="px-4 py-2 bg-[#31353a] hover:bg-[#262a2f] text-slate-200 text-xs rounded-lg font-semibold transition-colors"
               >
-                ✕
+                Close
               </button>
             </div>
-            <pre className="bg-slate-950 p-4 rounded-xl text-xs font-mono text-emerald-300 overflow-x-auto max-h-96 leading-relaxed border border-slate-800">
-              <code>{selectedCodeSnippet.code}</code>
-            </pre>
           </div>
         </div>
       )}
 
-      {/* Modals */}
+      {/* Submit Solution Modal */}
       <SubmitSolutionModal problem={problem} isOpen={isSubmitOpen} onClose={() => setIsSubmitOpen(false)} />
-      <PostProblemModal isOpen={isPostOpen} onClose={() => setIsPostOpen(false)} />
     </div>
   );
 };
