@@ -97,8 +97,8 @@ export const App = () => {
                   <div className="text-base sm:text-lg font-bold text-[#f0883e] font-sans truncate leading-tight mt-0.5">
                     {currentUser.streak} {currentUser.streak === 1 ? 'day' : 'days'}
                   </div>
-                  <div className="text-xs text-slate-500 font-mono truncate mt-0.5">
-                    Current: {currentUser.streak}d
+                  <div className="text-xs text-slate-400 font-sans truncate mt-0.5">
+                    {currentUser.streak > 0 ? 'Consecutive streak' : 'Solve today to start streak!'}
                   </div>
                 </div>
               </div>
@@ -115,8 +115,8 @@ export const App = () => {
                   <div className="text-base sm:text-lg font-bold text-[#d29922] font-sans truncate leading-tight mt-0.5">
                     {currentUser.points} pts
                   </div>
-                  <div className="text-xs text-slate-500 font-mono truncate mt-0.5">
-                    This week: +{pointsThisWeek} pts
+                  <div className="text-xs text-slate-400 font-sans truncate mt-0.5">
+                    {pointsThisWeek > 0 ? `This week: +${pointsThisWeek} pts` : 'Earn +30 to +100 on AC'}
                   </div>
                 </div>
               </div>
@@ -133,8 +133,8 @@ export const App = () => {
                   <div className="text-base sm:text-lg font-bold text-[#3fb950] font-sans truncate leading-tight mt-0.5">
                     {roomSolvesCount}
                   </div>
-                  <div className="text-xs text-slate-500 font-mono truncate mt-0.5">
-                    {currentUser.leetcodeTotalSolved ? `LeetCode: ${currentUser.leetcodeTotalSolved}` : 'Room Problems'}
+                  <div className="text-xs text-slate-400 font-sans truncate mt-0.5">
+                    {currentUser.leetcodeTotalSolved ? `LeetCode Total: ${currentUser.leetcodeTotalSolved}` : 'Room Problems'}
                   </div>
                 </div>
               </div>

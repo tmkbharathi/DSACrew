@@ -23,6 +23,8 @@ import {
   Sparkles,
   Layers,
   LogOut,
+  Flame,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -135,7 +137,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => setTourStep(1)}
-              className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[#21262d] transition-colors text-slate-400 hover:text-white"
+              className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[#21262d] transition-colors text-slate-300 hover:text-white"
               title="How It Works / Tour"
               aria-label="How It Works"
             >
@@ -179,45 +181,49 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
       </header>
 
       {/* Main Center Content Canvas */}
-      <main className="flex-1 relative z-10 max-w-3xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center justify-center w-full py-8 sm:py-12">
-        {/* Version / Pill Badge */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#30363d] bg-[#161b22] mb-3 shadow-sm">
-          <span className="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold">
-            REAL-TIME LEETCODE ROOMS • V1.0
-          </span>
+      <main className="flex-1 relative z-10 max-w-5xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center justify-center w-full py-10 sm:py-14 space-y-8">
+        <div className="space-y-3 max-w-2xl mx-auto">
+          {/* Version / Pill Badge */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#30363d] bg-[#161b22] shadow-sm">
+            <span className="text-xs font-mono uppercase tracking-wider text-slate-300 font-semibold">
+              REAL-TIME LEETCODE ROOMS • V1.0
+            </span>
+          </div>
+
+          {/* Hero Title */}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight tracking-tight font-sans">
+            Crack LeetCode Together with Your{' '}
+            <span className="text-[#3fb950]">Crew</span>.
+          </h1>
+
+          {/* Hero Subtitle */}
+          <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed text-balance font-sans">
+            Create collaborative practice rooms, post daily challenges, sync live solutions with verified LeetCode metrics, and compete on leaderboards.
+          </p>
         </div>
-
-        {/* Hero Title */}
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-2 max-w-xl mx-auto leading-tight tracking-tight font-sans">
-          Crack LeetCode Together with Your{' '}
-          <span className="text-[#3fb950]">Crew</span>.
-        </h1>
-
-        {/* Hero Subtitle */}
-        <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed mb-6 text-balance font-sans">
-          Create collaborative practice rooms, post daily challenges, receive live sync notifications, and compete on leaderboards.
-        </p>
 
         {/* Central Auth / Action Card */}
         {!isLoggedIn ? (
-          <div className="w-full max-w-md bg-[#161b22] border border-[#30363d] rounded-xl p-5 shadow-xl text-left">
-            <div className="flex justify-between items-center mb-3.5 pb-2.5 border-b border-[#30363d]">
+          <div className="w-full max-w-md bg-[#161b22] border border-[#30363d] rounded-xl p-6 shadow-2xl text-left space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-[#30363d]">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-[#3fb950]" />
-                <h2 className="text-sm font-semibold text-white font-sans">Sign In with LeetCode</h2>
+                <h2 className="text-sm sm:text-base font-bold text-white font-sans">Sign In with LeetCode</h2>
               </div>
-              <span className="text-xs text-slate-400 font-mono">Step 1 to Access</span>
+              <span className="text-xs text-slate-300 font-medium bg-[#0d1117] px-2 py-0.5 rounded border border-[#30363d]">
+                Step 1 to Access
+              </span>
             </div>
 
-            <form onSubmit={handleHeroLogin} className="space-y-3">
+            <form onSubmit={handleHeroLogin} className="space-y-3.5">
               {/* Username Input */}
               <div className="space-y-1">
-                <label className="text-xs text-slate-400 font-medium block" htmlFor="username">
+                <label className="text-xs text-slate-200 font-medium block" htmlFor="username">
                   LeetCode Username / Handle
                 </label>
                 <div className="relative group">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-xs font-mono text-slate-500 group-focus-within:text-[#3fb950] transition-colors">@</span>
+                    <span className="text-xs font-mono text-slate-400 group-focus-within:text-[#3fb950] transition-colors">@</span>
                   </span>
                   <input
                     id="username"
@@ -229,19 +235,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                       setLoginError('');
                     }}
                     placeholder="e.g. tourist or neal_wu"
-                    className="w-full bg-[#0d1117] border border-[#30363d] text-white text-xs sm:text-sm font-mono rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-[#3fb950] transition-all placeholder-slate-600"
+                    className="w-full bg-[#0d1117] border border-[#30363d] text-white text-xs sm:text-sm font-mono rounded-lg pl-8 pr-3 py-2.5 focus:outline-none focus:border-[#3fb950] transition-all placeholder-slate-500"
                   />
                 </div>
               </div>
 
               {/* Password Input */}
               <div className="space-y-1">
-                <label className="text-xs text-slate-400 font-medium block" htmlFor="password">
+                <label className="text-xs text-slate-200 font-medium block" htmlFor="password">
                   Password
                 </label>
                 <div className="relative group">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="w-3.5 h-3.5 text-slate-500 group-focus-within:text-[#3fb950] transition-colors" />
+                    <Lock className="w-3.5 h-3.5 text-slate-400 group-focus-within:text-[#3fb950] transition-colors" />
                   </span>
                   <input
                     id="password"
@@ -252,12 +258,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                       setLoginError('');
                     }}
                     placeholder="Enter password"
-                    className="w-full bg-[#0d1117] border border-[#30363d] text-white text-xs sm:text-sm rounded-lg pl-8 pr-9 py-2 focus:outline-none focus:border-[#3fb950] transition-all placeholder-slate-600"
+                    className="w-full bg-[#0d1117] border border-[#30363d] text-white text-xs sm:text-sm rounded-lg pl-8 pr-9 py-2.5 focus:outline-none focus:border-[#3fb950] transition-all placeholder-slate-500"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-white transition-colors"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
@@ -296,29 +302,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
               </div>
             </form>
 
-            <div className="mt-3.5 pt-2.5 border-t border-[#30363d] flex justify-between items-center text-xs">
-              <span className="text-slate-400">New to LeetTracker?</span>
+            <div className="pt-3 border-t border-[#30363d] flex justify-between items-center text-xs">
+              <span className="text-slate-300 font-sans">New to LeetTracker?</span>
               <button
                 type="button"
                 onClick={() => {
                   setAuthDefaultRegister(true);
                   setIsAuthOpen(true);
                 }}
-                className="text-[#3fb950] hover:underline font-medium font-mono"
+                className="text-[#3fb950] hover:underline font-semibold font-mono"
               >
-                Create Profile
+                Create Profile →
               </button>
             </div>
           </div>
         ) : (
           /* Post-login Room Controls */
-          <div className="w-full max-w-md bg-[#161b22] border border-[#30363d] rounded-xl p-5 shadow-xl text-left space-y-3.5">
+          <div className="w-full max-w-md bg-[#161b22] border border-[#30363d] rounded-xl p-6 shadow-2xl text-left space-y-4">
             <div className="flex items-center justify-between border-b border-[#30363d] pb-3">
               <div className="flex items-center gap-2.5">
                 <img
                   src={currentUser.avatar}
                   alt=""
-                  className="w-8 h-8 rounded-full object-cover border border-[#30363d]"
+                  className="w-9 h-9 rounded-full object-cover border border-[#30363d]"
                 />
                 <div>
                   <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 font-sans">
@@ -343,7 +349,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <Button
                 variant="primary"
                 size="md"
@@ -374,9 +380,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                   setRoomCode(e.target.value.toUpperCase());
                   setJoinError('');
                 }}
-                placeholder="CODE (e.g. 7X9K2P)"
+                placeholder="INVITE CODE (e.g. 7X9K2P)"
                 maxLength={8}
-                className="flex-1 bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-1.5 text-xs text-white font-mono uppercase tracking-wider focus:outline-none focus:border-[#3fb950] placeholder-slate-600"
+                className="flex-1 bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white font-mono uppercase tracking-wider focus:outline-none focus:border-[#3fb950] placeholder-slate-500"
               />
               <Button
                 variant="secondary"
@@ -398,7 +404,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                 type="button"
                 onClick={handleFetchDailyPreview}
                 disabled={loadingDaily}
-                className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1.5 font-mono"
+                className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1.5 font-mono font-medium"
               >
                 {loadingDaily ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                 <span>Fetch Today's Official Daily</span>
@@ -408,7 +414,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
             {quickDaily && (
               <div className="p-3 bg-[#0d1117] border border-[#30363d] rounded-lg text-xs space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-white truncate max-w-[200px]">{quickDaily.title}</span>
+                  <span className="font-semibold text-white truncate max-w-[200px] font-sans">{quickDaily.title}</span>
                   <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
                     quickDaily.difficulty === 'Hard' ? 'text-rose-400 border-rose-500/30' :
                     quickDaily.difficulty === 'Medium' ? 'text-amber-400 border-amber-500/30' :
@@ -417,26 +423,59 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                     {quickDaily.difficulty}
                   </span>
                 </div>
-                <div className="text-[10px] text-slate-500 font-mono">Date: {quickDaily.date}</div>
+                <div className="text-[10px] text-slate-400 font-mono">Date: {quickDaily.date}</div>
               </div>
             )}
           </div>
         )}
+
+        {/* 3 Interactive Feature Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl text-left pt-2">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-4 space-y-2 shadow-md hover:border-slate-500 transition-all">
+            <div className="w-8 h-8 rounded-lg bg-[#2ea043]/15 text-[#3fb950] flex items-center justify-center border border-[#2ea043]/30">
+              <Zap className="w-4 h-4" />
+            </div>
+            <h3 className="font-bold text-sm text-white font-sans">Official Daily Sync</h3>
+            <p className="text-xs text-slate-300 leading-relaxed font-sans">
+              Auto-fetch today's official LeetCode challenge with automatic verified AC detection.
+            </p>
+          </div>
+
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-4 space-y-2 shadow-md hover:border-slate-500 transition-all">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/15 text-cyan-400 flex items-center justify-center border border-cyan-500/30">
+              <Radio className="w-4 h-4" />
+            </div>
+            <h3 className="font-bold text-sm text-white font-sans">Real-Time Team Sync</h3>
+            <p className="text-xs text-slate-300 leading-relaxed font-sans">
+              Instant inter-tab broadcasts and cloud database synchronization across your squad.
+            </p>
+          </div>
+
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-4 space-y-2 shadow-md hover:border-slate-500 transition-all">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center border border-amber-500/30">
+              <Trophy className="w-4 h-4" />
+            </div>
+            <h3 className="font-bold text-sm text-white font-sans">Leaderboards &amp; Streaks</h3>
+            <p className="text-xs text-slate-300 leading-relaxed font-sans">
+              Climb the practice room ladder, earn difficulty points, and maintain daily fire streaks.
+            </p>
+          </div>
+        </div>
       </main>
 
       {/* Feature Highlights Footer Bar */}
-      <footer className="relative z-10 border-t border-[#30363d] py-3 px-4 sm:px-6 bg-[#161b22]/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-around gap-4 text-xs text-slate-400">
+      <footer className="relative z-10 border-t border-[#30363d] py-3.5 px-4 sm:px-6 bg-[#161b22]/90 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-around gap-4 text-xs text-slate-300">
           <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-[#3fb950]" />
-            <span className="font-medium font-sans">Official LeetCode Daily Sync</span>
+            <CheckCircle2 className="w-4 h-4 text-[#3fb950]" />
+            <span className="font-medium font-sans">Official LeetCode API Verification</span>
           </div>
           <div className="flex items-center gap-2">
             <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
             <span className="font-medium font-sans">Real-time Inter-Tab Broadcast</span>
           </div>
           <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-[#d29922]" />
+            <Flame className="w-4 h-4 text-[#f0883e]" />
             <span className="font-medium font-sans">Live Rankings &amp; Fire Streaks</span>
           </div>
         </div>

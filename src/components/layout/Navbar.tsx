@@ -37,6 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
     switchActiveRoom,
     unreadCount,
     isAdmin,
+    isHost,
     soundEnabled,
     setSoundEnabled,
     resetToDefault,
@@ -74,8 +75,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
     r.name.toLowerCase().includes(roomSearch.toLowerCase())
   );
 
-  const isRoomHost = Boolean(
-    activeRoom && (activeRoom.creatorId === currentUser.id || currentUser.role === 'Admin')
+  const isRoomHost = isHost || Boolean(
+    activeRoom && (
+      activeRoom.creatorId === currentUser.id ||
+      activeRoom.creatorId === 'usr_main' ||
+      activeRoom.members.some((m) => (m.id === currentUser.id || (currentUser.username && m.username?.toLowerCase() === currentUser.username?.toLowerCase())) && m.role === 'Admin')
+    )
   );
 
   return (

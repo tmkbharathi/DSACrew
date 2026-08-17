@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { InviteModal } from '../room/InviteModal';
-import { Trophy, Flame, Zap, ShieldCheck, UserPlus, Users, UserX } from 'lucide-react';
+import { Trophy, Flame, Zap, ShieldCheck, UserPlus, Users, UserX, ExternalLink } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 export const LeaderboardTable: React.FC = () => {
@@ -10,8 +10,20 @@ export const LeaderboardTable: React.FC = () => {
 
   if (!activeRoom) return null;
 
+  // Deduplicate members list to ensure no duplicate handles/IDs
+  const memberMap = new Map<string, typeof activeRoom.members[0]>();
+  activeRoom.members.forEach((m) => {
+    const key = (m.username || m.name || m.id).toLowerCase();
+    if (m.id === currentUser.id) {
+      memberMap.set(key, { ...m, ...currentUser });
+    } else if (!memberMap.has(key)) {
+      memberMap.set(key, m);
+    }
+  });
+  const uniqueMembers = Array.from(memberMap.values());
+
   // Sort members by Points descending, then Streak descending
-  const sortedMembers = [...activeRoom.members].sort((a, b) => {
+  const sortedMembers = uniqueMembers.sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
     return b.streak - a.streak;
   });
@@ -19,13 +31,13 @@ export const LeaderboardTable: React.FC = () => {
   const getRankBadge = (index: number) => {
     switch (index) {
       case 0:
-        return <span className="text-sm font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20 font-mono">#1</span>;
+        return <span className="text-sm font-bold text-amber-400 bg-amber-400/15 px-2 py-0.5 rounded border border-amber-400/30 font-mono">#1</span>;
       case 1:
-        return <span className="text-sm font-bold text-slate-300 bg-slate-300/10 px-2 py-0.5 rounded border border-slate-300/20 font-mono">#2</span>;
+        return <span className="text-sm font-bold text-slate-200 bg-slate-400/15 px-2 py-0.5 rounded border border-slate-400/30 font-mono">#2</span>;
       case 2:
-        return <span className="text-sm font-bold text-amber-700 bg-amber-700/10 px-2 py-0.5 rounded border border-amber-700/20 font-mono">#3</span>;
+        return <span className="text-sm font-bold text-amber-600 bg-amber-700/15 px-2 py-0.5 rounded border border-amber-700/30 font-mono">#3</span>;
       default:
-        return <span className="font-mono text-xs font-semibold text-slate-500">#{index + 1}</span>;
+        return <span className="font-mono text-xs font-semibold text-slate-400">#{index + 1}</span>;
     }
   };
 
@@ -39,8 +51,8 @@ export const LeaderboardTable: React.FC = () => {
             Room Leaderboard
           </h3>
         </div>
-        <span className="text-xs font-sans text-slate-400">
-          {activeRoom.members.length} {activeRoom.members.length === 1 ? 'Member' : 'Members'}
+        <span className="text-xs font-sans text-slate-300 font-medium bg-[#161b22] px-2.5 py-1 rounded-md border border-[#30363d]">
+          {sortedMembers.length} {sortedMembers.length === 1 ? 'Member' : 'Members'}
         </span>
       </div>
 
@@ -66,19 +78,19 @@ export const LeaderboardTable: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[540px]">
             <thead>
-              <tr className="border-b border-[#30363d] bg-[#0d1117] text-xs font-medium text-slate-400 uppercase tracking-wider">
+              <tr className="border-b border-[#30363d] bg-[#161b22] text-xs font-semibold text-slate-200 uppercase tracking-wider">
                 <th className="py-3 px-4 sm:px-5 w-16 text-center">RANK</th>
                 <th className="py-3 px-3 sm:px-4">MEMBER</th>
                 <th className="py-3 px-3 text-center">HANDLE</th>
                 <th className="py-3 px-3 text-center">STREAK</th>
-                <th className="py-3 px-3 text-center">SOLVED</th>
+                <th className="py-3 px-3 text-center">ROOM SOLVES</th>
                 <th className="py-3 px-4 sm:px-5 text-right">POINTS</th>
                 {isHost && <th className="py-3 px-3 text-center w-12">ACTION</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#30363d]/60 font-sans">
               {sortedMembers.map((member, idx) => {
-                const isCurrent = member.id === currentUser.id;
+                const isCurrent = member.id === currentUser.id || (currentUser.username && member.username?.toLowerCase() === currentUser.username?.toLowerCase());
                 const memberIsHost = member.id === activeRoom.creatorId || member.role === 'Admin';
 
                 return (
@@ -104,11 +116,8 @@ export const LeaderboardTable: React.FC = () => {
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5 font-sans">
                             <span className="text-xs sm:text-sm font-semibold text-white truncate max-w-[130px] sm:max-w-[180px]">
-                              {member.name === 'LeetCode Engineer' || !member.name ? (isCurrent ? 'You' : 'Member') : member.name}
+                              {isCurrent ? `${currentUser.name} (You)` : member.name}
                             </span>
-                            {isCurrent && (
-                              <span className="text-xs text-[#3fb950] font-semibold">(You)</span>
-                            )}
                             {memberIsHost && (
                               <span className="bg-purple-500/20 text-purple-300 text-[9px] px-1.5 py-0.2 rounded font-bold border border-purple-500/30 shrink-0 font-mono">
                                 HOST
@@ -122,13 +131,20 @@ export const LeaderboardTable: React.FC = () => {
                       </div>
                     </td>
 
-                    {/* LeetCode Handle */}
+                    {/* LeetCode Handle with Direct Profile Link */}
                     <td className="py-3 px-3 text-center">
                       {member.username ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-mono text-cyan-400 bg-[#0d1117] px-2 py-0.5 rounded-md border border-[#30363d]">
-                          <ShieldCheck className="w-3 h-3 text-cyan-400 shrink-0" />
-                          @{member.username}
-                        </span>
+                        <a
+                          href={`https://leetcode.com/${member.username}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-mono text-cyan-400 hover:text-cyan-300 hover:underline bg-[#0d1117] hover:bg-[#21262d] px-2.5 py-1 rounded-md border border-[#30363d] transition-all shadow-sm group"
+                          title={`Open @${member.username} on LeetCode.com`}
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                          <span>@{member.username}</span>
+                          <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-cyan-300 ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </a>
                       ) : (
                         <span className="text-xs text-slate-500 font-mono">Unlinked</span>
                       )}
@@ -144,10 +160,17 @@ export const LeaderboardTable: React.FC = () => {
 
                     {/* Problems Solved in Room */}
                     <td className="py-3 px-3 text-center">
-                      <span className="text-xs font-bold text-[#3fb950] flex items-center justify-center gap-1 font-mono" title={member.leetcodeTotalSolved ? `Room Solves (LeetCode Total: ${member.leetcodeTotalSolved})` : 'Room Solves'}>
-                        <Zap className="w-3.5 h-3.5 text-[#3fb950] shrink-0" />
-                        {member.roomSolvedCount ?? member.solvedCount ?? 0}
-                      </span>
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-xs font-bold text-[#3fb950] flex items-center justify-center gap-1 font-mono">
+                          <Zap className="w-3.5 h-3.5 text-[#3fb950] shrink-0" />
+                          {member.roomSolvedCount ?? 0}
+                        </span>
+                        {member.leetcodeTotalSolved ? (
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {member.leetcodeTotalSolved} LC
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
 
                     {/* Points */}

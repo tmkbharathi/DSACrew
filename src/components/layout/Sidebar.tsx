@@ -16,6 +16,8 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -32,10 +34,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen = false,
   onMobileClose,
 }) => {
-  const { activeRoom, currentUser, isHost, deleteRoom, removeMember } = useApp();
+  const { activeRoom, currentUser, isHost, deleteRoom, removeMember, setToast } = useApp();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDesktopMembersOpen, setIsDesktopMembersOpen] = useState(true);
+  const [copiedCode, setCopiedCode] = useState(false);
 
   if (!activeRoom) return null;
 
@@ -49,6 +52,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const handleDeleteRoom = () => {
     deleteRoom(activeRoom.id);
     setShowDeleteConfirm(false);
+  };
+
+  const handleCopyCode = () => {
+    try {
+      navigator.clipboard.writeText(activeRoom.code);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+      setToast({
+        title: 'Invite Code Copied! 📋',
+        message: `Share code "${activeRoom.code}" with friends to join "${activeRoom.name}".`,
+        type: 'info',
+      });
+    } catch (e) {}
   };
 
   const getMemberStatus = (memberId: string) => {
@@ -65,22 +81,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return { label: 'Not started', color: 'text-slate-400 bg-[#21262d] border-[#30363d]' };
   };
 
+  // Deduplicate members list to guarantee zero duplicates
+  const memberMap = new Map<string, typeof activeRoom.members[0]>();
+  activeRoom.members.forEach((m) => {
+    const key = (m.username || m.name || m.id).toLowerCase();
+    if (m.id === currentUser.id) {
+      memberMap.set(key, { ...m, ...currentUser });
+    } else if (!memberMap.has(key)) {
+      memberMap.set(key, m);
+    }
+  });
+  const uniqueMembers = Array.from(memberMap.values());
+
   const sidebarContent = (
     <div className="flex flex-col h-full p-3.5 space-y-4 font-sans text-xs bg-[#161b22]">
       {/* Active Room Metadata Card */}
       <div className="bg-[#0d1117] rounded-xl p-3.5 border border-[#30363d] space-y-2.5 shadow-sm">
-        <div className="flex items-start justify-between gap-1.5">
-          <div className="min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
             <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
               CURRENT ROOM
             </span>
-            <h2 className="font-bold text-sm text-white truncate font-sans mt-0.5">
+            <h2 className="font-bold text-sm text-white font-sans mt-0.5 leading-snug break-words">
               {activeRoom.name}
             </h2>
           </div>
-          <span className="bg-[#21262d] text-slate-300 font-mono text-[10px] px-1.5 py-0.5 rounded border border-[#30363d] shrink-0">
-            {activeRoom.code}
-          </span>
+
+          <button
+            onClick={handleCopyCode}
+            className="bg-[#21262d] hover:bg-[#30363d] text-slate-200 hover:text-white font-mono text-[11px] px-2 py-0.5 rounded border border-[#30363d] shrink-0 flex items-center gap-1 transition-all shadow-sm group"
+            title="Click to copy room code"
+            aria-label="Copy Room Code"
+          >
+            <span>{activeRoom.code}</span>
+            {copiedCode ? <Check className="w-3 h-3 text-[#3fb950]" /> : <Copy className="w-3 h-3 text-slate-400 group-hover:text-white" />}
+          </button>
         </div>
 
         <div className="text-xs text-slate-400 flex items-center justify-between pt-1 border-t border-[#30363d]">
@@ -145,16 +180,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <div className="flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5 text-[#3fb950]" />
-            <span className="font-semibold">MEMBERS ({activeRoom.members.length})</span>
+            <span className="font-semibold">MEMBERS ({uniqueMembers.length})</span>
           </div>
           {isDesktopMembersOpen ? <ChevronUp className="w-3.5 h-3.5 text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
         </button>
 
         {isDesktopMembersOpen && (
           <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
-            {activeRoom.members.map((member) => {
+            {uniqueMembers.map((member) => {
               const status = getMemberStatus(member.id);
-              const isCurrent = member.id === currentUser.id;
+              const isCurrent = member.id === currentUser.id || (currentUser.username && member.username?.toLowerCase() === currentUser.username?.toLowerCase());
               const memberIsHost = member.id === activeRoom.creatorId || member.role === 'Admin';
 
               return (
@@ -175,7 +210,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <div className="min-w-0">
                       <div className="flex items-center gap-1 font-sans">
                         <span className="text-xs font-semibold text-white truncate max-w-[85px]">
-                          {isCurrent ? 'You' : member.name}
+                          {isCurrent ? `${currentUser.name} (You)` : member.name}
                         </span>
                         {memberIsHost && (
                           <span className="text-[8px] bg-purple-500/20 text-purple-300 px-1 py-0.2 rounded border border-purple-500/30 font-mono">
@@ -193,7 +228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <Flame className="w-3 h-3 text-[#f0883e] fill-[#f0883e]" />
                     <span className="text-[11px] font-bold text-[#f0883e] font-mono">{member.streak}d</span>
 
-                    {isHost && member.id !== currentUser.id && (
+                    {isHost && !isCurrent && (
                       <button
                         onClick={() => removeMember(activeRoom.id, member.id)}
                         className="p-1 text-slate-500 hover:text-rose-400 rounded transition-colors ml-0.5"
