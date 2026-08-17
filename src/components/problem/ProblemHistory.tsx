@@ -5,7 +5,7 @@ import { Badge } from '../ui/Badge';
 import { EmptyState } from '../ui/EmptyState';
 
 export const ProblemHistory: React.FC = () => {
-  const { activeRoom, currentUser, deleteProblem } = useApp();
+  const { activeRoom, currentUser, deleteProblem, isHost } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [diffFilter, setDiffFilter] = useState<'All' | 'Easy' | 'Medium' | 'Hard'>('All');
@@ -21,7 +21,7 @@ export const ProblemHistory: React.FC = () => {
     );
   }
 
-  const isAdmin = currentUser.systemRole === 'SuperAdmin' || currentUser.role === 'Admin';
+  const isAdmin = isHost;
 
   const filteredProblems = activeRoom.dailyProblems.filter((prob) => {
     const matchesSearch =

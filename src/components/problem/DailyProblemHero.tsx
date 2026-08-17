@@ -98,7 +98,7 @@ const CURATED_RANDOM_PROBLEMS = [
 ];
 
 export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: initialProblem }) => {
-  const { currentUser, activeRoom, deleteProblem, postDailyProblem, setToast } = useApp();
+  const { currentUser, activeRoom, deleteProblem, postDailyProblem, setToast, isHost } = useApp();
 
   const getTodayStr = () => new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState<string>(initialProblem?.date || getTodayStr());
@@ -107,7 +107,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
   const [selectedCodeSnippet, setSelectedCodeSnippet] = useState<{ name: string; code: string; lang: string } | null>(null);
   const [networkError, setNetworkError] = useState(false);
 
-  const isAdmin = currentUser.systemRole === 'SuperAdmin' || currentUser.role === 'Admin';
+  const isAdmin = isHost;
   const todayStr = getTodayStr();
 
   // Find problem matching selectedDate

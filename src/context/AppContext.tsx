@@ -23,6 +23,7 @@ interface AppContextType {
   setToast: (toast: { title: string; message: string; type?: string } | null) => void;
   isCloudConnected: boolean;
   isAdmin: boolean;
+  isHost: boolean;
   login: (usernameOrHandle: string, password?: string) => Promise<{ success: boolean; message: string }>;
   registerAccount: (name: string, username: string, password?: string) => Promise<{ success: boolean; message: string }>;
   
@@ -81,12 +82,24 @@ function safeGetStorage<T>(key: string, fallback: T): T {
   }
 }
 
-// Client-side password hash helper
-function hashSecret(password: string): string {
+// Modern WebCrypto SHA-256 password hashing with salt
+async function hashSecret(password: string, salt = 'leettracker_salt_2026'): Promise<string> {
+  if (typeof crypto !== 'undefined' && crypto.subtle) {
+    try {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(`${salt}:${password}:${salt}`);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    } catch {
+      // Fallback below
+    }
+  }
+
+  // Fallback hash
   let hash = 0;
   for (let i = 0; i < password.length; i++) {
-    const char = password.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = ((hash << 5) - hash) + password.charCodeAt(i);
     hash |= 0;
   }
   return `h_${Math.abs(hash).toString(16)}_${password.length}`;
@@ -146,9 +159,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const activeRoom = rooms.find((r) => r.id === activeRoomId) || rooms[0];
   const unreadCount = notifications.filter((n) => !n.read && n.roomId === activeRoomId).length;
 
-  // Real room-level administrator / host detection
-  const isRoomHost = Boolean(activeRoom && (activeRoom.creatorId === currentUser.id || currentUser.role === 'Admin'));
-  const isAdmin = isRoomHost || currentUser.systemRole === 'SuperAdmin';
+  // Real room-scoped administrator / host detection
+  const isHost = Boolean(
+    activeRoom && (
+      activeRoom.creatorId === currentUser.id ||
+      activeRoom.members.find((m) => m.id === currentUser.id)?.role === 'Admin' ||
+      currentUser.systemRole === 'SuperAdmin'
+    )
+  );
+  const isAdmin = isHost;
 
   // Persist state to LocalStorage
   useEffect(() => {
@@ -181,36 +200,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (e) {}
   }, [authVault]);
 
-  // Synchronize profile updates in rooms where currentUser is already a member (WITHOUT injecting into unjoined rooms)
+  // Synchronize profile updates strictly in rooms where currentUser is already an existing member
   useEffect(() => {
-    if (!currentUser.id) return;
+    if (!currentUser.id || !isLoggedIn) return;
 
     setRooms((prevRooms) => {
       let changed = false;
       const updated = prevRooms.map((room) => {
-        // Purge any old dummy mock accounts
         const cleanedMembers = (room.members || []).filter(
           (m) => m.id !== 'usr_alex' && m.id !== 'usr_sarah' && m.id !== 'usr_david'
         );
-
-        let creatorId = room.creatorId;
-        if (creatorId === 'usr_main' && currentUser.id !== 'usr_main' && isLoggedIn) {
-          creatorId = currentUser.id;
-          changed = true;
-        }
 
         const isMember = cleanedMembers.some((m) => m.id === currentUser.id);
         if (!isMember) {
           if (cleanedMembers.length !== (room.members || []).length) {
             changed = true;
-            return { ...room, members: cleanedMembers, creatorId };
+            return { ...room, members: cleanedMembers };
           }
           return room;
         }
 
         const updatedMembers = cleanedMembers.map((m) => {
           if (m.id === currentUser.id) {
-            const role = creatorId === currentUser.id ? 'Admin' : m.role;
+            const role = room.creatorId === currentUser.id ? 'Admin' : m.role;
             if (
               m.name !== currentUser.name ||
               m.avatar !== currentUser.avatar ||
@@ -227,7 +239,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         });
 
         if (changed) {
-          return { ...room, members: updatedMembers, creatorId };
+          return { ...room, members: updatedMembers };
         }
         return room;
       });
@@ -236,7 +248,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   }, [currentUser, isLoggedIn]);
 
-  // On initial mount: if active room has no daily problems, auto-fetch today's official daily challenge from LeetCode
+  // Auto-fetch today's official daily challenge from LeetCode on initial room mount
   useEffect(() => {
     const initDailyProblem = async () => {
       if (activeRoom && activeRoom.dailyProblems.length === 0) {
@@ -285,6 +297,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
       const client = supabase;
+
       const roomChannel = client
         .channel('public:rooms')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, (payload) => {
@@ -298,8 +311,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         })
         .subscribe();
 
+      const notifChannel = client
+        .channel('public:notifications')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
+          if (payload.new && (payload.new as any).data) {
+            const updatedNotif = (payload.new as any).data as Notification;
+            setNotifications((prev) => {
+              const exists = prev.some((n) => n.id === updatedNotif.id);
+              return exists ? prev.map((n) => (n.id === updatedNotif.id ? updatedNotif : n)) : [updatedNotif, ...prev];
+            });
+          }
+        })
+        .subscribe();
+
       return () => {
         client.removeChannel(roomChannel);
+        client.removeChannel(notifChannel);
       };
     } else {
       let bc: BroadcastChannel | null = null;
@@ -334,8 +361,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             id: room.id,
             name: room.name,
             code: room.code,
+            description: room.description,
+            creator_id: room.creatorId,
+            target_daily_goal: room.targetDailyGoal,
             data: room,
             updated_at: new Date().toISOString(),
+          });
+        });
+
+        newNotifications.slice(0, 30).forEach(async (notif) => {
+          await client.from('notifications').upsert({
+            id: notif.id,
+            room_id: notif.roomId,
+            data: notif,
+            created_at: new Date().toISOString(),
           });
         });
       } catch (e) {
@@ -419,121 +458,78 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const login = async (usernameOrHandle: string, password?: string): Promise<{ success: boolean; message: string }> => {
     const clean = usernameOrHandle.trim();
-    if (!clean) return { success: false, message: 'Please enter a valid LeetCode handle or username.' };
+    if (!clean) return { success: false, message: 'Please enter your LeetCode username.' };
     const cleanPassword = password ? password.trim() : '';
+
+    if (!cleanPassword) {
+      return { success: false, message: 'Password is required to sign in.' };
+    }
 
     const cleanLower = clean.toLowerCase();
 
-    // Check auth vault for existing credentials
+    // Check auth vault for registered credentials
     const credential = authVault.find((c) => c.username.toLowerCase() === cleanLower);
 
-    // Look up user object in registered accounts or room members
-    const allKnownUsers = [
-      ...registeredAccounts,
-      ...rooms.flatMap((r) => r.members),
-    ];
-    const foundUser = allKnownUsers.find(
-      (u) => u.username.toLowerCase() === cleanLower || u.name.toLowerCase() === cleanLower
-    );
-
-    // Strict password verification if account has a registered password
-    if (credential) {
-      if (!cleanPassword || hashSecret(cleanPassword) !== credential.passwordHash) {
-        return { success: false, message: 'Invalid password. Please enter the correct password.' };
-      }
-    }
-
-    if (foundUser) {
-      const loggedUser: User = {
-        ...foundUser,
-        isLoggedIn: true,
-      };
-      setCurrentUser(loggedUser);
-
-      // Auto update stats in background
-      if (loggedUser.username) {
-        fetchLeetCodeProfile(loggedUser.username).then((stats) => {
-          if (stats) {
-            updateCurrentUser({
-              solvedCount: stats.totalSolved,
-              avatar: stats.avatar || loggedUser.avatar,
-            });
-          }
-        }).catch(() => {});
-      }
-
-      const userRoom = rooms.find((r) => r.members.some((m) => m.id === foundUser.id) || r.creatorId === foundUser.id);
-      if (userRoom) {
-        setActiveRoomId(userRoom.id);
-      }
-
-      setToast({
-        title: `Signed In as ${foundUser.name}`,
-        message: `Welcome back @${foundUser.username || foundUser.name}!`,
-        type: 'success',
-      });
-      return { success: true, message: `Welcome back, ${foundUser.name}!` };
-    }
-
-    // Verify on LeetCode API before creating account
-    const lcStats = await fetchLeetCodeProfile(clean);
-    if (!lcStats) {
+    if (!credential) {
       return {
         success: false,
-        message: `LeetCode handle "@${clean}" does not exist on LeetCode. Please check your username.`,
+        message: `Account "@${clean}" not found. Please click "New Account" to register with your LeetCode handle and password.`,
       };
     }
 
-    const newUser: User = {
-      id: `user_${Date.now()}`,
-      name: lcStats.realName || clean,
-      username: lcStats.username,
-      avatar: lcStats.avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80`,
-      role: 'Member',
-      systemRole: 'User',
-      points: 0,
-      streak: 0,
-      solvedCount: lcStats.totalSolved,
-      solvedToday: false,
-      joinedAt: new Date().toISOString().split('T')[0],
-      isLoggedIn: true,
-    };
-
-    if (cleanPassword) {
-      const newCred: AuthCredential = {
-        userId: newUser.id,
-        username: newUser.username,
-        passwordHash: hashSecret(cleanPassword),
-        createdAt: new Date().toISOString(),
-      };
-      setAuthVault((prev) => [...prev.filter((c) => c.username.toLowerCase() !== newCred.username.toLowerCase()), newCred]);
+    // Verify SHA-256 password hash
+    const inputHash = await hashSecret(cleanPassword);
+    if (inputHash !== credential.passwordHash) {
+      return { success: false, message: 'Incorrect password. Please verify and try again.' };
     }
 
-    setRegisteredAccounts((prev) => [...prev.filter((u) => u.username.toLowerCase() !== newUser.username.toLowerCase()), newUser]);
-    setCurrentUser(newUser);
+    // Find user record in registered accounts
+    const foundUser = registeredAccounts.find((u) => u.username.toLowerCase() === cleanLower);
 
-    // Add user to active room
-    if (activeRoom) {
-      setRooms((prev) =>
-        prev.map((r) =>
-          r.id === activeRoom.id
-            ? {
-                ...r,
-                creatorId: r.creatorId === 'usr_main' ? newUser.id : r.creatorId,
-                members: [...r.members.filter((m) => m.id !== newUser.id && m.id !== 'usr_main'), { ...newUser, role: r.creatorId === 'usr_main' ? 'Admin' : 'Member' }],
-              }
-            : r
-        )
-      );
+    const loggedUser: User = foundUser
+      ? { ...foundUser, isLoggedIn: true }
+      : {
+          id: credential.userId,
+          name: credential.username,
+          username: credential.username,
+          avatar: `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80`,
+          role: 'Member',
+          systemRole: 'User',
+          points: 0,
+          streak: 0,
+          solvedCount: 0,
+          solvedToday: false,
+          joinedAt: credential.createdAt.split('T')[0],
+          isLoggedIn: true,
+        };
+
+    setCurrentUser(loggedUser);
+
+    // Auto-update stats from LeetCode in background
+    if (loggedUser.username) {
+      fetchLeetCodeProfile(loggedUser.username).then((stats) => {
+        if (stats) {
+          updateCurrentUser({
+            solvedCount: stats.totalSolved,
+            avatar: stats.avatar || loggedUser.avatar,
+            name: stats.realName || loggedUser.name,
+          });
+        }
+      }).catch(() => {});
+    }
+
+    const userRoom = rooms.find((r) => r.members.some((m) => m.id === loggedUser.id) || r.creatorId === loggedUser.id);
+    if (userRoom) {
+      setActiveRoomId(userRoom.id);
     }
 
     setToast({
-      title: `Signed In as ${newUser.name}`,
-      message: `Verified LeetCode @${lcStats.username} (${lcStats.totalSolved} solved)`,
+      title: `Signed In as ${loggedUser.name}`,
+      message: `Welcome back @${loggedUser.username}!`,
       type: 'success',
     });
 
-    return { success: true, message: `Created profile for ${newUser.name}` };
+    return { success: true, message: `Welcome back, ${loggedUser.name}!` };
   };
 
   const registerAccount = async (name: string, username: string, password?: string): Promise<{ success: boolean; message: string }> => {
@@ -552,11 +548,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return { success: false, message: `Username "@${cleanUsername}" is already registered. Please sign in instead.` };
     }
 
+    // STRICT LeetCode API Verification
     const lcStats = await fetchLeetCodeProfile(cleanUsername);
     if (!lcStats) {
       return {
         success: false,
-        message: `LeetCode handle "@${cleanUsername}" not found. Please verify spelling.`,
+        message: `LeetCode handle "@${cleanUsername}" does not exist on LeetCode. Please check spelling or verify your public profile exists on leetcode.com.`,
       };
     }
 
@@ -575,15 +572,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       isLoggedIn: true,
     };
 
+    const passwordHash = await hashSecret(cleanPassword);
     const newCred: AuthCredential = {
       userId: newUser.id,
       username: newUser.username,
-      passwordHash: hashSecret(cleanPassword),
+      passwordHash,
       createdAt: new Date().toISOString(),
     };
 
     setAuthVault((prev) => [...prev, newCred]);
-    setRegisteredAccounts((prev) => [...prev, newUser]);
+    setRegisteredAccounts((prev) => [...prev.filter((u) => u.username.toLowerCase() !== cleanLower), newUser]);
     setCurrentUser(newUser);
 
     if (activeRoom) {
@@ -592,8 +590,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           r.id === activeRoom.id
             ? {
                 ...r,
-                creatorId: r.creatorId === 'usr_main' ? newUser.id : r.creatorId,
-                members: [...r.members.filter((m) => m.id !== newUser.id && m.id !== 'usr_main'), { ...newUser, role: r.creatorId === 'usr_main' ? 'Admin' : 'Member' }],
+                members: [...r.members.filter((m) => m.id !== newUser.id), { ...newUser, role: r.creatorId === newUser.id ? 'Admin' : 'Member' }],
               }
             : r
         )
@@ -602,7 +599,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setToast({
       title: 'Account Registered! 🎉',
-      message: `Welcome ${newUser.name}! Verified LeetCode @${lcStats.username}.`,
+      message: `Welcome ${newUser.name}! Verified LeetCode @${lcStats.username} (${lcStats.totalSolved} solved).`,
       type: 'success',
     });
 
@@ -662,7 +659,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return { success: false, message: 'Room not found.' };
     }
 
-    const isAuthorized = roomToDelete.creatorId === currentUser.id || currentUser.role === 'Admin' || isAdmin;
+    const isAuthorized = roomToDelete.creatorId === currentUser.id || currentUser.systemRole === 'SuperAdmin';
     if (!isAuthorized) {
       return { success: false, message: 'Permission denied. Only the room creator/host can delete this room.' };
     }
@@ -818,9 +815,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const deleteProblem = (problemId: string) => {
     const targetProblem = activeRoom?.dailyProblems.find((p) => p.id === problemId);
-    const isAuthorized = isAdmin || targetProblem?.postedBy.id === currentUser.id;
+    const isAuthorized = isHost || targetProblem?.postedBy.id === currentUser.id;
     if (!isAuthorized) {
-      setToast({ title: 'Permission Denied', message: 'Only the host or problem author can delete this challenge.', type: 'warning' });
+      setToast({ title: 'Permission Denied', message: 'Only the room host or problem author can delete this challenge.', type: 'warning' });
       return;
     }
 
@@ -1012,7 +1009,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!activeRoom) return;
 
     const targetComment = activeRoom.dailyProblems.flatMap((p) => p.comments).find((c) => c.id === commentId);
-    if (!isAdmin && targetComment?.userId !== currentUser.id) return;
+    if (!isHost && targetComment?.userId !== currentUser.id) return;
 
     const updatedRooms = rooms.map((r) => {
       if (r.id === activeRoomId) {
@@ -1041,8 +1038,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const targetRoom = rooms.find((r) => r.id === roomId);
     if (!targetRoom) return;
 
-    const isHost = targetRoom.creatorId === currentUser.id || currentUser.role === 'Admin' || isAdmin;
-    if (!isHost) {
+    const isRoomHost = targetRoom.creatorId === currentUser.id || currentUser.systemRole === 'SuperAdmin';
+    if (!isRoomHost) {
       setToast({ title: 'Permission Denied', message: 'Only the room host can remove members.', type: 'warning' });
       return;
     }
@@ -1072,7 +1069,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const markAllNotificationsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setNotifications((prev) =>
+      prev.map((n) => (n.roomId === activeRoomId ? { ...n, read: true } : n))
+    );
   };
 
   const resetDemoData = () => {
@@ -1082,6 +1081,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       localStorage.removeItem(`${LOCAL_STORAGE_KEY}_activeRoomId`);
       localStorage.removeItem(`${LOCAL_STORAGE_KEY}_notifications`);
       localStorage.removeItem(LOCAL_STORAGE_KEY_AUTH);
+      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_registered_accounts`);
     } catch (e) {}
 
     setCurrentUser(INITIAL_CURRENT_USER);
@@ -1089,6 +1089,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setActiveRoomId(MOCK_ROOMS[0].id);
     setNotifications(INITIAL_NOTIFICATIONS);
     setAuthVault([]);
+    setRegisteredAccounts([]);
     setToast({
       title: 'Workspace Reset',
       message: 'Reset back to fresh workspace state.',
@@ -1115,6 +1116,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setToast,
         isCloudConnected: isSupabaseConfigured,
         isAdmin,
+        isHost,
         login,
         registerAccount,
         switchActiveRoom,

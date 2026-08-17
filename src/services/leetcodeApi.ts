@@ -172,19 +172,6 @@ export async function fetchLeetCodeProfile(username: string): Promise<LeetCodePr
     console.warn('Could not fetch real LeetCode user profile stats:', e);
   }
 
-  // Graceful simulated verification if offline / mock handle
-  if (cleanUsername.length >= 3) {
-    return {
-      username: cleanUsername,
-      realName: cleanUsername,
-      ranking: 145200,
-      totalSolved: 180,
-      easySolved: 80,
-      mediumSolved: 85,
-      hardSolved: 15,
-    };
-  }
-
   return null;
 }
 

@@ -9,14 +9,14 @@ interface ProblemDiscussionProps {
 }
 
 export const ProblemDiscussion: React.FC<ProblemDiscussionProps> = ({ problem }) => {
-  const { addComment, deleteComment, currentUser } = useApp();
+  const { addComment, deleteComment, currentUser, isHost } = useApp();
   const [content, setContent] = useState('');
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [codeSnippet, setCodeSnippet] = useState('');
 
   if (!problem) return null;
 
-  const isAdmin = currentUser.systemRole === 'SuperAdmin' || currentUser.role === 'Admin';
+  const isAdmin = isHost;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
