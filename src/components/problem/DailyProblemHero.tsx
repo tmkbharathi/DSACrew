@@ -1,91 +1,60 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import type { Problem } from '../../types';
-import { SubmitSolutionModal } from './SubmitSolutionModal';
-import { PostProblemModal } from './PostProblemModal';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
+import { SubmitSolutionModal } from './SubmitSolutionModal';
+import { PostProblemModal } from './PostProblemModal';
 import {
-  ExternalLink,
-  CheckCircle2,
-  Clock,
   Tag,
-  Code2,
-  PlusCircle,
-  Trash2,
-  Calendar,
+  ExternalLink,
   ChevronLeft,
   ChevronRight,
+  PlusCircle,
   Dices,
   Sparkles,
+  Trash2,
+  Users,
+  Code2,
+  Clock,
   Award,
   Flame,
-  AlertCircle,
-  RefreshCw,
-  Percent,
+  CheckCircle2,
+  Code,
 } from 'lucide-react';
+import type { Problem } from '../../types';
 
 interface DailyProblemHeroProps {
   problem?: Problem;
 }
 
-// Curated DSA problems for Instant Random Picker
-const CURATED_RANDOM_PROBLEMS = [
+const RANDOM_BANK = [
   {
     title: 'Two Sum',
     url: 'https://leetcode.com/problems/two-sum/',
     difficulty: 'Easy' as const,
     tags: ['Array', 'Hash Table'],
     targetTimeMinutes: 20,
-    acceptanceRate: '50.4%',
   },
   {
-    title: '3Sum',
-    url: 'https://leetcode.com/problems/3sum/',
+    title: 'Add Two Numbers',
+    url: 'https://leetcode.com/problems/add-two-numbers/',
     difficulty: 'Medium' as const,
-    tags: ['Array', 'Two Pointers', 'Sorting'],
-    targetTimeMinutes: 35,
-    acceptanceRate: '33.2%',
+    tags: ['Linked List', 'Math', 'Recursion'],
+    targetTimeMinutes: 30,
   },
   {
     title: 'Longest Substring Without Repeating Characters',
     url: 'https://leetcode.com/problems/longest-substring-without-repeating-characters/',
     difficulty: 'Medium' as const,
-    tags: ['Hash Table', 'Sliding Window', 'String'],
+    tags: ['Hash Table', 'String', 'Sliding Window'],
     targetTimeMinutes: 30,
-    acceptanceRate: '34.8%',
   },
   {
     title: 'Trapping Rain Water',
     url: 'https://leetcode.com/problems/trapping-rain-water/',
     difficulty: 'Hard' as const,
-    tags: ['Array', 'Two Pointers', 'Dynamic Programming', 'Monotonic Stack'],
+    tags: ['Array', 'Two Pointers', 'Dynamic Programming', 'Stack', 'Monotonic Stack'],
     targetTimeMinutes: 45,
-    acceptanceRate: '60.1%',
-  },
-  {
-    title: 'Container With Most Water',
-    url: 'https://leetcode.com/problems/container-with-most-water/',
-    difficulty: 'Medium' as const,
-    tags: ['Array', 'Two Pointers', 'Greedy'],
-    targetTimeMinutes: 25,
-    acceptanceRate: '54.9%',
-  },
-  {
-    title: 'Valid Parentheses',
-    url: 'https://leetcode.com/problems/valid-parentheses/',
-    difficulty: 'Easy' as const,
-    tags: ['String', 'Stack'],
-    targetTimeMinutes: 15,
-    acceptanceRate: '40.6%',
-  },
-  {
-    title: 'LRU Cache',
-    url: 'https://leetcode.com/problems/lru-cache/',
-    difficulty: 'Medium' as const,
-    tags: ['Hash Table', 'Linked List', 'Design', 'Doubly-Linked List'],
-    targetTimeMinutes: 40,
-    acceptanceRate: '42.1%',
   },
   {
     title: 'Merge k Sorted Lists',
@@ -93,7 +62,6 @@ const CURATED_RANDOM_PROBLEMS = [
     difficulty: 'Hard' as const,
     tags: ['Linked List', 'Divide and Conquer', 'Heap (Priority Queue)'],
     targetTimeMinutes: 45,
-    acceptanceRate: '51.8%',
   },
 ];
 
@@ -105,7 +73,6 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [isPostOpen, setIsPostOpen] = useState(false);
   const [selectedCodeSnippet, setSelectedCodeSnippet] = useState<{ name: string; code: string; lang: string } | null>(null);
-  const [networkError, setNetworkError] = useState(false);
 
   const isAdmin = isHost;
   const todayStr = getTodayStr();
@@ -140,192 +107,110 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
   };
 
   const handleQuickRandomProblem = () => {
-    const randomItem =
-      CURATED_RANDOM_PROBLEMS[Math.floor(Math.random() * CURATED_RANDOM_PROBLEMS.length)];
+    const available = RANDOM_BANK.filter(
+      (p) => !activeRoom?.dailyProblems.some((dp) => dp.title.toLowerCase() === p.title.toLowerCase())
+    );
+    const chosen = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : RANDOM_BANK[0];
 
     postDailyProblem({
-      title: randomItem.title,
-      url: randomItem.url,
-      difficulty: randomItem.difficulty,
-      tags: randomItem.tags,
-      targetTimeMinutes: randomItem.targetTimeMinutes,
+      title: chosen.title,
+      url: chosen.url,
+      difficulty: chosen.difficulty,
+      tags: chosen.tags,
+      targetTimeMinutes: chosen.targetTimeMinutes,
       date: selectedDate,
     });
-
-    setToast({
-      title: 'Random Challenge Selected! 🎲',
-      message: `Scheduled "${randomItem.title}" (${randomItem.difficulty}) for ${selectedDate}`,
-      type: 'success',
-    });
   };
 
-  const formatDisplayDate = (dateStr: string) => {
-    const d = new Date(dateStr + 'T00:00:00');
-    const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
-    const monthName = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    if (dateStr === todayStr) return `Today (${dayName}, ${monthName})`;
-    return `${dayName}, ${monthName}`;
-  };
-
-  const userSubmission = activeProblem?.submissions.find((s) => s.userId === currentUser.id);
-  const isSolved = Boolean(userSubmission);
-  const isPastDate = selectedDate < todayStr;
-  const isMissed = isPastDate && !isSolved;
+  const isSolved = Boolean(activeProblem?.submissions?.some((s) => s.userId === currentUser.id));
+  const isMissed = selectedDate < todayStr && !isSolved;
 
   const difficultyVariant =
     activeProblem?.difficulty === 'Easy'
       ? 'easy'
-      : activeProblem?.difficulty === 'Hard'
-      ? 'hard'
-      : 'medium';
+      : activeProblem?.difficulty === 'Medium'
+      ? 'medium'
+      : 'hard';
+
+  const formatDisplayDate = (dStr: string) => {
+    if (dStr === todayStr) return 'Today';
+    const dateObj = new Date(dStr + 'T00:00:00');
+    return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const totalMembers = activeRoom?.members?.length || 1;
+  const completedCount = activeProblem?.submissions?.length || 0;
+  const completionPercentage = Math.round((completedCount / totalMembers) * 100);
 
   return (
     <div className="space-y-4">
-      {/* Date Progress Navigation Bar */}
-      <div className="bg-[#1c2024] border border-[#3d4a3e] rounded-xl p-3 sm:p-3.5 flex flex-col gap-3 shadow-md">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          {/* Active Date Title & Controls */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrevDay}
-              className="p-1.5 rounded-lg bg-[#101418] hover:bg-[#262a2f] border border-[#3d4a3e] text-slate-300 hover:text-white transition-colors"
-              title="Previous Day"
-              aria-label="Previous Day"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
+      {/* 7-Day Interactive Date Navigation Bar */}
+      <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-sm">
+        <button
+          onClick={handlePrevDay}
+          className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#21262d] transition-colors shrink-0"
+          title="Previous Day"
+          aria-label="Previous Day"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
 
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#4ade80]" />
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-[#101418] border border-[#3d4a3e] rounded-lg px-2.5 py-1 text-xs sm:text-sm text-white font-mono focus:outline-none focus:border-[#4ade80]"
-              />
-              <span className="text-xs font-semibold text-[#4ade80] hidden md:inline font-mono">
-                {formatDisplayDate(selectedDate)}
-              </span>
-            </div>
-
-            <button
-              onClick={handleNextDay}
-              className="p-1.5 rounded-lg bg-[#101418] hover:bg-[#262a2f] border border-[#3d4a3e] text-slate-300 hover:text-white transition-colors"
-              title="Next Day"
-              aria-label="Next Day"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Quick Shortcuts */}
-          <div className="flex items-center gap-2">
-            {selectedDate !== todayStr && (
-              <button
-                onClick={() => setSelectedDate(todayStr)}
-                className="text-[11px] font-mono font-semibold px-2.5 py-1 rounded-lg bg-[#101418] border border-[#3d4a3e] text-slate-300 hover:text-[#4ade80] hover:border-[#4ade80]/40 transition-colors"
-              >
-                Jump to Today
-              </button>
-            )}
-
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<PlusCircle className="w-3.5 h-3.5 text-[#4ade80]" />}
-              onClick={() => setIsPostOpen(true)}
-            >
-              Schedule Problem
-            </Button>
-          </div>
-        </div>
-
-        {/* 7-Day Progress Strip */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none pt-1 border-t border-[#3d4a3e]/60">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-0.5 justify-center flex-1">
           {getDateStrip().map((dStr) => {
-            const isCurr = dStr === selectedDate;
             const isToday = dStr === todayStr;
-            const probOnDate = activeRoom?.dailyProblems.find((p) => p.date === dStr);
-            const isDateSolved = probOnDate?.submissions.some((s) => s.userId === currentUser.id);
-            const isDatePast = dStr < todayStr;
-            const isDateMissed = isDatePast && probOnDate && !isDateSolved;
-
-            const d = new Date(dStr + 'T00:00:00');
-            const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' });
-            const dayNum = d.getDate();
+            const isSelected = dStr === selectedDate;
+            const probForDay = activeRoom?.dailyProblems.find((p) => p.date === dStr);
+            const userSolved = probForDay?.submissions?.some((s) => s.userId === currentUser.id);
 
             return (
               <button
                 key={dStr}
                 onClick={() => setSelectedDate(dStr)}
-                className={`flex-1 min-w-[54px] py-1.5 px-2 rounded-xl border text-center transition-all flex flex-col items-center gap-0.5 ${
-                  isCurr
-                    ? 'bg-[#4ade80]/15 border-[#4ade80] text-white shadow-sm'
-                    : isToday
-                    ? 'bg-[#1c2024] border-[#4ade80]/40 text-slate-200'
-                    : 'bg-[#101418] border-[#3d4a3e] text-slate-400 hover:border-slate-600 hover:text-slate-200'
+                className={`flex flex-col items-center justify-center min-w-[50px] sm:min-w-[70px] py-1 px-1.5 sm:px-2 rounded-lg border text-xs transition-all relative ${
+                  isSelected
+                    ? 'bg-[#2ea043]/15 border-[#2ea043]/40 text-white font-bold'
+                    : 'bg-[#0d1117] border-[#30363d] text-slate-400 hover:text-slate-200 hover:border-slate-600'
                 }`}
               >
-                <span className={`text-[9px] font-mono uppercase font-bold ${isToday ? 'text-[#4ade80]' : 'text-slate-400'}`}>
-                  {dayLabel} {isToday ? '•' : ''}
+                <span className="text-[10px] font-sans font-medium">
+                  {isToday ? 'Today' : new Date(dStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' })}
                 </span>
-                <span className={`text-xs font-bold font-mono ${isCurr ? 'text-[#4ade80]' : 'text-slate-200'}`}>
-                  {dayNum}
+                <span className="text-xs font-mono font-semibold">
+                  {new Date(dStr + 'T00:00:00').getDate()}
                 </span>
-                <div className="flex items-center justify-center h-3 text-[10px] font-mono leading-none">
-                  {isDateSolved ? (
-                    <span className="text-[#4ade80] font-bold" title="Completed">✓</span>
-                  ) : isDateMissed ? (
-                    <span className="text-slate-500 font-bold" title="Missed">×</span>
-                  ) : probOnDate ? (
-                    <span className="text-amber-400" title="Scheduled">○</span>
-                  ) : (
-                    <span className="text-slate-600">·</span>
-                  )}
-                </div>
+
+                {/* Solved Status Indicator Dot */}
+                {userSolved && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950] absolute top-1 right-1 ring-1 ring-[#161b22]" />
+                )}
               </button>
             );
           })}
         </div>
-      </div>
 
-      {/* Network Failure State Fallback */}
-      {networkError && (
-        <div className="bg-[#1c2024] border border-amber-500/40 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
-          <div className="flex items-center gap-3 text-left">
-            <AlertCircle className="w-6 h-6 text-amber-400 shrink-0" />
-            <div>
-              <h4 className="text-sm font-bold text-white">Couldn't load today's challenge</h4>
-              <p className="text-xs text-slate-400 mt-0.5 font-sans">
-                Showing cached problem. Check your internet connection.
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
-            onClick={() => setNetworkError(false)}
-          >
-            Retry Sync
-          </Button>
-        </div>
-      )}
+        <button
+          onClick={handleNextDay}
+          className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#21262d] transition-colors shrink-0"
+          title="Next Day"
+          aria-label="Next Day"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
 
       {/* Main Challenge Card or Empty State */}
       {!activeProblem ? (
-        /* Compact Empty State (Section 7) */
-        <div className="bg-[#1c2024] border border-[#3d4a3e] rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center text-center shadow-lg relative overflow-hidden">
-          <div className="w-12 h-12 rounded-xl bg-[#4ade80]/10 text-[#4ade80] flex items-center justify-center mb-3.5 border border-[#4ade80]/20">
-            <Sparkles className="w-6 h-6" />
+        <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 sm:p-8 flex flex-col items-center justify-center text-center shadow-lg relative overflow-hidden">
+          <div className="w-10 h-10 rounded-xl bg-[#2ea043]/10 text-[#3fb950] flex items-center justify-center mb-3 border border-[#2ea043]/20">
+            <Sparkles className="w-5 h-5" />
           </div>
 
-          <h3 className="text-lg font-bold text-white font-sans mb-1">Ready for today's challenge?</h3>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto mb-5 leading-relaxed">
-            Your daily challenge for <span className="text-[#4ade80] font-semibold">{formatDisplayDate(selectedDate)}</span> hasn't been scheduled yet.
+          <h3 className="text-base sm:text-lg font-bold text-white font-sans mb-1">Ready for today's challenge?</h3>
+          <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto mb-4 leading-relaxed font-sans">
+            Your daily challenge for <span className="text-[#3fb950] font-semibold">{formatDisplayDate(selectedDate)}</span> hasn't been scheduled yet.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
             <Button
               variant="primary"
               size="md"
@@ -346,22 +231,21 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
           </div>
         </div>
       ) : (
-        /* Primary Challenge Card (Section 8 & 9 & 10) */
-        <div className="bg-[#1c2024] border border-[#3d4a3e] rounded-2xl p-5 sm:p-7 relative overflow-hidden shadow-xl space-y-5">
-          {/* Subtle completion reward banner */}
+        <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-5 sm:p-6 relative overflow-hidden shadow-lg space-y-4">
+          {/* Completion reward banner */}
           {isSolved && (
-            <div className="bg-[#4ade80]/10 border border-[#4ade80]/30 rounded-xl px-4 py-2.5 flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2 text-[#4ade80]">
+            <div className="bg-[#2ea043]/10 border border-[#2ea043]/30 rounded-lg px-3.5 py-2 flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2 text-[#3fb950]">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span className="text-xs font-bold font-mono uppercase tracking-wider">DAILY GOAL COMPLETE</span>
-                <span className="text-xs text-slate-300 hidden sm:inline">• Completed today</span>
+                <span className="text-xs text-slate-300 hidden sm:inline font-sans">• Completed today</span>
               </div>
               <div className="flex items-center gap-3 text-xs font-mono">
                 <span className="text-amber-300 flex items-center gap-1 font-bold">
                   <Award className="w-3.5 h-3.5 text-amber-400" /> +30 Points
                 </span>
-                <span className="text-[#ea580c] flex items-center gap-1 font-bold">
-                  <Flame className="w-3.5 h-3.5 fill-[#ea580c]" /> {currentUser.streak}d Streak
+                <span className="text-[#f0883e] flex items-center gap-1 font-bold">
+                  <Flame className="w-3.5 h-3.5 fill-[#f0883e]" /> {currentUser.streak}d Streak
                 </span>
               </div>
             </div>
@@ -369,7 +253,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
 
           {/* Missed challenge banner */}
           {isMissed && (
-            <div className="bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs text-slate-300">
+            <div className="bg-[#0d1117] border border-[#30363d] rounded-lg px-3.5 py-2 flex items-center justify-between text-xs text-slate-300">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-slate-500 shrink-0" />
                 <span>Daily Goal Missed • You didn't complete this day's challenge.</span>
@@ -379,21 +263,16 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
           )}
 
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5 relative z-10">
-            <div className="min-w-0 flex-1 space-y-3">
+            <div className="min-w-0 flex-1 space-y-2.5">
               {/* Problem Metadata Header */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-mono uppercase font-bold text-slate-400 tracking-wider">
+                <span className="text-xs font-medium text-slate-400">
                   {selectedDate === todayStr ? "TODAY'S CHALLENGE" : `SCHEDULED: ${activeProblem.date}`}
                 </span>
                 <span className="text-slate-600">•</span>
                 <Badge variant={difficultyVariant} size="sm">
                   {activeProblem.difficulty}
                 </Badge>
-                <span className="text-slate-600">•</span>
-                <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
-                  <Percent className="w-3 h-3 text-slate-500" />
-                  Acceptance: {activeProblem.difficulty === 'Easy' ? '68.4%' : activeProblem.difficulty === 'Medium' ? '51.2%' : '38.6%'}
-                </span>
               </div>
 
               {/* Problem Title */}
@@ -402,11 +281,11 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
               </h2>
 
               {/* Topic Tags */}
-              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap pt-0.5">
+              <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                 {activeProblem.tags.map((tag, i) => (
                   <span
                     key={i}
-                    className="bg-[#101418] text-slate-300 text-[11px] px-2.5 py-1 rounded-md border border-[#3d4a3e] flex items-center gap-1 font-mono"
+                    className="bg-[#0d1117] text-slate-300 text-xs px-2.5 py-0.5 rounded-md border border-[#30363d] flex items-center gap-1 font-sans"
                   >
                     <Tag className="w-2.5 h-2.5 text-slate-400" /> {tag}
                   </span>
@@ -414,23 +293,23 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
               </div>
 
               {/* Posted by context */}
-              <div className="text-[11px] text-slate-400 flex items-center gap-1.5 font-mono pt-1">
+              <div className="text-xs text-slate-400 flex items-center gap-1.5 font-sans pt-0.5">
                 <span>Posted by</span>
-                <img src={activeProblem.postedBy.avatar} alt="" className="w-4 h-4 rounded-full object-cover border border-[#3d4a3e]" />
+                <img src={activeProblem.postedBy.avatar} alt="" className="w-4 h-4 rounded-full object-cover border border-[#30363d]" />
                 <span className="text-slate-200 font-medium">{activeProblem.postedBy.name}</span>
-                <span className="text-slate-500">• Source: LeetCode</span>
+                <span className="text-slate-500">• LeetCode</span>
               </div>
             </div>
 
             {/* Primary Action Buttons */}
-            <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-2.5 shrink-0 pt-2 lg:pt-0">
+            <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-2 shrink-0 pt-1 lg:pt-0">
               <a
                 href={activeProblem.url}
                 target="_blank"
                 rel="noreferrer"
-                className="bg-[#101418] hover:bg-[#262a2f] text-slate-200 hover:text-white text-xs px-4 py-2.5 rounded-lg font-semibold border border-[#3d4a3e] flex items-center justify-center gap-2 transition-all shadow-sm"
+                className="bg-[#0d1117] hover:bg-[#21262d] text-slate-200 hover:text-white text-xs px-3.5 py-2 rounded-lg font-medium border border-[#30363d] flex items-center justify-center gap-1.5 transition-all shadow-sm"
               >
-                <span>Open Problem</span>
+                <span>Open LeetCode</span>
                 <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
               </a>
 
@@ -447,7 +326,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
                 <Button
                   variant="secondary"
                   size="md"
-                  leftIcon={<Code2 className="w-4 h-4 text-[#4ade80]" />}
+                  leftIcon={<Code2 className="w-4 h-4 text-[#3fb950]" />}
                   onClick={() => setIsSubmitOpen(true)}
                 >
                   Update Solution
@@ -457,92 +336,110 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
               {isAdmin && (
                 <button
                   onClick={() => deleteProblem(activeProblem.id)}
-                  className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs px-3 py-2 rounded-lg font-medium flex items-center justify-center gap-1 transition-all shrink-0"
-                  title="Delete Problem (Admin)"
-                  aria-label="Delete Problem"
+                  className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg border border-transparent hover:border-rose-500/20 transition-all flex items-center justify-center"
+                  title="Delete Daily Challenge"
+                  aria-label="Delete Challenge"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Collaborative Room Solved Status */}
-          <div className="pt-4 border-t border-[#3d4a3e] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-300 font-mono">Room Progress:</span>
-              <span className="text-xs text-[#4ade80] font-bold font-mono">
-                {activeProblem.submissions.length} / {activeRoom?.members.length || 1} Completed
+          {/* Room Progress Metrics Bar */}
+          <div className="pt-3 border-t border-[#30363d] space-y-1.5">
+            <div className="flex justify-between items-center text-xs">
+              <div className="flex items-center gap-1.5 text-slate-300 font-medium">
+                <Users className="w-3.5 h-3.5 text-[#3fb950]" />
+                <span>Room Completion Rate</span>
+              </div>
+              <span className="font-mono text-slate-300 font-semibold">
+                {completedCount} / {totalMembers} Members ({completionPercentage}%)
               </span>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              {activeProblem.submissions.length === 0 ? (
-                <span className="text-xs text-slate-500 font-mono">No submissions yet</span>
-              ) : (
-                activeProblem.submissions.map((sub) => (
+            <div className="w-full bg-[#0d1117] h-2 rounded-full overflow-hidden border border-[#30363d]">
+              <div
+                className="bg-[#2ea043] h-full transition-all duration-500 rounded-full"
+                style={{ width: `${Math.max(completionPercentage, 4)}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Teammates Solved Avatar Strip */}
+          {activeProblem.submissions.length > 0 && (
+            <div className="pt-1 flex items-center gap-2 flex-wrap text-xs">
+              <span className="text-slate-400 font-medium">Solved by:</span>
+              <div className="flex items-center -space-x-1.5">
+                {activeProblem.submissions.map((sub) => (
                   <button
                     key={sub.id}
-                    onClick={() =>
-                      setSelectedCodeSnippet({
-                        name: sub.userName,
-                        code: sub.codeSnippet,
-                        lang: sub.language,
-                      })
-                    }
-                    className="flex items-center gap-1.5 bg-[#101418] border border-[#4ade80]/30 hover:border-[#4ade80] rounded-lg px-2.5 py-1 text-xs text-slate-200 transition-colors"
-                    title={`Click to view code by ${sub.userName}`}
+                    onClick={() => {
+                      if (isSolved || isHost) {
+                        setSelectedCodeSnippet({
+                          name: sub.userName,
+                          code: sub.codeSnippet,
+                          lang: sub.language,
+                        });
+                      } else {
+                        setToast({
+                          title: 'Solve to Unlock Code Review 🔒',
+                          message: 'Submit your solution first to view teammates\' code snippets and runtime metrics.',
+                          type: 'info',
+                        });
+                      }
+                    }}
+                    className="relative group focus:outline-none"
+                    title={`${sub.userName} (${sub.language}) - Click to review`}
                   >
-                    <CheckCircle2 className="w-3 h-3 text-[#4ade80]" />
-                    <span className="truncate max-w-[90px]">{sub.userName}</span>
-                    {sub.runtimeMs && <span className="text-[10px] text-slate-400 font-mono">({sub.runtimeMs})</span>}
+                    <img
+                      src={sub.userAvatar}
+                      alt={sub.userName}
+                      className="w-6 h-6 rounded-full object-cover border border-[#30363d] ring-1 ring-[#161b22] group-hover:scale-110 transition-transform"
+                    />
                   </button>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Code Snippet Modal */}
-      {selectedCodeSnippet && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setSelectedCodeSnippet(null)} />
-          <div className="relative w-full max-w-2xl bg-[#1c2024] border border-[#3d4a3e] rounded-xl p-5 sm:p-6 shadow-2xl z-10 space-y-4 max-h-[85vh] flex flex-col mx-3">
-            <div className="flex items-center justify-between border-b border-[#3d4a3e] pb-3">
-              <div className="flex items-center gap-2">
-                <Code2 className="w-5 h-5 text-[#4ade80]" />
-                <h3 className="font-bold text-white text-sm sm:text-base font-sans">
-                  Solution by <span className="text-[#4ade80]">{selectedCodeSnippet.name}</span>
-                </h3>
+                ))}
               </div>
-              <Badge variant="neutral" size="sm">
-                {selectedCodeSnippet.lang}
-              </Badge>
             </div>
+          )}
+        </div>
+      )}
 
-            <div className="flex-1 overflow-auto bg-[#101418] border border-[#3d4a3e] rounded-lg p-4 font-mono text-xs text-[#4ade80] leading-relaxed">
-              <pre>{selectedCodeSnippet.code}</pre>
+      {/* Code Snippet Review Modal */}
+      {selectedCodeSnippet && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-5 max-w-2xl w-full space-y-3 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-2 border-b border-[#30363d]">
+              <div className="flex items-center gap-2">
+                <Code className="w-4 h-4 text-[#3fb950]" />
+                <h4 className="font-bold text-sm text-white font-sans">
+                  {selectedCodeSnippet.name}'s Solution ({selectedCodeSnippet.lang})
+                </h4>
+              </div>
+              <button
+                onClick={() => setSelectedCodeSnippet(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                ✕
+              </button>
             </div>
-
-            <div className="flex justify-end pt-1">
-              <Button variant="secondary" size="sm" onClick={() => setSelectedCodeSnippet(null)}>
-                Close
-              </Button>
-            </div>
+            <pre className="bg-[#0d1117] p-4 rounded-lg text-xs font-mono text-emerald-300 overflow-x-auto max-h-96 border border-[#30363d]">
+              <code>{selectedCodeSnippet.code}</code>
+            </pre>
           </div>
         </div>
       )}
 
-      {/* Submit Solution Modal */}
+      {/* Modals */}
       {activeProblem && (
-        <SubmitSolutionModal problem={activeProblem} isOpen={isSubmitOpen} onClose={() => setIsSubmitOpen(false)} />
+        <SubmitSolutionModal
+          problem={activeProblem}
+          isOpen={isSubmitOpen}
+          onClose={() => setIsSubmitOpen(false)}
+        />
       )}
-
-      {/* Post / Schedule Problem Modal */}
       <PostProblemModal
         isOpen={isPostOpen}
-        initialDate={selectedDate}
         onClose={() => setIsPostOpen(false)}
       />
     </div>

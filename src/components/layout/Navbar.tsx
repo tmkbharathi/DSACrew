@@ -23,6 +23,7 @@ import { InviteModal } from '../room/InviteModal';
 import { NotificationDrawer } from '../notifications/NotificationDrawer';
 import { UserProfileModal } from '../profile/UserProfileModal';
 import { Tooltip } from '../ui/Tooltip';
+import { Button } from '../ui/Button';
 
 interface NavbarProps {
   onMobileMenuToggle?: () => void;
@@ -79,15 +80,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-[#101418] border-b border-[#3d4a3e] px-3 sm:px-6 py-2.5 sm:py-3 transition-colors">
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
+      <header className="sticky top-0 z-50 w-full bg-[#161b22] border-b border-[#30363d] px-3 sm:px-6 py-2.5 sm:py-3 transition-colors">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
           {/* Brand & Room Switcher Group */}
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             {/* Mobile Menu Button */}
             {onMobileMenuToggle && (
               <button
                 onClick={onMobileMenuToggle}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#1c2024] lg:hidden"
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#21262d] lg:hidden"
                 aria-label="Open Mobile Drawer"
               >
                 <Menu className="w-5 h-5" />
@@ -104,11 +105,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
               }}
               title="Return to Landing Page Overview"
             >
-              <div className="w-8 h-8 rounded-lg bg-[#1c2024] border border-[#3d4a3e] flex items-center justify-center text-[#4ade80] font-mono font-bold text-sm shadow-sm">
+              <div className="w-8 h-8 rounded-lg bg-[#0d1117] border border-[#30363d] flex items-center justify-center text-[#3fb950] font-mono font-bold text-sm shadow-sm">
                 &lt;/&gt;
               </div>
               <span className="font-bold text-base sm:text-lg tracking-tight text-white hidden md:inline font-sans">
-                Leet<span className="text-[#4ade80]">Tracker</span>
+                Leet<span className="text-[#3fb950]">Tracker</span>
               </span>
             </div>
 
@@ -116,11 +117,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
             <div className="relative min-w-0" ref={roomDropdownRef}>
               <button
                 onClick={() => setIsRoomDropdownOpen(!isRoomDropdownOpen)}
-                className="flex items-center gap-1.5 sm:gap-2 bg-[#1c2024] hover:bg-[#262a2f] border border-[#3d4a3e] rounded-lg px-2.5 sm:px-3 py-1.5 transition-colors text-left max-w-[180px] xs:max-w-[220px] sm:max-w-[280px]"
+                className="flex items-center gap-1.5 sm:gap-2 bg-[#0d1117] hover:bg-[#21262d] border border-[#30363d] rounded-lg px-2.5 sm:px-3 py-1.5 transition-colors text-left max-w-[180px] xs:max-w-[220px] sm:max-w-[280px]"
                 aria-label="Switch Practice Room"
               >
-                <div className="w-2 h-2 rounded-full bg-[#4ade80] shrink-0 animate-pulse" />
-                <span className="font-semibold text-xs sm:text-sm text-white truncate">
+                <div className="w-2 h-2 rounded-full bg-[#3fb950] shrink-0 animate-pulse" />
+                <span className="font-semibold text-xs sm:text-sm text-white truncate font-sans">
                   {activeRoom ? activeRoom.name : 'Select Room'}
                 </span>
                 <ChevronDown
@@ -130,10 +131,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
                 />
               </button>
 
-              {/* Room Menu Modal/Dropdown */}
+              {/* Room Menu Dropdown */}
               {isRoomDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-72 sm:w-80 bg-[#1c2024] border border-[#3d4a3e] rounded-xl shadow-2xl p-2 z-50 animate-in fade-in-50 zoom-in-95">
-                  <div className="p-2 border-b border-[#3d4a3e]">
+                <div className="absolute top-full left-0 mt-2 w-72 sm:w-80 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl p-2 z-50 animate-in fade-in-50 zoom-in-95">
+                  <div className="p-2 border-b border-[#30363d]">
                     <div className="relative">
                       <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
                       <input
@@ -141,7 +142,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
                         placeholder="Search rooms..."
                         value={roomSearch}
                         onChange={(e) => setRoomSearch(e.target.value)}
-                        className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#4ade80]"
+                        className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#3fb950]"
                       />
                     </div>
                   </div>
@@ -156,14 +157,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
                         }}
                         className={`w-full flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors group ${
                           activeRoom?.id === room.id
-                            ? 'bg-[#4ade80]/15 text-[#4ade80] font-bold border border-[#4ade80]/30'
-                            : 'hover:bg-[#262a2f] text-slate-300'
+                            ? 'bg-[#2ea043]/15 text-[#3fb950] font-bold border border-[#2ea043]/30'
+                            : 'hover:bg-[#21262d] text-slate-300'
                         }`}
                       >
-                        <div className="flex items-center gap-2 truncate">
+                        <div className="flex items-center gap-2 truncate font-sans">
                           <div
                             className={`w-1.5 h-1.5 rounded-full ${
-                              activeRoom?.id === room.id ? 'bg-[#4ade80]' : 'bg-slate-500'
+                              activeRoom?.id === room.id ? 'bg-[#3fb950]' : 'bg-slate-500'
                             }`}
                           />
                           <span className="truncate">{room.name}</span>
@@ -192,12 +193,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
           {/* Right Header Actions Group */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {/* Room Host / Member Role Badge */}
-            <Tooltip content={isRoomHost ? 'You are the Host & Creator of this Room' : 'You are a Member of this Room'}>
+            <Tooltip content={isRoomHost ? 'You are the Host of this Room' : 'You are a Member of this Room'}>
               <div
                 className={`text-xs px-2.5 py-1.5 rounded-lg font-bold border flex items-center gap-1.5 select-none font-mono ${
                   isRoomHost
-                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 shadow-sm'
-                    : 'bg-[#1c2024] text-slate-400 border-[#3d4a3e]'
+                    ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+                    : 'bg-[#0d1117] text-slate-400 border-[#30363d]'
                 }`}
               >
                 {isRoomHost ? (
@@ -215,25 +216,27 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
             </Tooltip>
 
             {/* Post Problem Action Button */}
-            <button
+            <Button
+              variant="primary"
+              size="sm"
               onClick={() => setIsPostOpen(true)}
-              className="bg-[#4ade80] text-[#005e2d] hover:bg-[#6dfe9c] active:bg-[#3bc26f] px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-colors shadow-sm"
-              title="Add Daily Challenge"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-4 h-4 text-[#005e2d] stroke-[2.5]" />
-              <span className="hidden xs:inline font-sans">Post</span>
-            </button>
+              Post
+            </Button>
 
             {/* Invite Button */}
             {activeRoom && (
               <Tooltip content="Share Room Invite Code">
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setIsInviteOpen(true)}
-                  className="bg-[#1c2024] hover:bg-[#262a2f] text-slate-200 text-xs px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg font-semibold border border-[#3d4a3e] flex items-center gap-1.5 transition-colors hidden sm:flex font-sans"
+                  leftIcon={<Share2 className="w-3.5 h-3.5 text-[#3fb950]" />}
+                  className="hidden sm:inline-flex"
                 >
-                  <Share2 className="w-3.5 h-3.5 text-[#4ade80]" />
-                  <span>Invite</span>
-                </button>
+                  Invite
+                </Button>
               </Tooltip>
             )}
 
@@ -241,12 +244,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
             <Tooltip content="Room Notifications">
               <button
                 onClick={() => setIsNotifOpen(true)}
-                className="relative p-2 text-slate-400 hover:text-white rounded-lg hover:bg-[#1c2024] transition-colors"
+                className="relative p-2 text-slate-400 hover:text-white rounded-lg hover:bg-[#21262d] transition-colors"
                 aria-label="Notifications"
               >
                 <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#ea580c] ring-2 ring-[#101418]" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#f0883e] ring-2 ring-[#161b22]" />
                 )}
               </button>
             </Tooltip>
@@ -255,10 +258,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
             <Tooltip content={soundEnabled ? 'Disable Notification Sounds' : 'Enable Notification Sounds'}>
               <button
                 onClick={() => setSoundEnabled(!soundEnabled)}
-                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-[#1c2024] transition-colors hidden sm:block"
+                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-[#21262d] transition-colors hidden sm:block"
                 aria-label="Toggle Sound"
               >
-                {soundEnabled ? <Volume2 className="w-4 h-4 text-[#4ade80]" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
+                {soundEnabled ? <Volume2 className="w-4 h-4 text-[#3fb950]" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
               </button>
             </Tooltip>
 
@@ -266,7 +269,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center gap-1 p-0.5 rounded-full ring-2 ring-[#3d4a3e] hover:ring-[#4ade80] transition-all"
+                className="flex items-center gap-1 p-0.5 rounded-full ring-2 ring-[#30363d] hover:ring-[#3fb950] transition-all"
                 aria-label="User Profile Menu"
               >
                 <img
@@ -278,15 +281,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
 
               {/* User Dropdown Menu */}
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-[#1c2024] border border-[#3d4a3e] rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in-50 zoom-in-95">
-                  <div className="p-3 border-b border-[#3d4a3e] flex items-center gap-3">
+                <div className="absolute right-0 mt-2 w-64 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl p-2 z-50 animate-in fade-in-50 zoom-in-95">
+                  <div className="p-3 border-b border-[#30363d] flex items-center gap-3">
                     <img
                       src={currentUser.avatar}
                       alt={currentUser.name}
-                      className="w-10 h-10 rounded-full object-cover border border-[#3d4a3e]"
+                      className="w-10 h-10 rounded-full object-cover border border-[#30363d]"
                     />
                     <div className="min-w-0">
-                      <div className="text-xs font-bold text-white truncate flex items-center gap-1">
+                      <div className="text-xs font-bold text-white truncate flex items-center gap-1 font-sans">
                         {currentUser.name}
                         {isRoomHost && (
                           <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1 rounded border border-purple-500/30">
@@ -295,7 +298,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
                         )}
                       </div>
                       {currentUser.username && (
-                        <div className="text-[10px] text-cyan-400 font-mono truncate">
+                        <div className="text-xs text-cyan-400 font-mono truncate">
                           @{currentUser.username}
                         </div>
                       )}
@@ -308,9 +311,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
                         setIsProfileOpen(true);
                         setIsUserMenuOpen(false);
                       }}
-                      className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#262a2f] text-left transition-colors"
+                      className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#21262d] text-left transition-colors"
                     >
-                      <Sparkles className="w-4 h-4 text-[#4ade80]" />
+                      <Sparkles className="w-4 h-4 text-[#3fb950]" />
                       <span>LeetCode Profile &amp; Stats</span>
                     </button>
 
@@ -321,7 +324,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
                         }
                         setIsUserMenuOpen(false);
                       }}
-                      className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#262a2f] text-left transition-colors"
+                      className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#21262d] text-left transition-colors"
                     >
                       <Layers className="w-4 h-4 text-cyan-400" />
                       <span>Switch Room / Overview</span>
@@ -331,13 +334,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
                       href={`https://leetcode.com/${currentUser.username || ''}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#262a2f] text-left transition-colors text-slate-300"
+                      className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#21262d] text-left transition-colors text-slate-300"
                     >
                       <ExternalLink className="w-4 h-4 text-slate-400" />
                       <span>Open LeetCode.com</span>
                     </a>
 
-                    <div className="border-t border-[#3d4a3e] my-1" />
+                    <div className="border-t border-[#30363d] my-1" />
 
                     <button
                       onClick={() => {
@@ -355,7 +358,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
                         signOut();
                         setIsUserMenuOpen(false);
                       }}
-                      className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#262a2f] text-slate-400 hover:text-white text-left transition-colors"
+                      className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#21262d] text-slate-400 hover:text-white text-left transition-colors"
                     >
                       <LogOut className="w-4 h-4 text-slate-400" />
                       <span>Sign Out</span>
@@ -383,18 +386,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
       {/* Reset Confirmation Dialog */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-[#1c2024] border border-[#3d4a3e] rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
-            <h4 className="font-bold text-base text-white">Reset Workspace Data?</h4>
-            <p className="text-xs text-slate-400 leading-relaxed">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <h4 className="font-bold text-base text-white font-sans">Reset Workspace Data?</h4>
+            <p className="text-xs text-slate-400 leading-relaxed font-sans">
               This will restore all default practice rooms, reset problem submissions, and clear local state cache.
             </p>
             <div className="flex gap-2 pt-2">
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowResetConfirm(false)}
-                className="flex-1 px-3 py-2 rounded-lg border border-[#3d4a3e] hover:bg-[#262a2f] text-xs font-semibold text-white transition-colors"
+                className="flex-1"
               >
                 Cancel
-              </button>
+              </Button>
               <button
                 onClick={() => {
                   resetToDefault();

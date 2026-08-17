@@ -1,29 +1,30 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { AuthModal } from '../auth/AuthModal';
 import { CreateRoomModal } from '../room/CreateRoomModal';
 import { JoinRoomModal } from '../room/JoinRoomModal';
-import { AuthModal } from '../auth/AuthModal';
-import { fetchLeetCodeDaily } from '../../services/leetcodeApi';
+import { fetchLeetCodeDaily, type LeetCodeDailyChallenge } from '../../services/leetcodeApi';
 import {
   Code2,
-  Sparkles,
-  Zap,
+  Users,
+  Trophy,
+  ArrowRight,
+  ShieldCheck,
   LogIn,
   Plus,
-  ArrowRight,
-  Bell,
+  RefreshCw,
   HelpCircle,
   X,
-  CheckCircle2,
-  ShieldCheck,
-  RefreshCw,
-  LogOut,
-  Layers,
   Lock,
   Eye,
   EyeOff,
-  Flame,
+  Radio,
+  Zap,
+  Sparkles,
+  Layers,
+  LogOut,
 } from 'lucide-react';
+import { Button } from '../ui/Button';
 
 interface LandingPageProps {
   onEnterRoom?: () => void;
@@ -31,26 +32,34 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWorkspace }) => {
-  const { joinRoomByCode, setToast, currentUser, isLoggedIn, login, logout } = useApp();
+  const { currentUser, joinRoomByCode, login, logout, setToast } = useApp();
 
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isJoinOpen, setIsJoinOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authDefaultRegister, setAuthDefaultRegister] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isJoinOpen, setIsJoinOpen] = useState(false);
   const [roomCode, setRoomCode] = useState('');
   const [joinError, setJoinError] = useState('');
+  const [tourStep, setTourStep] = useState<number | null>(null);
+
+  // Direct login state on landing page
   const [loginHandleInput, setLoginHandleInput] = useState('');
   const [loginPasswordInput, setLoginPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const [tourStep, setTourStep] = useState<number | null>(null);
-  const [quickDaily, setQuickDaily] = useState<any>(null);
+
+  // Quick Daily Preview
+  const [quickDaily, setQuickDaily] = useState<LeetCodeDailyChallenge | null>(null);
   const [loadingDaily, setLoadingDaily] = useState(false);
 
+  const isLoggedIn = Boolean(
+    currentUser.isLoggedIn && currentUser.username && currentUser.username.trim().length > 0
+  );
+
   const handleEnter = () => {
-    if (onEnterRoom) onEnterRoom();
     if (onEnterWorkspace) onEnterWorkspace();
+    else if (onEnterRoom) onEnterRoom();
   };
 
   const handleHeroLogin = async (e: React.FormEvent) => {
@@ -59,12 +68,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
 
     setLoginLoading(true);
     setLoginError('');
+
     const res = await login(loginHandleInput.trim(), loginPasswordInput);
     setLoginLoading(false);
 
     if (res.success) {
-      setLoginHandleInput('');
-      setLoginPasswordInput('');
       handleEnter();
     } else {
       setLoginError(res.message);
@@ -108,108 +116,108 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
   };
 
   return (
-    <div className="h-screen max-h-screen w-screen bg-[#0A0E12] text-slate-200 flex flex-col justify-between overflow-hidden relative selection:bg-[#4ade80]/20 selection:text-[#4ade80]">
-      {/* Background Ambient Radial Glows */}
+    <div className="min-h-screen w-full bg-[#0d1117] text-[#f0f6fc] flex flex-col justify-between overflow-y-auto relative selection:bg-[#2ea043]/20 selection:text-[#3fb950]">
+      {/* Background Ambient Subtle Glow */}
       <div className="absolute inset-0 pointer-events-none hero-gradient" />
-      <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
 
       {/* Top Navigation Bar */}
-      <header className="relative z-20 border-b border-slate-800/80 px-4 sm:px-6 py-3 bg-[#101418]/80 backdrop-blur-md shrink-0">
+      <header className="relative z-20 border-b border-[#30363d] px-4 sm:px-6 py-3 bg-[#161b22]/90 backdrop-blur-md shrink-0">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded border border-emerald-500/30 flex items-center justify-center bg-[#111827] shadow-sm">
-              <Code2 className="w-5 h-5 text-[#4ade80]" />
+            <div className="w-8 h-8 rounded-lg border border-[#30363d] flex items-center justify-center bg-[#0d1117] shadow-sm">
+              <Code2 className="w-4 h-4 text-[#3fb950]" />
             </div>
-            <span className="font-bold text-xl tracking-tight text-white font-sans">
-              Leet<span className="text-[#4ade80]">Tracker</span>
+            <span className="font-bold text-lg tracking-tight text-white font-sans">
+              Leet<span className="text-[#3fb950]">Tracker</span>
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => setTourStep(1)}
-              className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-800/80 transition-colors text-slate-400 hover:text-white"
+              className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[#21262d] transition-colors text-slate-400 hover:text-white"
               title="How It Works / Tour"
+              aria-label="How It Works"
             >
-              <HelpCircle className="w-5 h-5" />
+              <HelpCircle className="w-4 h-4" />
             </button>
 
             {isLoggedIn ? (
               <div className="flex items-center gap-2">
-                <button
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={handleEnter}
-                  className="px-4 py-2 rounded-lg bg-[#4ade80] hover:bg-[#6bfb9a] text-[#0A0E12] font-semibold text-xs transition-colors flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
+                  leftIcon={<Layers className="w-3.5 h-3.5" />}
                 >
-                  <Layers className="w-4 h-4" />
-                  <span>Workspace</span>
-                </button>
+                  Workspace
+                </Button>
                 <button
                   onClick={logout}
-                  className="p-2 rounded-lg border border-slate-800 hover:bg-slate-800 transition-colors text-slate-400 hover:text-rose-400"
+                  className="p-1.5 rounded-lg border border-[#30363d] hover:bg-[#21262d] transition-colors text-slate-400 hover:text-rose-400"
                   title="Sign Out"
+                  aria-label="Sign Out"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   setAuthDefaultRegister(false);
                   setIsAuthOpen(true);
                 }}
-                className="px-4 py-2 rounded-lg border border-slate-800 hover:bg-slate-800 transition-colors text-white font-medium text-xs flex items-center gap-2"
+                leftIcon={<LogIn className="w-3.5 h-3.5" />}
               >
-                <span>Sign In</span>
-                <LogIn className="w-3.5 h-3.5" />
-              </button>
+                Sign In
+              </Button>
             )}
           </div>
         </div>
       </header>
 
       {/* Main Center Content Canvas */}
-      <main className="flex-1 relative z-10 max-w-3xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center justify-center w-full min-h-0 py-2 sm:py-3">
+      <main className="flex-1 relative z-10 max-w-3xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center justify-center w-full py-8 sm:py-12">
         {/* Version / Pill Badge */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-800 bg-[#181c20] mb-2 shadow-sm">
-          <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#30363d] bg-[#161b22] mb-3 shadow-sm">
+          <span className="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold">
             REAL-TIME LEETCODE ROOMS • V1.0
           </span>
         </div>
 
-        {/* Hero Title - Scaled to prevent overlap */}
-        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-white mb-1.5 max-w-xl mx-auto leading-tight tracking-tight">
+        {/* Hero Title */}
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-2 max-w-xl mx-auto leading-tight tracking-tight font-sans">
           Crack LeetCode Together with Your{' '}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#4ade80] to-[#38dac5]">
-            Crew
-          </span>
-          .
+          <span className="text-[#3fb950]">Crew</span>.
         </h1>
 
         {/* Hero Subtitle */}
-        <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed mb-3 text-balance">
+        <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed mb-6 text-balance font-sans">
           Create collaborative practice rooms, post daily challenges, receive live sync notifications, and compete on leaderboards.
         </p>
 
-        {/* Central Auth / Action Card (Level 2 Glassmorphic) */}
+        {/* Central Auth / Action Card */}
         {!isLoggedIn ? (
-          <div className="w-full max-w-sm sm:max-w-md bg-[#111827]/70 backdrop-blur-xl border border-slate-800 rounded-xl p-4 sm:p-5 shadow-2xl relative glow-effect text-left">
-            <div className="flex justify-between items-center mb-3 pb-2.5 border-b border-slate-800">
+          <div className="w-full max-w-md bg-[#161b22] border border-[#30363d] rounded-xl p-5 shadow-xl text-left">
+            <div className="flex justify-between items-center mb-3.5 pb-2.5 border-b border-[#30363d]">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#4ade80]" />
-                <h2 className="text-sm sm:text-base font-semibold text-white font-sans">Sign In with LeetCode</h2>
+                <ShieldCheck className="w-4 h-4 text-[#3fb950]" />
+                <h2 className="text-sm font-semibold text-white font-sans">Sign In with LeetCode</h2>
               </div>
-              <span className="text-[11px] font-mono text-slate-400">Step 1 to Access</span>
+              <span className="text-xs text-slate-400 font-mono">Step 1 to Access</span>
             </div>
 
-            <form onSubmit={handleHeroLogin} className="space-y-2.5 sm:space-y-3">
+            <form onSubmit={handleHeroLogin} className="space-y-3">
               {/* Username Input */}
               <div className="space-y-1">
-                <label className="text-[11px] font-mono text-slate-400 block" htmlFor="username">
+                <label className="text-xs text-slate-400 font-medium block" htmlFor="username">
                   LeetCode Username / Handle
                 </label>
                 <div className="relative group">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-xs font-mono text-slate-500 group-focus-within:text-[#4ade80] transition-colors">@</span>
+                    <span className="text-xs font-mono text-slate-500 group-focus-within:text-[#3fb950] transition-colors">@</span>
                   </span>
                   <input
                     id="username"
@@ -221,19 +229,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                       setLoginError('');
                     }}
                     placeholder="e.g. tourist or neal_wu"
-                    className="w-full bg-[#111827] border border-slate-800 text-white text-xs sm:text-sm font-mono rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-[#4ade80] focus:ring-1 focus:ring-[#4ade80] transition-all placeholder-slate-600"
+                    className="w-full bg-[#0d1117] border border-[#30363d] text-white text-xs sm:text-sm font-mono rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-[#3fb950] transition-all placeholder-slate-600"
                   />
                 </div>
               </div>
 
               {/* Password Input */}
               <div className="space-y-1">
-                <label className="text-[11px] font-mono text-slate-400 block" htmlFor="password">
+                <label className="text-xs text-slate-400 font-medium block" htmlFor="password">
                   Password
                 </label>
                 <div className="relative group">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="w-3.5 h-3.5 text-slate-500 group-focus-within:text-[#4ade80] transition-colors" />
+                    <Lock className="w-3.5 h-3.5 text-slate-500 group-focus-within:text-[#3fb950] transition-colors" />
                   </span>
                   <input
                     id="password"
@@ -244,7 +252,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                       setLoginError('');
                     }}
                     placeholder="Enter password"
-                    className="w-full bg-[#111827] border border-slate-800 text-white text-xs sm:text-sm font-mono rounded-lg pl-8 pr-9 py-2 focus:outline-none focus:border-[#4ade80] focus:ring-1 focus:ring-[#4ade80] transition-all placeholder-slate-600"
+                    className="w-full bg-[#0d1117] border border-[#30363d] text-white text-xs sm:text-sm rounded-lg pl-8 pr-9 py-2 focus:outline-none focus:border-[#3fb950] transition-all placeholder-slate-600"
                   />
                   <button
                     type="button"
@@ -257,43 +265,46 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
               </div>
 
               {loginError && (
-                <div className="text-[11px] text-rose-400 bg-rose-950/40 p-2 rounded-lg border border-rose-500/30 leading-relaxed">
+                <div className="text-xs text-rose-400 bg-rose-950/40 p-2.5 rounded-lg border border-rose-500/30 leading-relaxed font-sans">
                   {loginError}
                 </div>
               )}
 
               {/* Actions */}
-              <div className="flex gap-2 pt-0.5">
-                <button
+              <div className="flex gap-2 pt-1">
+                <Button
+                  variant="primary"
+                  size="md"
                   type="submit"
                   disabled={loginLoading}
-                  className="flex-1 bg-[#4ade80] hover:bg-[#6bfb9a] text-[#0A0E12] font-semibold text-xs sm:text-sm py-2 px-3 sm:px-4 rounded-lg transition-colors flex justify-center items-center gap-1.5 group shadow-md shadow-emerald-500/20"
+                  className="flex-1"
+                  leftIcon={loginLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <LogIn className="w-3.5 h-3.5" />}
                 >
-                  {loginLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <LogIn className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />}
-                  <span>{loginLoading ? 'Verifying...' : 'Sign In & Enter'}</span>
-                </button>
-                <button
+                  {loginLoading ? 'Verifying...' : 'Sign In & Enter'}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="md"
                   type="button"
                   onClick={() => {
                     setAuthDefaultRegister(false);
                     setIsAuthOpen(true);
                   }}
-                  className="px-3 py-2 rounded-lg border border-slate-800 hover:bg-slate-800 transition-colors text-white font-medium text-xs whitespace-nowrap"
                 >
-                  More Options
-                </button>
+                  More
+                </Button>
               </div>
             </form>
 
-            <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex justify-between items-center text-[11px] sm:text-xs">
-              <span className="text-slate-400 font-mono">New to LeetTracker?</span>
+            <div className="mt-3.5 pt-2.5 border-t border-[#30363d] flex justify-between items-center text-xs">
+              <span className="text-slate-400">New to LeetTracker?</span>
               <button
                 type="button"
                 onClick={() => {
                   setAuthDefaultRegister(true);
                   setIsAuthOpen(true);
                 }}
-                className="text-[#4ade80] hover:text-[#6bfb9a] transition-colors font-medium hover:underline font-mono"
+                className="text-[#3fb950] hover:underline font-medium font-mono"
               >
                 Create Profile
               </button>
@@ -301,232 +312,208 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
           </div>
         ) : (
           /* Post-login Room Controls */
-          <div className="w-full max-w-sm sm:max-w-md bg-[#111827]/70 backdrop-blur-xl border border-slate-800 rounded-xl p-4 sm:p-5 shadow-2xl relative glow-effect text-left space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
-              <div className="flex items-center gap-2">
+          <div className="w-full max-w-md bg-[#161b22] border border-[#30363d] rounded-xl p-5 shadow-xl text-left space-y-3.5">
+            <div className="flex items-center justify-between border-b border-[#30363d] pb-3">
+              <div className="flex items-center gap-2.5">
                 <img
                   src={currentUser.avatar}
                   alt=""
-                  className="w-7 h-7 rounded-full object-cover border-2 border-emerald-500/60"
+                  className="w-8 h-8 rounded-full object-cover border border-[#30363d]"
                 />
                 <div>
-                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 font-sans">
                     {currentUser.name}
-                    <span className="bg-emerald-500/20 text-[#4ade80] text-[9px] px-1.5 py-0.2 rounded border border-emerald-500/30">
+                    <span className="bg-[#2ea043]/20 text-[#3fb950] text-[10px] px-1.5 py-0.2 rounded border border-[#2ea043]/30 font-mono">
                       Logged In
                     </span>
                   </div>
                   {currentUser.username && (
-                    <div className="text-[10px] text-cyan-400 font-mono">@{currentUser.username}</div>
+                    <div className="text-xs text-cyan-400 font-mono">@{currentUser.username}</div>
                   )}
                 </div>
               </div>
 
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={handleEnter}
-                className="bg-[#4ade80] hover:bg-[#6bfb9a] text-[#0A0E12] font-bold text-xs px-3 py-1 rounded-lg transition-colors flex items-center gap-1 shadow-md shadow-emerald-500/20"
+                rightIcon={<ArrowRight className="w-3 h-3" />}
               >
-                Enter Workspace <ArrowRight className="w-3 h-3" />
-              </button>
+                Workspace
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button
+              <Button
+                variant="primary"
+                size="md"
                 onClick={() => setIsCreateOpen(true)}
-                className="w-full bg-[#4ade80] hover:bg-[#6bfb9a] text-[#0A0E12] font-bold text-xs py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors shadow-md shadow-emerald-500/20"
+                className="w-full"
+                leftIcon={<Plus className="w-3.5 h-3.5" />}
               >
-                <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                Create New Room
-              </button>
+                Create Room
+              </Button>
 
-              <form onSubmit={handleQuickJoin} className="flex gap-1">
-                <input
-                  type="text"
-                  maxLength={8}
-                  value={roomCode}
-                  onChange={(e) => {
-                    setRoomCode(e.target.value.toUpperCase());
-                    setJoinError('');
-                  }}
-                  placeholder="Code (7X9K2P)"
-                  className="w-full bg-[#111827] border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono tracking-wider text-cyan-400 uppercase focus:outline-none focus:border-[#4ade80]"
-                />
-                <button
-                  type="submit"
-                  className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1 shrink-0 transition-colors"
-                >
-                  <LogIn className="w-3.5 h-3.5 text-cyan-400" />
-                  Join
-                </button>
-              </form>
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => setIsJoinOpen(true)}
+                className="w-full"
+                leftIcon={<Users className="w-3.5 h-3.5" />}
+              >
+                Join with Code
+              </Button>
             </div>
 
+            {/* Quick Code Join Form */}
+            <form onSubmit={handleQuickJoin} className="flex gap-2 pt-1">
+              <input
+                type="text"
+                value={roomCode}
+                onChange={(e) => {
+                  setRoomCode(e.target.value.toUpperCase());
+                  setJoinError('');
+                }}
+                placeholder="CODE (e.g. 7X9K2P)"
+                maxLength={8}
+                className="flex-1 bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-1.5 text-xs text-white font-mono uppercase tracking-wider focus:outline-none focus:border-[#3fb950] placeholder-slate-600"
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                type="submit"
+                rightIcon={<ArrowRight className="w-3 h-3" />}
+              >
+                Join
+              </Button>
+            </form>
+
             {joinError && (
-              <p className="text-[11px] text-rose-400 bg-rose-950/40 p-2 rounded-lg border border-rose-500/30 text-left">
-                {joinError}
-              </p>
+              <p className="text-xs text-rose-400 font-sans">{joinError}</p>
             )}
 
-            {/* Official Daily Fetcher */}
-            <div className="pt-1 border-t border-slate-800/80 flex items-center justify-end gap-2 text-[11px]">
+            {/* Daily Challenge Live Fetcher */}
+            <div className="pt-2 border-t border-[#30363d] flex justify-between items-center text-xs">
               <button
+                type="button"
                 onClick={handleFetchDailyPreview}
                 disabled={loadingDaily}
-                className="text-slate-400 hover:text-cyan-400 font-medium flex items-center gap-1 transition-colors"
+                className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1.5 font-mono"
               >
-                <Zap className="w-3 h-3 text-cyan-400" />
-                {loadingDaily ? 'Fetching...' : "Fetch Today's Official Daily"}
+                {loadingDaily ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                <span>Fetch Today's Official Daily</span>
               </button>
             </div>
 
             {quickDaily && (
-              <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-lg p-2 text-left text-xs text-emerald-300 flex items-center justify-between">
-                <div className="truncate mr-2">
-                  <span className="font-bold text-white truncate">{quickDaily.title}</span> ({quickDaily.difficulty})
+              <div className="p-3 bg-[#0d1117] border border-[#30363d] rounded-lg text-xs space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-white truncate max-w-[200px]">{quickDaily.title}</span>
+                  <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+                    quickDaily.difficulty === 'Hard' ? 'text-rose-400 border-rose-500/30' :
+                    quickDaily.difficulty === 'Medium' ? 'text-amber-400 border-amber-500/30' :
+                    'text-[#3fb950] border-[#2ea043]/30'
+                  }`}>
+                    {quickDaily.difficulty}
+                  </span>
                 </div>
-                <a
-                  href={quickDaily.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="bg-[#4ade80] text-[#0A0E12] px-2 py-0.5 rounded font-bold text-[10px] hover:bg-[#6bfb9a] shrink-0"
-                >
-                  Solve
-                </a>
+                <div className="text-[10px] text-slate-500 font-mono">Date: {quickDaily.date}</div>
               </div>
             )}
           </div>
         )}
       </main>
 
-      {/* Bottom Feature Bar */}
-      <footer className="w-full border-t border-slate-800/80 bg-[#101418]/60 backdrop-blur-md mt-auto hidden md:block shrink-0 py-4 px-6">
-        <div className="max-w-5xl mx-auto flex justify-around items-center">
-          <div className="flex items-center gap-3 group">
-            <Sparkles className="w-4 h-4 text-slate-400 group-hover:text-[#4ade80] transition-colors" />
-            <span className="text-xs font-mono text-slate-400 group-hover:text-white transition-colors">
-              Official LeetCode Daily Sync
-            </span>
+      {/* Feature Highlights Footer Bar */}
+      <footer className="relative z-10 border-t border-[#30363d] py-3 px-4 sm:px-6 bg-[#161b22]/80 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-around gap-4 text-xs text-slate-400">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-[#3fb950]" />
+            <span className="font-medium font-sans">Official LeetCode Daily Sync</span>
           </div>
-          <div className="w-px h-6 bg-slate-800" />
-          <div className="flex items-center gap-3 group">
-            <Bell className="w-4 h-4 text-slate-400 group-hover:text-[#4ade80] transition-colors" />
-            <span className="text-xs font-mono text-slate-400 group-hover:text-white transition-colors">
-              Real-time Inter-Tab Broadcast
-            </span>
+          <div className="flex items-center gap-2">
+            <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
+            <span className="font-medium font-sans">Real-time Inter-Tab Broadcast</span>
           </div>
-          <div className="w-px h-6 bg-slate-800" />
-          <div className="flex items-center gap-3 group">
-            <Flame className="w-4 h-4 text-slate-400 group-hover:text-[#4ade80] transition-colors" />
-            <span className="text-xs font-mono text-slate-400 group-hover:text-white transition-colors">
-              Live Rankings &amp; Fire Streaks
-            </span>
+          <div className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-[#d29922]" />
+            <span className="font-medium font-sans">Live Rankings &amp; Fire Streaks</span>
           </div>
         </div>
       </footer>
 
-      {/* Interactive Tour Modal */}
-      {tourStep !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setTourStep(null)} />
+      {/* Modals */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        defaultRegisterMode={authDefaultRegister}
+        onSuccess={handleEnter}
+      />
+      <CreateRoomModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSuccess={handleEnter}
+      />
+      <JoinRoomModal
+        isOpen={isJoinOpen}
+        onClose={() => setIsJoinOpen(false)}
+        onSuccess={handleEnter}
+      />
 
-          <div className="relative w-full max-w-md glass-panel bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5 sm:p-6 z-10 space-y-3.5 mx-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#4ade80]" />
-                <h3 className="font-bold text-base text-white">How LeetTracker Works</h3>
-              </div>
-              <button onClick={() => setTourStep(null)} className="text-slate-400 hover:text-white p-1 rounded-lg">
-                <X className="w-4 h-4" />
-              </button>
+      {/* Tour / Walkthrough Modal */}
+      {tourStep !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 max-w-lg w-full space-y-4 shadow-2xl relative text-left">
+            <button
+              onClick={() => setTourStep(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#21262d]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-2 pb-2 border-b border-[#30363d]">
+              <Sparkles className="w-4 h-4 text-[#3fb950]" />
+              <h3 className="font-bold text-sm sm:text-base text-white font-sans">How LeetTracker Works</h3>
             </div>
 
-            {tourStep === 1 && (
-              <div className="space-y-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-[#4ade80] flex items-center justify-center font-bold text-lg">
-                  1
+            <div className="space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
+              <div className="flex gap-3">
+                <span className="w-6 h-6 rounded-full bg-[#2ea043]/20 text-[#3fb950] flex items-center justify-center font-bold font-mono text-xs shrink-0">1</span>
+                <div>
+                  <strong className="text-white">Create or Join a Practice Room:</strong>
+                  <p className="text-xs text-slate-400 mt-0.5">Start a private group with friends or your study circle using an invite code.</p>
                 </div>
-                <h4 className="font-bold text-sm sm:text-base text-white">Sign In with Your LeetCode Handle</h4>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Connect your LeetCode handle to auto-sync your problem solving statistics and verify daily submissions.
-                </p>
               </div>
-            )}
 
-            {tourStep === 2 && (
-              <div className="space-y-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-lg">
-                  2
+              <div className="flex gap-3">
+                <span className="w-6 h-6 rounded-full bg-[#2ea043]/20 text-[#3fb950] flex items-center justify-center font-bold font-mono text-xs shrink-0">2</span>
+                <div>
+                  <strong className="text-white">Schedule Daily DSA Challenges:</strong>
+                  <p className="text-xs text-slate-400 mt-0.5">Auto-fetch today's official LeetCode challenge or post custom practice problems.</p>
                 </div>
-                <h4 className="font-bold text-sm sm:text-base text-white">Create or Join a Practice Room</h4>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Start your own practice room or enter an invite code (like <code className="text-cyan-400 font-mono">7X9K2P</code>) to collaborate with teammates.
-                </p>
               </div>
-            )}
 
-            {tourStep === 3 && (
-              <div className="space-y-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-lg">
-                  3
+              <div className="flex gap-3">
+                <span className="w-6 h-6 rounded-full bg-[#2ea043]/20 text-[#3fb950] flex items-center justify-center font-bold font-mono text-xs shrink-0">3</span>
+                <div>
+                  <strong className="text-white">Solve, Verify &amp; Review Solutions:</strong>
+                  <p className="text-xs text-slate-400 mt-0.5">Submit your solution, earn points, track streaks, and review teammates' code.</p>
                 </div>
-                <h4 className="font-bold text-sm sm:text-base text-white">Solve, Post &amp; Climb Leaderboard</h4>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Post daily problems or auto-fetch the official challenge, submit solutions, earn points, and build daily streaks!
-                </p>
               </div>
-            )}
+            </div>
 
-            <div className="pt-3 flex items-center justify-between border-t border-slate-800">
-              <div className="flex gap-1">
-                {[1, 2, 3].map((step) => (
-                  <span
-                    key={step}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      tourStep === step ? 'w-5 bg-[#4ade80]' : 'bg-slate-700'
-                    }`}
-                  />
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                {tourStep < 3 ? (
-                  <button
-                    onClick={() => setTourStep(tourStep + 1)}
-                    className="bg-[#4ade80] hover:bg-[#6bfb9a] text-[#0A0E12] font-bold text-xs px-3.5 py-1.5 rounded-lg flex items-center gap-1"
-                  >
-                    Next <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setTourStep(null);
-                      if (isLoggedIn) {
-                        handleEnter();
-                      } else {
-                        setIsAuthOpen(true);
-                      }
-                    }}
-                    className="bg-[#4ade80] hover:bg-[#6bfb9a] text-[#0A0E12] font-bold text-xs px-3.5 py-1.5 rounded-lg flex items-center gap-1"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    {isLoggedIn ? 'Enter Workspace' : 'Sign In Now'}
-                  </button>
-                )}
-              </div>
+            <div className="pt-2 flex justify-end">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setTourStep(null)}
+              >
+                Got It, Let's Practice!
+              </Button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Modals */}
-      <CreateRoomModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} onSuccess={onEnterRoom} />
-      <JoinRoomModal isOpen={isJoinOpen} onClose={() => setIsJoinOpen(false)} onSuccess={onEnterRoom} />
-      <AuthModal
-        isOpen={isAuthOpen}
-        defaultRegisterMode={authDefaultRegister}
-        onClose={() => setIsAuthOpen(false)}
-        onSuccess={onEnterRoom}
-      />
     </div>
   );
 };
