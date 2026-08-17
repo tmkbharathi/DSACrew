@@ -31,7 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen = false,
   onMobileClose,
 }) => {
-  const { activeRoom, currentUser, isAdmin, deleteRoom, removeMember } = useApp();
+  const { activeRoom, currentUser, isHost, deleteRoom, removeMember } = useApp();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDesktopMembersOpen, setIsDesktopMembersOpen] = useState(true);
@@ -120,11 +120,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span>Invite</span>
           </button>
 
-          {isAdmin && (
+          {isHost && (
             <button
               onClick={() => setShowDeleteConfirm(true)}
               className="bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 p-1.5 rounded-lg border border-rose-500/20 transition-colors flex items-center justify-center shrink-0"
-              title="Delete Active Room (Admin)"
+              title="Delete Active Room (Host)"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -186,7 +186,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <Flame className="w-3 h-3 text-[#ea580c] fill-[#ea580c]" />
                     <span className="text-[11px] font-bold text-[#ea580c] font-mono">{member.streak}d</span>
 
-                    {(activeRoom.creatorId === currentUser.id || currentUser.role === 'Admin' || isAdmin) && member.id !== currentUser.id && (
+                    {isHost && member.id !== currentUser.id && (
                       <button
                         onClick={() => removeMember(activeRoom.id, member.id)}
                         className="p-1 text-slate-500 hover:text-rose-400 rounded transition-colors ml-0.5"

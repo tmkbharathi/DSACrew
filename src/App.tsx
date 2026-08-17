@@ -48,8 +48,24 @@ export const App = () => {
   const activeProblem =
     activeRoom.dailyProblems.find((p) => p.id === activeRoom.activeProblemId) || activeRoom.dailyProblems[0];
 
-  const bestStreak = Math.max(currentUser.streak, 12);
   const isGoalComplete = currentUser.solvedToday;
+
+  // Dynamically calculate metrics from actual room submissions
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - now.getDay());
+  weekStart.setHours(0, 0, 0, 0);
+
+  const pointsThisWeek = activeRoom.dailyProblems.reduce((sum, p) => {
+    const pDate = new Date(p.date + 'T00:00:00');
+    const userSub = p.submissions.find((s) => s.userId === currentUser.id);
+    if (pDate >= weekStart && userSub) {
+      return sum + (p.difficulty === 'Hard' ? 100 : p.difficulty === 'Medium' ? 60 : 30);
+    }
+    return sum;
+  }, 0);
+
+  const roomSolvesCount = currentUser.roomSolvedCount ?? currentUser.solvedCount ?? 0;
 
   return (
     <div className="min-h-screen bg-[#101418] text-[#e0e2e8] flex flex-col font-sans selection:bg-[#4ade80]/20 selection:text-[#4ade80]">
@@ -81,7 +97,7 @@ export const App = () => {
                     {currentUser.streak} {currentUser.streak === 1 ? 'day' : 'days'}
                   </div>
                   <div className="text-[10px] font-mono text-slate-500 truncate mt-0.5">
-                    Best: {bestStreak} days
+                    Current: {currentUser.streak}d
                   </div>
                 </div>
               </div>
@@ -99,7 +115,7 @@ export const App = () => {
                     {currentUser.points} pts
                   </div>
                   <div className="text-[10px] font-mono text-slate-500 truncate mt-0.5">
-                    This week: +{isGoalComplete ? 30 : 0}
+                    This week: +{pointsThisWeek} pts
                   </div>
                 </div>
               </div>
@@ -111,13 +127,13 @@ export const App = () => {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider font-semibold">
-                    Solved
+                    Room Solves
                   </div>
                   <div className="text-base sm:text-lg font-bold text-[#4ade80] font-sans truncate leading-tight mt-0.5">
-                    {currentUser.solvedCount}
+                    {roomSolvesCount}
                   </div>
                   <div className="text-[10px] font-mono text-slate-500 truncate mt-0.5">
-                    This month: +{Math.min(currentUser.solvedCount, 14)}
+                    {currentUser.leetcodeTotalSolved ? `LeetCode: ${currentUser.leetcodeTotalSolved}` : 'Room Problems'}
                   </div>
                 </div>
               </div>
@@ -145,7 +161,7 @@ export const App = () => {
                   <div className={`text-[10px] font-mono truncate mt-0.5 ${
                     isGoalComplete ? 'text-[#4ade80]' : 'text-slate-500'
                   }`}>
-                    {isGoalComplete ? 'Completed today ✓' : 'Not started'}
+                    {isGoalComplete ? 'Completed today' : 'Not started'}
                   </div>
                 </div>
               </div>

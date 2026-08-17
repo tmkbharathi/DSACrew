@@ -9,7 +9,10 @@ export interface User {
   systemRole: 'SuperAdmin' | 'User'; // System role
   points: number;
   streak: number;
-  solvedCount: number;
+  solvedCount: number; // Solved in LeetTracker rooms
+  roomSolvedCount?: number;
+  leetcodeTotalSolved?: number; // Lifetime solves on LeetCode.com
+  lastSolvedDate?: string; // YYYY-MM-DD
   solvedToday: boolean;
   joinedAt: string;
   joinedRoomIds?: string[];
@@ -20,6 +23,7 @@ export interface AuthCredential {
   userId: string;
   username: string;
   passwordHash: string;
+  salt: string;
   createdAt: string;
 }
 
@@ -47,7 +51,7 @@ export interface Submission {
   memoryMb?: string;
   notes?: string;
   submittedAt: string;
-  verifiedLeetCode?: boolean;
+  verifiedLeetCode: boolean;
 }
 
 export interface Problem {

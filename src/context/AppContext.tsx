@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import confetti from 'canvas-confetti';
 import type { Room, User, Problem, Submission, Notification, Difficulty, AuthCredential } from '../types';
@@ -82,8 +82,18 @@ function safeGetStorage<T>(key: string, fallback: T): T {
   }
 }
 
-// Modern WebCrypto SHA-256 password hashing with salt
-async function hashSecret(password: string, salt = 'leettracker_salt_2026'): Promise<string> {
+// Generate random salt for per-user cryptographic hashing
+function generateSalt(): string {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const array = new Uint8Array(16);
+    crypto.getRandomValues(array);
+    return Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+}
+
+// WebCrypto SHA-256 password hashing with per-user salt
+async function hashSecretWithSalt(password: string, salt: string): Promise<string> {
   if (typeof crypto !== 'undefined' && crypto.subtle) {
     try {
       const encoder = new TextEncoder();
@@ -96,13 +106,13 @@ async function hashSecret(password: string, salt = 'leettracker_salt_2026'): Pro
     }
   }
 
-  // Fallback hash
   let hash = 0;
-  for (let i = 0; i < password.length; i++) {
-    hash = ((hash << 5) - hash) + password.charCodeAt(i);
+  const combo = `${salt}:${password}:${salt}`;
+  for (let i = 0; i < combo.length; i++) {
+    hash = ((hash << 5) - hash) + combo.charCodeAt(i);
     hash |= 0;
   }
-  return `h_${Math.abs(hash).toString(16)}_${password.length}`;
+  return `sha_fallback_${Math.abs(hash).toString(16)}`;
 }
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -139,7 +149,56 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     currentUser.isLoggedIn && currentUser.username && currentUser.username.trim().length > 0
   );
 
+  // Daily rollover evaluation for streak and solvedToday
+  const checkDailyRollover = useCallback(() => {
+    if (!currentUser || !currentUser.username) return;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const lastSolved = currentUser.lastSolvedDate;
+
+    if (!lastSolved) {
+      if (currentUser.solvedToday) {
+        setCurrentUser((prev) => ({ ...prev, solvedToday: false, streak: 0 }));
+      }
+      return;
+    }
+
+    if (lastSolved === todayStr) {
+      if (!currentUser.solvedToday) {
+        setCurrentUser((prev) => ({ ...prev, solvedToday: true }));
+      }
+    } else {
+      const todayDate = new Date(todayStr);
+      const lastDate = new Date(lastSolved);
+      const diffTime = Math.abs(todayDate.getTime() - lastDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 1) {
+        // Solved yesterday, streak intact for today
+        if (currentUser.solvedToday) {
+          setCurrentUser((prev) => ({ ...prev, solvedToday: false }));
+        }
+      } else if (diffDays > 1) {
+        // Streak broken
+        if (currentUser.solvedToday || currentUser.streak > 0) {
+          setCurrentUser((prev) => ({ ...prev, solvedToday: false, streak: 0 }));
+        }
+      }
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    checkDailyRollover();
+    const onFocus = () => checkDailyRollover();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [checkDailyRollover]);
+
   const logout = () => {
+    if (isSupabaseConfigured && supabase) {
+      supabase.auth.signOut().catch(() => {});
+    }
+
     const unlogged: User = {
       ...INITIAL_CURRENT_USER,
       isLoggedIn: false,
@@ -200,7 +259,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (e) {}
   }, [authVault]);
 
-  // Synchronize profile updates strictly in rooms where currentUser is already an existing member
+  // Synchronize profile updates strictly in rooms where currentUser is an existing member
   useEffect(() => {
     if (!currentUser.id || !isLoggedIn) return;
 
@@ -229,6 +288,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               m.points !== currentUser.points ||
               m.streak !== currentUser.streak ||
               m.solvedToday !== currentUser.solvedToday ||
+              m.roomSolvedCount !== currentUser.roomSolvedCount ||
+              m.solvedCount !== currentUser.solvedCount ||
               m.role !== role
             ) {
               changed = true;
@@ -248,7 +309,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   }, [currentUser, isLoggedIn]);
 
-  // Auto-fetch today's official daily challenge from LeetCode on initial room mount
+  // Initial load: fetch official daily challenge if active room is empty
   useEffect(() => {
     const initDailyProblem = async () => {
       if (activeRoom && activeRoom.dailyProblems.length === 0) {
@@ -298,6 +359,50 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (isSupabaseConfigured && supabase) {
       const client = supabase;
 
+      // Load initial rooms from Supabase
+      client.from('rooms').select('*').then(({ data: cloudRooms, error }) => {
+        if (!error && cloudRooms && cloudRooms.length > 0) {
+          const parsedRooms: Room[] = cloudRooms.map((row: any) => row.data || row);
+          setRooms(parsedRooms);
+        }
+      });
+
+      // Load initial notifications from Supabase
+      client.from('notifications').select('*').limit(30).then(({ data: cloudNotifs, error }) => {
+        if (!error && cloudNotifs && cloudNotifs.length > 0) {
+          const parsedNotifs: Notification[] = cloudNotifs.map((row: any) => row.data || row);
+          setNotifications(parsedNotifs);
+        }
+      });
+
+      // Supabase Auth listener
+      const { data: authListener } = client.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          const email = session.user.email || '';
+          const handle = session.user.user_metadata?.username || email.split('@')[0];
+          const stats = await fetchLeetCodeProfile(handle);
+          const cloudUser: User = {
+            id: session.user.id,
+            name: session.user.user_metadata?.name || stats?.realName || handle,
+            username: handle,
+            avatar: stats?.avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80`,
+            role: 'Member',
+            systemRole: 'User',
+            points: 0,
+            streak: 0,
+            solvedCount: 0,
+            roomSolvedCount: 0,
+            leetcodeTotalSolved: stats?.totalSolved || 0,
+            solvedToday: false,
+            joinedAt: new Date().toISOString().split('T')[0],
+            isLoggedIn: true,
+          };
+          setCurrentUser(cloudUser);
+        } else if (event === 'SIGNED_OUT') {
+          setCurrentUser(INITIAL_CURRENT_USER);
+        }
+      });
+
       const roomChannel = client
         .channel('public:rooms')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, (payload) => {
@@ -325,6 +430,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         .subscribe();
 
       return () => {
+        authListener.subscription.unsubscribe();
         client.removeChannel(roomChannel);
         client.removeChannel(notifChannel);
       };
@@ -361,9 +467,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             id: room.id,
             name: room.name,
             code: room.code,
-            description: room.description,
+            description: room.description || '',
             creator_id: room.creatorId,
-            target_daily_goal: room.targetDailyGoal,
+            target_daily_goal: room.targetDailyGoal || 1,
             data: room,
             updated_at: new Date().toISOString(),
           });
@@ -405,8 +511,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
       gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
       osc.connect(gain);
@@ -439,7 +545,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         username: stats.username,
         name: stats.realName || currentUser.name || stats.username,
         avatar: stats.avatar || currentUser.avatar,
-        solvedCount: stats.totalSolved,
+        leetcodeTotalSolved: stats.totalSolved,
       });
       return true;
     }
@@ -467,7 +573,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const cleanLower = clean.toLowerCase();
 
-    // Check auth vault for registered credentials
+    // If Supabase is configured, use Supabase Auth
+    if (isSupabaseConfigured && supabase) {
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: `${cleanLower}@leettracker.internal`,
+        password: cleanPassword,
+      });
+
+      if (authError || !authData.user) {
+        return { success: false, message: authError?.message || 'Invalid credentials in Supabase Auth.' };
+      }
+    }
+
+    // Check local auth vault for registered credentials
     const credential = authVault.find((c) => c.username.toLowerCase() === cleanLower);
 
     if (!credential) {
@@ -477,8 +595,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
     }
 
-    // Verify SHA-256 password hash
-    const inputHash = await hashSecret(cleanPassword);
+    // Verify SHA-256 password hash with per-user salt
+    const inputHash = await hashSecretWithSalt(cleanPassword, credential.salt || 'leettracker_salt_2026');
     if (inputHash !== credential.passwordHash) {
       return { success: false, message: 'Incorrect password. Please verify and try again.' };
     }
@@ -498,6 +616,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           points: 0,
           streak: 0,
           solvedCount: 0,
+          roomSolvedCount: 0,
           solvedToday: false,
           joinedAt: credential.createdAt.split('T')[0],
           isLoggedIn: true,
@@ -510,7 +629,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       fetchLeetCodeProfile(loggedUser.username).then((stats) => {
         if (stats) {
           updateCurrentUser({
-            solvedCount: stats.totalSolved,
+            leetcodeTotalSolved: stats.totalSolved,
             avatar: stats.avatar || loggedUser.avatar,
             name: stats.realName || loggedUser.name,
           });
@@ -553,8 +672,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!lcStats) {
       return {
         success: false,
-        message: `LeetCode handle "@${cleanUsername}" does not exist on LeetCode. Please check spelling or verify your public profile exists on leetcode.com.`,
+        message: `LeetCode handle "@${cleanUsername}" does not exist on LeetCode. Please check spelling or verify your public profile on leetcode.com.`,
       };
+    }
+
+    // If Supabase is configured, sign up via Supabase Auth
+    if (isSupabaseConfigured && supabase) {
+      await supabase.auth.signUp({
+        email: `${cleanLower}@leettracker.internal`,
+        password: cleanPassword,
+        options: {
+          data: {
+            name: cleanName,
+            username: cleanUsername,
+          },
+        },
+      });
     }
 
     const newUser: User = {
@@ -566,17 +699,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       systemRole: 'User',
       points: 0,
       streak: 0,
-      solvedCount: lcStats.totalSolved,
+      solvedCount: 0,
+      roomSolvedCount: 0,
+      leetcodeTotalSolved: lcStats.totalSolved,
       solvedToday: false,
       joinedAt: new Date().toISOString().split('T')[0],
       isLoggedIn: true,
     };
 
-    const passwordHash = await hashSecret(cleanPassword);
+    const userSalt = generateSalt();
+    const passwordHash = await hashSecretWithSalt(cleanPassword, userSalt);
     const newCred: AuthCredential = {
       userId: newUser.id,
       username: newUser.username,
       passwordHash,
+      salt: userSalt,
       createdAt: new Date().toISOString(),
     };
 
@@ -853,6 +990,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const targetProblem = activeRoom?.dailyProblems.find((p) => p.id === problemId);
     const existingSubmission = targetProblem?.submissions.find((s) => s.userId === currentUser.id);
     const isFirstSubmission = !existingSubmission;
+    const todayStr = new Date().toISOString().split('T')[0];
 
     let earnedPoints = 50;
     if (targetProblem) {
@@ -875,21 +1013,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       memoryMb: data.memoryMb || undefined,
       notes: data.notes,
       submittedAt: existingSubmission ? existingSubmission.submittedAt : 'Just now',
-      verifiedLeetCode: data.verifiedLeetCode !== false,
+      verifiedLeetCode: data.verifiedLeetCode === true,
     };
 
-    // ANTI-FARMING: Only award points & increment solvedCount on the FIRST submission!
+    // ANTI-FARMING: Only award points & increment room solved count on the FIRST submission!
     let updatedUser = currentUser;
     if (isFirstSubmission) {
       const newStreak = currentUser.solvedToday ? currentUser.streak : currentUser.streak + 1;
       const newPoints = currentUser.points + earnedPoints;
-      const newSolvedCount = currentUser.solvedCount + 1;
+      const newRoomSolved = (currentUser.roomSolvedCount || 0) + 1;
 
       updatedUser = {
         ...currentUser,
         points: newPoints,
         streak: newStreak,
-        solvedCount: newSolvedCount,
+        roomSolvedCount: newRoomSolved,
+        solvedCount: newRoomSolved,
+        lastSolvedDate: todayStr,
         solvedToday: true,
       };
       setCurrentUser(updatedUser);

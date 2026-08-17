@@ -5,12 +5,10 @@ import { Trophy, Flame, Zap, ShieldCheck, UserPlus, Users, UserX } from 'lucide-
 import { Button } from '../ui/Button';
 
 export const LeaderboardTable: React.FC = () => {
-  const { activeRoom, currentUser, removeMember, isAdmin } = useApp();
+  const { activeRoom, currentUser, removeMember, isHost } = useApp();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   if (!activeRoom) return null;
-
-  const isHost = activeRoom.creatorId === currentUser.id || currentUser.role === 'Admin' || isAdmin;
 
   // Sort members by Points descending, then Streak descending
   const sortedMembers = [...activeRoom.members].sort((a, b) => {
@@ -144,11 +142,11 @@ export const LeaderboardTable: React.FC = () => {
                       </span>
                     </td>
 
-                    {/* Problems Solved */}
+                    {/* Problems Solved in Room */}
                     <td className="py-3 px-3 text-center">
-                      <span className="text-xs font-bold text-[#4ade80] flex items-center justify-center gap-1 font-mono">
+                      <span className="text-xs font-bold text-[#4ade80] flex items-center justify-center gap-1 font-mono" title={member.leetcodeTotalSolved ? `Room Solves (LeetCode Total: ${member.leetcodeTotalSolved})` : 'Room Solves'}>
                         <Zap className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
-                        {member.solvedCount}
+                        {member.roomSolvedCount ?? member.solvedCount ?? 0}
                       </span>
                     </td>
 

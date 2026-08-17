@@ -392,7 +392,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
                 <span className="text-slate-600">•</span>
                 <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
                   <Percent className="w-3 h-3 text-slate-500" />
-                  Acceptance: 49.8%
+                  Acceptance: {activeProblem.difficulty === 'Easy' ? '68.4%' : activeProblem.difficulty === 'Medium' ? '51.2%' : '38.6%'}
                 </span>
               </div>
 

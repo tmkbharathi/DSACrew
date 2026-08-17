@@ -13,7 +13,7 @@ export const supabase = isSupabaseConfigured
 /**
  * SQL Schema script to run in Supabase SQL Editor if creating a Supabase backend:
  * 
- * CREATE TABLE rooms (
+ * CREATE TABLE IF NOT EXISTS rooms (
  *   id TEXT PRIMARY KEY,
  *   name TEXT NOT NULL,
  *   code TEXT UNIQUE NOT NULL,
@@ -21,10 +21,11 @@ export const supabase = isSupabaseConfigured
  *   creator_id TEXT,
  *   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
  *   target_daily_goal INT DEFAULT 1,
- *   data JSONB NOT NULL
+ *   data JSONB NOT NULL,
+ *   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
  * );
  * 
- * CREATE TABLE notifications (
+ * CREATE TABLE IF NOT EXISTS notifications (
  *   id TEXT PRIMARY KEY,
  *   room_id TEXT NOT NULL,
  *   data JSONB NOT NULL,

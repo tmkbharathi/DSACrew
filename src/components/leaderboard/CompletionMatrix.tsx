@@ -7,7 +7,9 @@ export const CompletionMatrix: React.FC = () => {
 
   if (!activeRoom || activeRoom.dailyProblems.length === 0) return null;
 
-  const problems = activeRoom.dailyProblems.slice(0, 5);
+  const problems = [...activeRoom.dailyProblems]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
 
   return (
     <div className="bg-[#1c2024] border border-[#3d4a3e] rounded-2xl p-4 sm:p-6 space-y-4 shadow-lg">
