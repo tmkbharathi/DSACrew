@@ -26,6 +26,8 @@ export const MOCK_ROOMS: Room[] = [
     code: '7X9K2P',
     description: 'Collaborative daily practice room. Auto-fetch the official daily challenge or post custom problems!',
     creatorId: 'usr_main',
+    creatorUsername: '',
+    creatorName: 'You',
     createdAt: new Date().toISOString().split('T')[0],
     targetDailyGoal: 1,
     members: [INITIAL_CURRENT_USER],

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useApp } from '../../context/AppContext';
+import { useApp, isUserHostOfRoom } from '../../context/AppContext';
 import { AuthModal } from '../auth/AuthModal';
 import { CreateRoomModal } from '../room/CreateRoomModal';
 import { JoinRoomModal } from '../room/JoinRoomModal';
@@ -25,6 +25,8 @@ import {
   LogOut,
   Flame,
   CheckCircle2,
+  Target,
+  Copy,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -34,7 +36,7 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWorkspace }) => {
-  const { currentUser, joinRoomByCode, login, logout, setToast } = useApp();
+  const { currentUser, rooms, activeRoomId, switchActiveRoom, joinRoomByCode, login, logout, setToast } = useApp();
 
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authDefaultRegister, setAuthDefaultRegister] = useState(false);
@@ -88,6 +90,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
 
     const res = joinRoomByCode(roomCode);
     if (res.success) {
+      setRoomCode('');
       handleEnter();
     } else {
       setJoinError(res.message);
@@ -152,7 +155,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                   onClick={handleEnter}
                   leftIcon={<Layers className="w-3.5 h-3.5" />}
                 >
-                  Workspace
+                  Enter Workspace
                 </Button>
                 <button
                   onClick={logout}
@@ -182,221 +185,325 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
 
       {/* Main Center Content Canvas */}
       <main className="flex-1 relative z-10 max-w-5xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center justify-center w-full py-10 sm:py-14 space-y-8">
-        <div className="space-y-3 max-w-2xl mx-auto">
-          {/* Version / Pill Badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#30363d] bg-[#161b22] shadow-sm">
-            <span className="text-xs font-mono uppercase tracking-wider text-slate-300 font-semibold">
-              REAL-TIME LEETCODE ROOMS • V1.0
-            </span>
-          </div>
-
-          {/* Hero Title */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight tracking-tight font-sans">
-            Crack LeetCode Together with Your{' '}
-            <span className="text-[#3fb950]">Crew</span>.
-          </h1>
-
-          {/* Hero Subtitle */}
-          <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed text-balance font-sans">
-            Create collaborative practice rooms, post daily challenges, sync live solutions with verified LeetCode metrics, and compete on leaderboards.
-          </p>
-        </div>
-
-        {/* Central Auth / Action Card */}
         {!isLoggedIn ? (
-          <div className="w-full max-w-md bg-[#161b22] border border-[#30363d] rounded-xl p-6 shadow-2xl text-left space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-[#30363d]">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#3fb950]" />
-                <h2 className="text-sm sm:text-base font-bold text-white font-sans">Sign In with LeetCode</h2>
+          <>
+            <div className="space-y-3 max-w-2xl mx-auto">
+              {/* Version / Pill Badge */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#30363d] bg-[#161b22] shadow-sm">
+                <span className="text-xs font-mono uppercase tracking-wider text-slate-300 font-semibold">
+                  REAL-TIME LEETCODE ROOMS • V1.0
+                </span>
               </div>
-              <span className="text-xs text-slate-300 font-medium bg-[#0d1117] px-2 py-0.5 rounded border border-[#30363d]">
-                Step 1 to Access
-              </span>
+
+              {/* Hero Title */}
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight tracking-tight font-sans">
+                Crack LeetCode Together with Your{' '}
+                <span className="text-[#3fb950]">Crew</span>.
+              </h1>
+
+              {/* Hero Subtitle */}
+              <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed text-balance font-sans">
+                Create collaborative practice rooms, post daily challenges, sync live solutions with verified LeetCode metrics, and compete on leaderboards.
+              </p>
             </div>
 
-            <form onSubmit={handleHeroLogin} className="space-y-3.5">
-              {/* Username Input */}
-              <div className="space-y-1">
-                <label className="text-xs text-slate-200 font-medium block" htmlFor="username">
-                  LeetCode Username / Handle
-                </label>
-                <div className="relative group">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-xs font-mono text-slate-400 group-focus-within:text-[#3fb950] transition-colors">@</span>
-                  </span>
-                  <input
-                    id="username"
-                    type="text"
-                    required
-                    value={loginHandleInput}
-                    onChange={(e) => {
-                      setLoginHandleInput(e.target.value);
-                      setLoginError('');
-                    }}
-                    placeholder="e.g. tourist or neal_wu"
-                    className="w-full bg-[#0d1117] border border-[#30363d] text-white text-xs sm:text-sm font-mono rounded-lg pl-8 pr-3 py-2.5 focus:outline-none focus:border-[#3fb950] transition-all placeholder-slate-500"
-                  />
+            {/* Central Auth Card */}
+            <div className="w-full max-w-md bg-[#161b22] border border-[#30363d] rounded-xl p-6 shadow-2xl text-left space-y-4">
+              <div className="flex justify-between items-center pb-3 border-b border-[#30363d]">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-[#3fb950]" />
+                  <h2 className="text-sm sm:text-base font-bold text-white font-sans">Sign In with LeetCode</h2>
                 </div>
+                <span className="text-xs text-slate-300 font-medium bg-[#0d1117] px-2 py-0.5 rounded border border-[#30363d]">
+                  Step 1 to Access
+                </span>
               </div>
 
-              {/* Password Input */}
-              <div className="space-y-1">
-                <label className="text-xs text-slate-200 font-medium block" htmlFor="password">
-                  Password
-                </label>
-                <div className="relative group">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="w-3.5 h-3.5 text-slate-400 group-focus-within:text-[#3fb950] transition-colors" />
-                  </span>
-                  <input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={loginPasswordInput}
-                    onChange={(e) => {
-                      setLoginPasswordInput(e.target.value);
-                      setLoginError('');
-                    }}
-                    placeholder="Enter password"
-                    className="w-full bg-[#0d1117] border border-[#30363d] text-white text-xs sm:text-sm rounded-lg pl-8 pr-9 py-2.5 focus:outline-none focus:border-[#3fb950] transition-all placeholder-slate-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white transition-colors"
+              <form onSubmit={handleHeroLogin} className="space-y-3.5">
+                {/* Username Input */}
+                <div className="space-y-1">
+                  <label className="text-xs text-slate-200 font-medium block" htmlFor="username">
+                    LeetCode Username / Handle
+                  </label>
+                  <div className="relative group">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-xs font-mono text-slate-400 group-focus-within:text-[#3fb950] transition-colors">@</span>
+                    </span>
+                    <input
+                      id="username"
+                      type="text"
+                      required
+                      value={loginHandleInput}
+                      onChange={(e) => {
+                        setLoginHandleInput(e.target.value);
+                        setLoginError('');
+                      }}
+                      placeholder="e.g. tourist or neal_wu"
+                      className="w-full bg-[#0d1117] border border-[#30363d] text-white text-xs sm:text-sm font-mono rounded-lg pl-8 pr-3 py-2.5 focus:outline-none focus:border-[#3fb950] transition-all placeholder-slate-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Password Input */}
+                <div className="space-y-1">
+                  <label className="text-xs text-slate-200 font-medium block" htmlFor="password">
+                    Password
+                  </label>
+                  <div className="relative group">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="w-3.5 h-3.5 text-slate-400 group-focus-within:text-[#3fb950] transition-colors" />
+                    </span>
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={loginPasswordInput}
+                      onChange={(e) => {
+                        setLoginPasswordInput(e.target.value);
+                        setLoginError('');
+                      }}
+                      placeholder="Enter password"
+                      className="w-full bg-[#0d1117] border border-[#30363d] text-white text-xs sm:text-sm rounded-lg pl-8 pr-9 py-2.5 focus:outline-none focus:border-[#3fb950] transition-all placeholder-slate-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {loginError && (
+                  <div className="text-xs text-rose-400 bg-rose-950/40 p-2.5 rounded-lg border border-rose-500/30 leading-relaxed font-sans">
+                    {loginError}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    variant="primary"
+                    size="md"
+                    type="submit"
+                    disabled={loginLoading}
+                    className="flex-1"
+                    leftIcon={loginLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <LogIn className="w-3.5 h-3.5" />}
                   >
-                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
+                    {loginLoading ? 'Verifying...' : 'Sign In & Enter'}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    type="button"
+                    onClick={() => {
+                      setAuthDefaultRegister(false);
+                      setIsAuthOpen(true);
+                    }}
+                  >
+                    More
+                  </Button>
+                </div>
+              </form>
+
+              <div className="pt-3 border-t border-[#30363d] flex justify-between items-center text-xs">
+                <span className="text-slate-300 font-sans">New to LeetTracker?</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthDefaultRegister(true);
+                    setIsAuthOpen(true);
+                  }}
+                  className="text-[#3fb950] hover:underline font-semibold font-mono"
+                >
+                  Create Profile →
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Post-login Rooms Hub / Room Selection Dashboard */
+          <div className="w-full max-w-4xl bg-[#161b22] border border-[#30363d] rounded-2xl p-6 sm:p-8 shadow-2xl text-left space-y-6">
+            {/* User Profile & Quick Actions Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#30363d]">
+              <div className="flex items-center gap-3.5">
+                <div className="relative">
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-[#2ea043]/60 shadow-md"
+                  />
+                  <div className="absolute -bottom-1 -right-1 bg-[#161b22] rounded-full p-0.5 border border-[#30363d]">
+                    <ShieldCheck className="w-4 h-4 text-[#3fb950]" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base sm:text-lg font-bold text-white font-sans">{currentUser.name}</h2>
+                    <span className="bg-[#2ea043]/20 text-[#3fb950] text-[10px] px-2 py-0.5 rounded font-mono font-bold border border-[#2ea043]/30">
+                      ONLINE
+                    </span>
+                  </div>
+                  <div className="text-xs text-cyan-400 font-mono mt-0.5">
+                    @{currentUser.username} • {currentUser.leetcodeTotalSolved ? `${currentUser.leetcodeTotalSolved} LC Solves` : 'Verified Handle'}
+                  </div>
                 </div>
               </div>
 
-              {loginError && (
-                <div className="text-xs text-rose-400 bg-rose-950/40 p-2.5 rounded-lg border border-rose-500/30 leading-relaxed font-sans">
-                  {loginError}
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex gap-2 pt-1">
+              <div className="flex items-center gap-2.5">
                 <Button
                   variant="primary"
                   size="md"
-                  type="submit"
-                  disabled={loginLoading}
-                  className="flex-1"
-                  leftIcon={loginLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <LogIn className="w-3.5 h-3.5" />}
+                  onClick={() => setIsCreateOpen(true)}
+                  leftIcon={<Plus className="w-4 h-4" />}
                 >
-                  {loginLoading ? 'Verifying...' : 'Sign In & Enter'}
+                  Create New Room
                 </Button>
                 <Button
                   variant="secondary"
                   size="md"
-                  type="button"
-                  onClick={() => {
-                    setAuthDefaultRegister(false);
-                    setIsAuthOpen(true);
-                  }}
+                  onClick={() => setIsJoinOpen(true)}
+                  leftIcon={<Users className="w-4 h-4" />}
                 >
-                  More
+                  Join Room
                 </Button>
               </div>
-            </form>
-
-            <div className="pt-3 border-t border-[#30363d] flex justify-between items-center text-xs">
-              <span className="text-slate-300 font-sans">New to LeetTracker?</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthDefaultRegister(true);
-                  setIsAuthOpen(true);
-                }}
-                className="text-[#3fb950] hover:underline font-semibold font-mono"
-              >
-                Create Profile →
-              </button>
             </div>
-          </div>
-        ) : (
-          /* Post-login Room Controls */
-          <div className="w-full max-w-md bg-[#161b22] border border-[#30363d] rounded-xl p-6 shadow-2xl text-left space-y-4">
-            <div className="flex items-center justify-between border-b border-[#30363d] pb-3">
-              <div className="flex items-center gap-2.5">
-                <img
-                  src={currentUser.avatar}
-                  alt=""
-                  className="w-9 h-9 rounded-full object-cover border border-[#30363d]"
+
+            {/* Quick Join Code Strip */}
+            <form onSubmit={handleQuickJoin} className="flex gap-2 bg-[#0d1117] p-2.5 rounded-xl border border-[#30363d]">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={roomCode}
+                  onChange={(e) => {
+                    setRoomCode(e.target.value.toUpperCase());
+                    setJoinError('');
+                  }}
+                  placeholder="ENTER ROOM CODE (e.g. 7X9K2P)"
+                  maxLength={8}
+                  className="w-full bg-transparent px-3 py-1.5 text-xs sm:text-sm text-white font-mono uppercase tracking-wider focus:outline-none placeholder-slate-500"
                 />
-                <div>
-                  <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 font-sans">
-                    {currentUser.name}
-                    <span className="bg-[#2ea043]/20 text-[#3fb950] text-[10px] px-1.5 py-0.2 rounded border border-[#2ea043]/30 font-mono">
-                      Logged In
-                    </span>
-                  </div>
-                  {currentUser.username && (
-                    <div className="text-xs text-cyan-400 font-mono">@{currentUser.username}</div>
-                  )}
-                </div>
               </div>
-
               <Button
                 variant="primary"
-                size="sm"
-                onClick={handleEnter}
-                rightIcon={<ArrowRight className="w-3 h-3" />}
-              >
-                Workspace
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <Button
-                variant="primary"
-                size="md"
-                onClick={() => setIsCreateOpen(true)}
-                className="w-full"
-                leftIcon={<Plus className="w-3.5 h-3.5" />}
-              >
-                Create Room
-              </Button>
-
-              <Button
-                variant="secondary"
-                size="md"
-                onClick={() => setIsJoinOpen(true)}
-                className="w-full"
-                leftIcon={<Users className="w-3.5 h-3.5" />}
-              >
-                Join with Code
-              </Button>
-            </div>
-
-            {/* Quick Code Join Form */}
-            <form onSubmit={handleQuickJoin} className="flex gap-2 pt-1">
-              <input
-                type="text"
-                value={roomCode}
-                onChange={(e) => {
-                  setRoomCode(e.target.value.toUpperCase());
-                  setJoinError('');
-                }}
-                placeholder="INVITE CODE (e.g. 7X9K2P)"
-                maxLength={8}
-                className="flex-1 bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white font-mono uppercase tracking-wider focus:outline-none focus:border-[#3fb950] placeholder-slate-500"
-              />
-              <Button
-                variant="secondary"
                 size="sm"
                 type="submit"
-                rightIcon={<ArrowRight className="w-3 h-3" />}
+                rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
               >
-                Join
+                Join by Code
               </Button>
             </form>
+            {joinError && <p className="text-xs text-rose-400 font-sans -mt-3 pl-2">{joinError}</p>}
 
-            {joinError && (
-              <p className="text-xs text-rose-400 font-sans">{joinError}</p>
-            )}
+            {/* All Practice Rooms Section */}
+            <div className="space-y-3 pt-1">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-[#3fb950]" />
+                  <h3 className="text-sm sm:text-base font-bold text-white font-sans">
+                    Your Practice Rooms ({rooms.length})
+                  </h3>
+                </div>
+                <span className="text-xs text-slate-400 font-sans">Click any room card to open workspace</span>
+              </div>
+
+              {/* Rooms Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {rooms.map((room) => {
+                  const isHost = isUserHostOfRoom(room, currentUser);
+                  const isActive = room.id === activeRoomId;
+                  const todayProblem = room.dailyProblems.find(
+                    (p) => p.date === new Date().toISOString().split('T')[0]
+                  ) || room.dailyProblems[0];
+
+                  return (
+                    <div
+                      key={room.id}
+                      onClick={() => {
+                        switchActiveRoom(room.id);
+                        handleEnter();
+                      }}
+                      className={`bg-[#0d1117] hover:bg-[#161b22] border rounded-xl p-4.5 cursor-pointer transition-all space-y-3 group shadow-md hover:border-slate-500 ${
+                        isActive ? 'border-[#2ea043]/50 ring-1 ring-[#2ea043]/30' : 'border-[#30363d]'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-sm sm:text-base text-white font-sans truncate group-hover:text-[#3fb950] transition-colors">
+                              {room.name}
+                            </h4>
+                            {isHost ? (
+                              <span className="bg-purple-500/20 text-purple-300 text-[10px] px-1.5 py-0.2 rounded font-bold border border-purple-500/30 font-mono shrink-0">
+                                HOST
+                              </span>
+                            ) : (
+                              <span className="bg-slate-800 text-slate-300 text-[10px] px-1.5 py-0.2 rounded font-mono shrink-0 border border-slate-700">
+                                MEMBER
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-400 line-clamp-1 mt-1 font-sans">
+                            {room.description || 'Collaborative daily practice room.'}
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(room.code);
+                            setToast({
+                              title: 'Code Copied! 📋',
+                              message: `Room code ${room.code} copied to clipboard.`,
+                              type: 'info',
+                            });
+                          }}
+                          className="bg-[#21262d] hover:bg-[#30363d] text-slate-200 font-mono text-[11px] px-2 py-0.5 rounded border border-[#30363d] flex items-center gap-1 shrink-0 transition-colors"
+                          title="Copy Room Invite Code"
+                          aria-label="Copy Room Code"
+                        >
+                          <span>{room.code}</span>
+                          <Copy className="w-3 h-3 text-slate-400" />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-slate-400 border-t border-[#30363d]/60 pt-2.5">
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5 text-slate-400" />
+                            <strong className="text-slate-200 font-sans">{room.members.length}</strong> {room.members.length === 1 ? 'member' : 'members'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Target className="w-3.5 h-3.5 text-[#3fb950]" />
+                            <strong className="text-slate-200 font-sans">{room.targetDailyGoal || 1}</strong>/day
+                          </span>
+                        </div>
+
+                        <span className="text-[#3fb950] font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs font-sans">
+                          Enter Room <ArrowRight className="w-3 h-3" />
+                        </span>
+                      </div>
+
+                      {todayProblem && (
+                        <div className="bg-[#161b22] px-2.5 py-1.5 rounded-lg border border-[#30363d] text-[11px] flex items-center justify-between">
+                          <span className="text-slate-300 truncate max-w-[200px] font-sans">
+                            Challenge: <strong className="text-white">{todayProblem.title}</strong>
+                          </span>
+                          <span className={`font-mono font-semibold ${
+                            todayProblem.difficulty === 'Hard' ? 'text-rose-400' :
+                            todayProblem.difficulty === 'Medium' ? 'text-amber-400' :
+                            'text-[#3fb950]'
+                          }`}>
+                            {todayProblem.difficulty}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* Daily Challenge Live Fetcher */}
             <div className="pt-2 border-t border-[#30363d] flex justify-between items-center text-xs">
@@ -407,15 +514,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                 className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1.5 font-mono font-medium"
               >
                 {loadingDaily ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                <span>Fetch Today's Official Daily</span>
+                <span>Fetch Today's Official Daily Challenge</span>
               </button>
             </div>
 
             {quickDaily && (
-              <div className="p-3 bg-[#0d1117] border border-[#30363d] rounded-lg text-xs space-y-1">
+              <div className="p-3.5 bg-[#0d1117] border border-[#30363d] rounded-xl text-xs space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-white truncate max-w-[200px] font-sans">{quickDaily.title}</span>
-                  <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+                  <span className="font-semibold text-white truncate max-w-[240px] font-sans">{quickDaily.title}</span>
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
                     quickDaily.difficulty === 'Hard' ? 'text-rose-400 border-rose-500/30' :
                     quickDaily.difficulty === 'Medium' ? 'text-amber-400 border-amber-500/30' :
                     'text-[#3fb950] border-[#2ea043]/30'
@@ -423,7 +530,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                     {quickDaily.difficulty}
                   </span>
                 </div>
-                <div className="text-[10px] text-slate-400 font-mono">Date: {quickDaily.date}</div>
+                <div className="text-[10px] text-slate-400 font-mono">Scheduled: {quickDaily.date}</div>
               </div>
             )}
           </div>

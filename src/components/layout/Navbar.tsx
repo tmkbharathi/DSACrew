@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useApp } from '../../context/AppContext';
+import { useApp, isUserHostOfRoom } from '../../context/AppContext';
 import {
   Bell,
   Volume2,
@@ -36,8 +36,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
     rooms,
     switchActiveRoom,
     unreadCount,
-    isAdmin,
-    isHost,
     soundEnabled,
     setSoundEnabled,
     resetToDefault,
@@ -75,13 +73,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
     r.name.toLowerCase().includes(roomSearch.toLowerCase())
   );
 
-  const isRoomHost = isHost || Boolean(
-    activeRoom && (
-      activeRoom.creatorId === currentUser.id ||
-      activeRoom.creatorId === 'usr_main' ||
-      activeRoom.members.some((m) => (m.id === currentUser.id || (currentUser.username && m.username?.toLowerCase() === currentUser.username?.toLowerCase())) && m.role === 'Admin')
-    )
-  );
+  const isRoomHost = isUserHostOfRoom(activeRoom, currentUser);
 
   return (
     <>
@@ -175,7 +167,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
                           <span className="truncate">{room.name}</span>
                         </div>
 
-                        {isAdmin && rooms.length > 1 && (
+                        {isUserHostOfRoom(room, currentUser) && rooms.length > 1 && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

@@ -77,6 +77,8 @@ export interface Room {
   code: string;
   description: string;
   creatorId: string;
+  creatorUsername?: string;
+  creatorName?: string;
   createdAt: string;
   targetDailyGoal: number;
   members: User[];

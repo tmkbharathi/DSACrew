@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useApp } from '../../context/AppContext';
+import { useApp, isUserHostOfRoom } from '../../context/AppContext';
 import { InviteModal } from '../room/InviteModal';
 import {
   LayoutDashboard,
@@ -190,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {uniqueMembers.map((member) => {
               const status = getMemberStatus(member.id);
               const isCurrent = member.id === currentUser.id || (currentUser.username && member.username?.toLowerCase() === currentUser.username?.toLowerCase());
-              const memberIsHost = member.id === activeRoom.creatorId || member.role === 'Admin';
+              const memberIsHost = isUserHostOfRoom(activeRoom, member);
 
               return (
                 <div

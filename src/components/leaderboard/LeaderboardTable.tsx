@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useApp } from '../../context/AppContext';
+import { useApp, isUserHostOfRoom } from '../../context/AppContext';
 import { InviteModal } from '../room/InviteModal';
 import { Trophy, Flame, Zap, ShieldCheck, UserPlus, Users, UserX, ExternalLink } from 'lucide-react';
 import { Button } from '../ui/Button';
@@ -91,7 +91,7 @@ export const LeaderboardTable: React.FC = () => {
             <tbody className="divide-y divide-[#30363d]/60 font-sans">
               {sortedMembers.map((member, idx) => {
                 const isCurrent = member.id === currentUser.id || (currentUser.username && member.username?.toLowerCase() === currentUser.username?.toLowerCase());
-                const memberIsHost = member.id === activeRoom.creatorId || member.role === 'Admin';
+                const memberIsHost = isUserHostOfRoom(activeRoom, member);
 
                 return (
                   <tr

@@ -69,6 +69,29 @@ const LOCAL_STORAGE_KEY = 'leettracker_state_v2';
 const LOCAL_STORAGE_KEY_AUTH = 'leettracker_auth_vault';
 const BROADCAST_CHANNEL_NAME = 'leettracker_realtime_channel';
 
+export const normalizeHandle = (value?: string) => value?.trim().toLowerCase() || '';
+
+export const isUserHostOfRoom = (room?: Room, user?: User): boolean => {
+  if (!room || !user) return false;
+  if (user.systemRole === 'SuperAdmin') return true;
+
+  const userHandle = normalizeHandle(user.username);
+  const creatorHandle = normalizeHandle(room.creatorUsername);
+
+  if (creatorHandle && userHandle && creatorHandle === userHandle) {
+    return true;
+  }
+
+  if (room.creatorId && (room.creatorId === user.id || room.creatorId === 'usr_main')) {
+    return true;
+  }
+
+  const member = room.members?.find(
+    (m) => m.id === user.id || (userHandle && normalizeHandle(m.username) === userHandle)
+  );
+  return member?.role === 'Admin';
+};
+
 // Helper to safely parse LocalStorage JSON
 function safeGetStorage<T>(key: string, fallback: T): T {
   try {
@@ -215,20 +238,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const activeRoom = rooms.find((r) => r.id === activeRoomId) || rooms[0];
   const unreadCount = notifications.filter((n) => !n.read && n.roomId === activeRoomId).length;
-
   // Real room-scoped administrator / host detection
-  const isHost = Boolean(
-    activeRoom && (
-      activeRoom.creatorId === currentUser.id ||
-      activeRoom.creatorId === 'usr_main' ||
-      activeRoom.members.some(
-        (m) =>
-          (m.id === currentUser.id || (currentUser.username && m.username?.toLowerCase() === currentUser.username?.toLowerCase())) &&
-          m.role === 'Admin'
-      ) ||
-      currentUser.systemRole === 'SuperAdmin'
-    )
-  );
+  const isHost = isUserHostOfRoom(activeRoom, currentUser);
   const isAdmin = isHost;
 
   // Persist state to LocalStorage
@@ -269,22 +280,35 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setRooms((prevRooms) => {
       let changed = false;
       const updated = prevRooms.map((room) => {
-        const creatorId = (room.creatorId === 'usr_main' || room.creatorId === currentUser.id)
-          ? currentUser.id
-          : room.creatorId;
+        const currentUsername = normalizeHandle(currentUser.username);
+        const adminMember = (room.members || []).find((m) => m.role === 'Admin' && m.id !== 'usr_main');
+        const roomCreatorUsername = normalizeHandle(room.creatorUsername);
+        const currentUserOwnsLegacyRoom =
+          room.creatorId === 'usr_main' ||
+          room.creatorId === currentUser.id ||
+          Boolean(currentUsername && roomCreatorUsername === currentUsername) ||
+          Boolean(currentUsername && !roomCreatorUsername && adminMember && normalizeHandle(adminMember.username) === currentUsername);
+
+        const creatorId = currentUserOwnsLegacyRoom ? currentUser.id : room.creatorId;
+        const creatorUsername = currentUserOwnsLegacyRoom
+          ? currentUser.username
+          : room.creatorUsername || adminMember?.username || '';
+        const creatorName = currentUserOwnsLegacyRoom
+          ? currentUser.name
+          : room.creatorName || adminMember?.name || '';
 
         // Deduplicate members list by username / id
         const memberMap = new Map<string, User>();
         (room.members || []).forEach((m) => {
           if (m.id === 'usr_alex' || m.id === 'usr_sarah' || m.id === 'usr_david') return;
-          const key = (m.username || m.name || m.id).toLowerCase();
+          const key = normalizeHandle(m.username || m.name || m.id);
 
           if (
             m.id === currentUser.id ||
-            (currentUser.username && m.username?.toLowerCase() === currentUser.username.toLowerCase()) ||
+            (currentUsername && normalizeHandle(m.username) === currentUsername) ||
             (m.id === 'usr_main')
           ) {
-            const role = creatorId === currentUser.id ? 'Admin' : m.role;
+            const role = creatorId === currentUser.id || Boolean(currentUsername && normalizeHandle(creatorUsername) === currentUsername) ? 'Admin' : m.role;
             memberMap.set('current_user_key', { ...currentUser, id: currentUser.id, role });
           } else if (!memberMap.has(key)) {
             memberMap.set(key, m);
@@ -300,12 +324,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (
           dedupedMembers.length !== (room.members || []).length ||
           room.creatorId !== creatorId ||
+          room.creatorUsername !== creatorUsername ||
+          room.creatorName !== creatorName ||
           dedupedMembers.some((dm, i) => dm !== room.members[i])
         ) {
           changed = true;
           return {
             ...room,
             creatorId,
+            creatorUsername,
+            creatorName,
             members: dedupedMembers,
           };
         }
