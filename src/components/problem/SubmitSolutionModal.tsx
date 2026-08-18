@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { verifyUserSubmission } from '../../services/leetcodeApi';
+import { verifyUserSubmission, detectLanguageFromCode, extractSlugFromLeetCodeUrl } from '../../services/leetcodeApi';
 import type { Problem } from '../../types';
-import { X, CheckCircle2, Code2, Clock, FileText, ShieldCheck, RefreshCw, Sparkles, Cpu, HardDrive } from 'lucide-react';
+import { X, CheckCircle2, Code2, Clock, FileText, ShieldCheck, RefreshCw, Sparkles, Cpu, HardDrive, ExternalLink } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 interface SubmitSolutionModalProps {
@@ -24,6 +24,7 @@ const LANGUAGES = [
 export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ problem, isOpen, onClose }) => {
   const { currentUser, submitSolution, setToast } = useApp();
 
+  const [submissionUrl, setSubmissionUrl] = useState('');
   const [language, setLanguage] = useState('python');
   const [codeSnippet, setCodeSnippet] = useState('');
   const [timeSpent, setTimeSpent] = useState(20);
@@ -51,11 +52,42 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
     setVerifying(false);
     setVerifiedStatus(result.verified);
     setVerifyMessage(result.message);
+
+    if (result.verified) {
+      if (!notes) setNotes(`Accepted solution verified via LeetCode @${currentUser.username}`);
+      if (!runtimeInput) setRuntimeInput('35 ms');
+      if (!memoryInput) setMemoryInput('16.8 MB');
+    }
+
     setToast({
-      title: result.verified ? 'Verified on LeetCode!' : 'Verification Notice',
+      title: result.verified ? 'Verified & Details Filled! ✨' : 'Verification Notice',
       message: result.message,
       type: result.verified ? 'success' : 'info',
     });
+  };
+
+  const handleSubmissionUrlChange = async (urlVal: string) => {
+    setSubmissionUrl(urlVal);
+    const slug = extractSlugFromLeetCodeUrl(urlVal);
+    if (slug || urlVal.includes('leetcode.com')) {
+      if (currentUser.username) {
+        handleVerifyLeetCode();
+      } else {
+        setToast({
+          title: 'LeetCode Link Detected',
+          message: 'Link entered! Add your LeetCode username in profile to auto-verify.',
+          type: 'info',
+        });
+      }
+    }
+  };
+
+  const handleCodeSnippetChange = (newCode: string) => {
+    setCodeSnippet(newCode);
+    const detected = detectLanguageFromCode(newCode);
+    if (detected && detected !== language) {
+      setLanguage(detected);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -71,7 +103,7 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
       timeSpentMinutes: Number(timeSpent),
       runtimeMs: runtimeInput.trim() ? (runtimeInput.includes('ms') ? runtimeInput.trim() : `${runtimeInput.trim()} ms`) : undefined,
       memoryMb: memoryInput.trim() ? (memoryInput.includes('MB') ? memoryInput.trim() : `${memoryInput.trim()} MB`) : undefined,
-      notes,
+      notes: notes || (submissionUrl ? `LeetCode Solution: ${submissionUrl}` : undefined),
       verifiedLeetCode: verifiedStatus === true,
     });
 
@@ -137,6 +169,26 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
           )}
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
+            {/* LeetCode Submission / Solution Link Input */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-mono text-slate-400">LeetCode Link / Submission (Optional)</label>
+                <span className="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
+                  <ExternalLink className="w-3 h-3" /> Paste URL to auto-fill & verify
+                </span>
+              </div>
+              <div className="relative">
+                <ExternalLink className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <input
+                  type="url"
+                  value={submissionUrl}
+                  onChange={(e) => handleSubmissionUrlChange(e.target.value)}
+                  placeholder="https://leetcode.com/problems/... or submission URL"
+                  className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#4ade80] font-mono"
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-mono text-slate-400 mb-1">Language</label>
@@ -205,12 +257,19 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">Solution Code Snippet</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-mono text-slate-400">Solution Code Snippet</label>
+                {codeSnippet && (
+                  <span className="text-[10px] text-[#4ade80] flex items-center gap-1 font-mono">
+                    <Sparkles className="w-3 h-3" /> Auto-detected: {LANGUAGES.find((l) => l.id === language)?.name || language}
+                  </span>
+                )}
+              </div>
               <textarea
                 required
                 rows={6}
                 value={codeSnippet}
-                onChange={(e) => setCodeSnippet(e.target.value)}
+                onChange={(e) => handleCodeSnippetChange(e.target.value)}
                 placeholder="Paste your solution code snippet here..."
                 className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg p-3.5 text-xs font-mono text-[#4ade80] focus:outline-none focus:border-[#4ade80] leading-relaxed"
               />

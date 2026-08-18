@@ -23,6 +23,7 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
+import { fetchLeetCodeDaily } from '../../services/leetcodeApi';
 import type { Problem } from '../../types';
 
 interface DailyProblemHeroProps {
@@ -68,12 +69,13 @@ const RANDOM_BANK = [
 ];
 
 export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: initialProblem }) => {
-  const { currentUser, activeRoom, deleteProblem, postDailyProblem, setToast, isHost } = useApp();
+  const { currentUser, activeRoom, deleteProblem, postDailyProblem, setActiveProblemId, setToast, isHost } = useApp();
 
   const getTodayStr = () => new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState<string>(initialProblem?.date || getTodayStr());
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [isPostOpen, setIsPostOpen] = useState(false);
+  const [loadingDailyFetch, setLoadingDailyFetch] = useState(false);
   const [selectedCodeSnippet, setSelectedCodeSnippet] = useState<{ name: string; code: string; lang: string } | null>(null);
   const [isCardHidden, setIsCardHidden] = useState<boolean>(() => {
     try {
@@ -97,13 +99,18 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
     });
   };
 
-  const isAdmin = isHost;
   const todayStr = getTodayStr();
 
-  // Find problem matching selectedDate
+  // Find all problems matching selectedDate
+  const problemsOnDate = activeRoom?.dailyProblems.filter((p) => p.date === selectedDate) || [];
   const activeProblem =
-    activeRoom?.dailyProblems.find((p) => p.date === selectedDate) ||
+    problemsOnDate.find((p) => p.id === activeRoom?.activeProblemId) ||
+    problemsOnDate[0] ||
     (selectedDate === todayStr ? initialProblem : undefined);
+
+  const canDeleteProblem = Boolean(
+    activeProblem && (isHost || activeProblem.postedBy.id === currentUser.id)
+  );
 
   // Generate 7-day strip
   const getDateStrip = () => {
@@ -127,6 +134,31 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + 1);
     setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
+  const handleFetchOfficialDaily = async () => {
+    setLoadingDailyFetch(true);
+    try {
+      const daily = await fetchLeetCodeDaily();
+      if (daily && daily.title) {
+        postDailyProblem({
+          title: daily.title,
+          url: daily.url,
+          difficulty: daily.difficulty,
+          tags: daily.tags,
+          date: selectedDate,
+        });
+        setToast({
+          title: 'LeetCode Daily Added!',
+          message: `Added "${daily.title}" (${daily.difficulty}) to ${formatDisplayDate(selectedDate)}`,
+          type: 'success',
+        });
+      }
+    } catch (e) {
+      setToast({ title: 'Error', message: 'Could not fetch official LeetCode daily.', type: 'warning' });
+    } finally {
+      setLoadingDailyFetch(false);
+    }
   };
 
   const handleQuickRandomProblem = () => {
@@ -182,8 +214,8 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
           {getDateStrip().map((dStr) => {
             const isToday = dStr === todayStr;
             const isSelected = dStr === selectedDate;
-            const probForDay = activeRoom?.dailyProblems.find((p) => p.date === dStr);
-            const userSolved = probForDay?.submissions?.some((s) => s.userId === currentUser.id);
+            const dayProblems = activeRoom?.dailyProblems.filter((p) => p.date === dStr) || [];
+            const userSolved = dayProblems.some((p) => p.submissions?.some((s) => s.userId === currentUser.id));
 
             return (
               <button
@@ -198,8 +230,11 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
                 <span className={`text-[10px] font-sans font-medium ${isSelected ? 'text-[#3fb950]' : 'text-slate-400'}`}>
                   {isToday ? 'Today' : new Date(dStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' })}
                 </span>
-                <span className="text-xs font-mono font-bold text-white">
+                <span className="text-xs font-mono font-bold text-white flex items-center gap-1">
                   {new Date(dStr + 'T00:00:00').getDate()}
+                  {dayProblems.length > 1 && (
+                    <span className="text-[9px] font-normal text-slate-400 font-mono">({dayProblems.length})</span>
+                  )}
                 </span>
 
                 {/* Solved Status Indicator Dot */}
@@ -230,7 +265,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
 
           <h3 className="text-base sm:text-lg font-bold text-white font-sans mb-1">Ready for today's challenge?</h3>
           <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto mb-4 leading-relaxed font-sans">
-            Your daily challenge for <span className="text-[#3fb950] font-semibold">{formatDisplayDate(selectedDate)}</span> hasn't been scheduled yet.
+            No challenges scheduled for <span className="text-[#3fb950] font-semibold">{formatDisplayDate(selectedDate)}</span> yet. Choose a problem or fetch today's LeetCode challenge.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-2.5">
@@ -241,6 +276,16 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
               onClick={() => setIsPostOpen(true)}
             >
               Choose Problem
+            </Button>
+
+            <Button
+              variant="secondary"
+              size="md"
+              leftIcon={<Sparkles className={`w-4 h-4 text-[#3fb950] ${loadingDailyFetch ? 'animate-spin' : ''}`} />}
+              disabled={loadingDailyFetch}
+              onClick={handleFetchOfficialDaily}
+            >
+              {loadingDailyFetch ? 'Fetching...' : 'Fetch LeetCode Daily'}
             </Button>
 
             <Button
@@ -289,6 +334,50 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
         </div>
       ) : (
         <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-5 sm:p-6 relative overflow-hidden shadow-lg space-y-4">
+          {/* Multi-Problem Selector Switcher & Add Problem Action */}
+          <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-[#30363d]">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Problems ({problemsOnDate.length}):
+            </span>
+            <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+              {problemsOnDate.map((prob, idx) => {
+                const isSelected = prob.id === activeProblem?.id;
+                const probSolved = prob.submissions?.some((s) => s.userId === currentUser.id);
+                const diffVar =
+                  prob.difficulty === 'Easy' ? 'easy' : prob.difficulty === 'Medium' ? 'medium' : 'hard';
+
+                return (
+                  <button
+                    key={prob.id}
+                    onClick={() => setActiveProblemId(prob.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                      isSelected
+                        ? 'bg-[#2ea043]/25 border border-[#2ea043]/60 text-white font-bold shadow-sm'
+                        : 'bg-[#0d1117] border border-[#30363d] text-slate-300 hover:text-white hover:border-slate-500'
+                    }`}
+                  >
+                    {probSolved && <CheckCircle2 className="w-3.5 h-3.5 text-[#3fb950]" />}
+                    <span className="truncate max-w-[120px] sm:max-w-[180px]">
+                      #{idx + 1} {prob.title}
+                    </span>
+                    <Badge variant={diffVar} size="sm">
+                      {prob.difficulty}
+                    </Badge>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setIsPostOpen(true)}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-[#3fb950] hover:text-[#4ade80] bg-[#2ea043]/10 hover:bg-[#2ea043]/20 border border-[#2ea043]/30 transition-all ml-auto shrink-0"
+              title="Add another problem for this date"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Add Problem</span>
+            </button>
+          </div>
+
           {/* Completion reward banner */}
           {isSolved && (
             <div className="bg-[#2ea043]/10 border border-[#2ea043]/30 rounded-lg px-3.5 py-2 flex items-center justify-between flex-wrap gap-2">
@@ -401,11 +490,11 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
                 </Button>
               )}
 
-              {isAdmin && (
+              {canDeleteProblem && (
                 <button
                   onClick={() => deleteProblem(activeProblem.id)}
                   className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg border border-transparent hover:border-rose-500/20 transition-all flex items-center justify-center"
-                  title="Delete Daily Challenge"
+                  title="Delete Challenge Post"
                   aria-label="Delete Challenge"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -509,6 +598,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
       <PostProblemModal
         isOpen={isPostOpen}
         onClose={() => setIsPostOpen(false)}
+        initialDate={selectedDate}
       />
     </div>
   );

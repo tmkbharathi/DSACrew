@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { fetchLeetCodeDaily } from '../../services/leetcodeApi';
+import { fetchLeetCodeDaily, fetchLeetCodeProblemDetails, extractSlugFromLeetCodeUrl } from '../../services/leetcodeApi';
 import type { Difficulty } from '../../types';
 import { Button } from '../ui/Button';
-import { X, PlusCircle, ExternalLink, RefreshCw, Tag, Calendar, Dices, Search } from 'lucide-react';
+import { X, PlusCircle, ExternalLink, RefreshCw, Tag, Calendar, Dices, Search, Sparkles, Loader2 } from 'lucide-react';
 
 interface PostProblemModalProps {
   isOpen: boolean;
@@ -40,6 +40,7 @@ export const PostProblemModal: React.FC<PostProblemModalProps> = ({ isOpen, onCl
   const [difficulty, setDifficulty] = useState<Difficulty>('Medium');
   const [tagsInput, setTagsInput] = useState('');
   const [loadingFetch, setLoadingFetch] = useState(false);
+  const [isAutoFetchingUrl, setIsAutoFetchingUrl] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -51,6 +52,33 @@ export const PostProblemModal: React.FC<PostProblemModalProps> = ({ isOpen, onCl
   }, [initialDate, isOpen]);
 
   if (!isOpen) return null;
+
+  const handleUrlChange = async (newUrl: string) => {
+    setUrl(newUrl);
+
+    const slug = extractSlugFromLeetCodeUrl(newUrl);
+    if (slug) {
+      setIsAutoFetchingUrl(true);
+      try {
+        const details = await fetchLeetCodeProblemDetails(newUrl);
+        if (details) {
+          setTitle(details.title);
+          setDifficulty(details.difficulty);
+          setTagsInput(details.tags.join(', '));
+          setUrl(details.url);
+          setToast({
+            title: 'Problem Details Auto-Filled! ✨',
+            message: `Loaded "${details.title}" (${details.difficulty}) from LeetCode`,
+            type: 'success',
+          });
+        }
+      } catch (err) {
+        console.warn('Auto fetch error on URL change:', err);
+      } finally {
+        setIsAutoFetchingUrl(false);
+      }
+    }
+  };
 
   const handleFetchOfficialDaily = async () => {
     setLoadingFetch(true);
@@ -233,7 +261,40 @@ export const PostProblemModal: React.FC<PostProblemModalProps> = ({ isOpen, onCl
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">Problem Title</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-mono text-slate-400">LeetCode URL Link</label>
+                {isAutoFetchingUrl ? (
+                  <span className="text-[10px] text-[#4ade80] flex items-center gap-1 font-mono animate-pulse">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Auto-fetching details...
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    Paste link to auto-fill
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <ExternalLink className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <input
+                  type="url"
+                  required
+                  value={url}
+                  onChange={(e) => handleUrlChange(e.target.value)}
+                  placeholder="https://leetcode.com/problems/..."
+                  className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#4ade80] font-mono"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-mono text-slate-400">Problem Title</label>
+                {title && (
+                  <span className="text-[10px] text-[#4ade80] flex items-center gap-1 font-mono">
+                    <Sparkles className="w-3 h-3" /> Auto-filled
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 required
@@ -242,21 +303,6 @@ export const PostProblemModal: React.FC<PostProblemModalProps> = ({ isOpen, onCl
                 placeholder="e.g. Two Sum"
                 className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#4ade80]"
               />
-            </div>
-
-            <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">LeetCode URL Link</label>
-              <div className="relative">
-                <ExternalLink className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
-                <input
-                  type="url"
-                  required
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://leetcode.com/problems/..."
-                  className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#4ade80] font-mono"
-                />
-              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

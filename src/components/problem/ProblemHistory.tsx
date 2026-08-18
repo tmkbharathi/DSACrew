@@ -21,8 +21,6 @@ export const ProblemHistory: React.FC = () => {
     );
   }
 
-  const isAdmin = isHost;
-
   const filteredProblems = activeRoom.dailyProblems.filter((prob) => {
     const matchesSearch =
       prob.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -166,7 +164,7 @@ export const ProblemHistory: React.FC = () => {
                     <ExternalLink className="w-4 h-4" />
                   </a>
 
-                  {isAdmin && (
+                  {(isHost || prob.postedBy.id === currentUser.id) && (
                     <button
                       onClick={() => deleteProblem(prob.id)}
                       className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg border border-transparent hover:border-rose-500/20 transition-all"

@@ -116,6 +116,115 @@ export async function fetchLeetCodeDaily(): Promise<LeetCodeDailyChallenge> {
 }
 
 /**
+ * Extracts a problem slug from a LeetCode problem or submission URL or raw slug string
+ */
+export function extractSlugFromLeetCodeUrl(input: string): string | null {
+  if (!input) return null;
+  const trimmed = input.trim();
+
+  // Pattern: https://leetcode.com/problems/two-sum/...
+  const matchProblem = trimmed.match(/leetcode\.com\/problems\/([^/?#]+)/i);
+  if (matchProblem && matchProblem[1]) {
+    return matchProblem[1].toLowerCase();
+  }
+
+  // Pattern: problems/two-sum/...
+  const matchShort = trimmed.match(/^problems\/([^/?#]+)/i);
+  if (matchShort && matchShort[1]) {
+    return matchShort[1].toLowerCase();
+  }
+
+  // If already a valid slug format (e.g. "two-sum", "3sum")
+  if (/^[a-z0-9]+(-[a-z0-9]+)*$/i.test(trimmed)) {
+    return trimmed.toLowerCase();
+  }
+
+  return null;
+}
+
+/**
+ * Automatically fetches LeetCode problem details (title, difficulty, tags, canonical URL) by URL or slug
+ */
+export async function fetchLeetCodeProblemDetails(slugOrUrl: string): Promise<{
+  title: string;
+  titleSlug: string;
+  difficulty: Difficulty;
+  tags: string[];
+  url: string;
+} | null> {
+  const extractedSlug = extractSlugFromLeetCodeUrl(slugOrUrl);
+  const slug = extractedSlug || slugOrUrl.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  if (!slug) return null;
+
+  const query = `
+    query getQuestionDetail($titleSlug: String!) {
+      question(titleSlug: $titleSlug) {
+        questionId
+        title
+        titleSlug
+        difficulty
+        topicTags {
+          name
+        }
+      }
+    }
+  `;
+
+  try {
+    const data = await executeLeetCodeGraphQL(query, { titleSlug: slug });
+    const q = data?.data?.question;
+    if (q && q.title) {
+      const difficulty = (q.difficulty as Difficulty) || 'Medium';
+      const tags = Array.isArray(q.topicTags) && q.topicTags.length > 0
+        ? q.topicTags.map((t: { name: string }) => t.name)
+        : ['Algorithms'];
+
+      return {
+        title: q.title,
+        titleSlug: q.titleSlug || slug,
+        difficulty,
+        tags,
+        url: `https://leetcode.com/problems/${q.titleSlug || slug}/`,
+      };
+    }
+  } catch (err) {
+    console.warn('GraphQL error fetching question details:', err);
+  }
+
+  // Fallback heuristic: format title from slug
+  const formattedTitle = slug
+    .split('-')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+  if (!formattedTitle) return null;
+
+  return {
+    title: formattedTitle,
+    titleSlug: slug,
+    difficulty: 'Medium',
+    tags: ['Algorithms'],
+    url: `https://leetcode.com/problems/${slug}/`,
+  };
+}
+
+/**
+ * Automatically detects language from code snippet text
+ */
+export function detectLanguageFromCode(code: string): string {
+  const trimmed = code.trim();
+  if (/def\s+\w+\s*\(|import\s+sys|class\s+Solution:\s*\n\s*def/i.test(trimmed)) return 'python';
+  if (/#include\s+<iostream>|#include\s+<vector>|std::/i.test(trimmed)) return 'cpp';
+  if (/public\s+class\s+Solution|public\s+static\s+void\s+main|System\.out\.println/i.test(trimmed)) return 'java';
+  if (/interface\s+\w+|type\s+\w+\s*=|:\s*(string|number|boolean)\[\]/i.test(trimmed)) return 'typescript';
+  if (/const\s+\w+\s*=\s*function|console\.log|var\s+\w+/i.test(trimmed)) return 'javascript';
+  if (/package\s+main|func\s+\w+\s*\(/i.test(trimmed)) return 'go';
+  if (/fn\s+main|impl\s+Solution|pub\s+fn/i.test(trimmed)) return 'rust';
+  return 'python';
+}
+
+/**
  * Fetches real user profile stats directly from LeetCode GraphQL
  */
 export async function fetchLeetCodeProfile(username: string): Promise<LeetCodeProfileStats | null> {

@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti';
 import type { Room, User, Problem, Submission, Notification, Difficulty, AuthCredential } from '../types';
 import { INITIAL_CURRENT_USER, INITIAL_NOTIFICATIONS } from '../data/mockData';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
-import { fetchLeetCodeDaily, fetchLeetCodeProfile } from '../services/leetcodeApi';
+import { fetchLeetCodeProfile } from '../services/leetcodeApi';
 
 interface AppContextType {
   currentUser: User;
@@ -40,6 +40,7 @@ interface AppContextType {
     targetTimeMinutes?: number;
     date?: string;
   }) => void;
+  setActiveProblemId: (problemId: string) => void;
   deleteProblem: (problemId: string) => void;
   submitSolution: (
     problemId: string,
@@ -363,50 +364,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   }, [currentUser, isLoggedIn]);
 
-  // Initial load: fetch official daily challenge if active room is empty
-  useEffect(() => {
-    const initDailyProblem = async () => {
-      if (activeRoom && activeRoom.dailyProblems.length === 0) {
-        try {
-          const daily = await fetchLeetCodeDaily();
-          if (daily && daily.title) {
-            const todayStr = new Date().toISOString().split('T')[0];
-            const autoProb: Problem = {
-              id: `prob_daily_${Date.now()}`,
-              title: daily.title,
-              url: daily.url,
-              difficulty: daily.difficulty,
-              tags: daily.tags,
-              date: daily.date || todayStr,
-              postedBy: {
-                id: 'system_leetcode',
-                name: 'LeetCode Official Daily',
-                avatar: 'https://assets.leetcode.com/static_assets/public/icons/favicon-192x192.png',
-              },
-              submissions: [],
-              comments: [],
-            };
-
-            setRooms((prev) =>
-              prev.map((r) =>
-                r.id === activeRoom.id && r.dailyProblems.length === 0
-                  ? {
-                      ...r,
-                      activeProblemId: autoProb.id,
-                      dailyProblems: [autoProb],
-                    }
-                  : r
-              )
-            );
-          }
-        } catch (e) {
-          console.warn('Could not auto-fetch official daily problem on init:', e);
-        }
-      }
-    };
-
-    initDailyProblem();
-  }, [activeRoomId]);
+  // Note: Auto-daily is disabled by default so empty rooms remain clean until a problem is chosen/posted.
 
   // Supabase Real-time Cloud Sync + Fallback to BroadcastChannel
   useEffect(() => {
@@ -970,7 +928,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return {
           ...r,
           activeProblemId: newProblem.id,
-          dailyProblems: [newProblem, ...r.dailyProblems.filter((p) => p.date !== newProblem.date)],
+          dailyProblems: [newProblem, ...r.dailyProblems],
         };
       }
       return r;
@@ -999,6 +957,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       message: `"${newProblem.title}" scheduled for ${newProblem.date}.`,
       type: 'success',
     });
+  };
+
+  const setActiveProblemId = (problemId: string) => {
+    setRooms((prev) =>
+      prev.map((r) =>
+        r.id === activeRoomId ? { ...r, activeProblemId: problemId } : r
+      )
+    );
   };
 
   const deleteProblem = (problemId: string) => {
@@ -1317,6 +1283,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         deleteRoom,
         joinRoomByCode,
         postDailyProblem,
+        setActiveProblemId,
         deleteProblem,
         submitSolution,
         addComment,
