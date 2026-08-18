@@ -44,9 +44,9 @@ export interface Submission {
   userName: string;
   userAvatar: string;
   status: 'Accepted' | 'Wrong Answer' | 'Pending';
-  language: string;
-  codeSnippet: string;
-  timeSpentMinutes: number;
+  language?: string;
+  codeSnippet?: string;
+  timeSpentMinutes?: number;
   runtimeMs?: string;
   memoryMb?: string;
   notes?: string;

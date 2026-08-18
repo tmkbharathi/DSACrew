@@ -44,10 +44,10 @@ interface AppContextType {
   deleteProblem: (problemId: string) => void;
   submitSolution: (
     problemId: string,
-    data: {
-      language: string;
-      codeSnippet: string;
-      timeSpentMinutes: number;
+    data?: {
+      language?: string;
+      codeSnippet?: string;
+      timeSpentMinutes?: number;
       runtimeMs?: string;
       memoryMb?: string;
       notes?: string;
@@ -994,10 +994,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const submitSolution = (
     problemId: string,
-    data: {
-      language: string;
-      codeSnippet: string;
-      timeSpentMinutes: number;
+    data?: {
+      language?: string;
+      codeSnippet?: string;
+      timeSpentMinutes?: number;
       runtimeMs?: string;
       memoryMb?: string;
       notes?: string;
@@ -1023,14 +1023,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       userName: currentUser.name,
       userAvatar: currentUser.avatar,
       status: 'Accepted',
-      language: data.language,
-      codeSnippet: data.codeSnippet,
-      timeSpentMinutes: data.timeSpentMinutes,
-      runtimeMs: data.runtimeMs || undefined,
-      memoryMb: data.memoryMb || undefined,
-      notes: data.notes,
+      language: data?.language || 'LeetCode',
+      codeSnippet: data?.codeSnippet || '',
+      timeSpentMinutes: data?.timeSpentMinutes ?? 15,
+      runtimeMs: data?.runtimeMs || undefined,
+      memoryMb: data?.memoryMb || undefined,
+      notes: data?.notes,
       submittedAt: existingSubmission ? existingSubmission.submittedAt : 'Just now',
-      verifiedLeetCode: data.verifiedLeetCode === true,
+      verifiedLeetCode: data?.verifiedLeetCode === true,
     };
 
     let updatedUser = currentUser;
@@ -1087,7 +1087,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         roomId: activeRoomId,
         type: 'PROBLEM_SOLVED',
         title: `${currentUser.name} solved today's challenge! 🔥`,
-        message: `Completed "${targetProblem?.title || 'Daily Problem'}" in ${data.timeSpentMinutes} mins (+${earnedPoints} pts).`,
+        message: `Completed "${targetProblem?.title || 'Daily Problem'}" (+${earnedPoints} pts).`,
         timestamp: 'Just now',
         read: false,
         authorName: currentUser.name,
@@ -1106,7 +1106,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } else {
       setToast({
         title: 'Solution Updated!',
-        message: 'Your code snippet and runtime metrics have been saved.',
+        message: 'Your submission status has been saved.',
         type: 'info',
       });
     }

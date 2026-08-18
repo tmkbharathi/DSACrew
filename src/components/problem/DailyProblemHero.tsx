@@ -612,19 +612,19 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
                       if (isSolved || isHost) {
                         setSelectedCodeSnippet({
                           name: sub.userName,
-                          code: sub.codeSnippet,
-                          lang: sub.language,
+                          code: sub.codeSnippet || sub.notes || 'Solved problem on LeetCode.',
+                          lang: sub.language || 'LeetCode',
                         });
                       } else {
                         setToast({
-                          title: 'Solve to Unlock Code Review 🔒',
-                          message: 'Submit your solution first to view teammates\' code snippets and runtime metrics.',
+                          title: 'Solve to Unlock Solution Details 🔒',
+                          message: 'Mark your solution complete first to view teammates\' submission details.',
                           type: 'info',
                         });
                       }
                     }}
                     className="relative group focus:outline-none"
-                    title={`${sub.userName} (${sub.language}) - Click to review`}
+                    title={`${sub.userName}${sub.language ? ` (${sub.language})` : ''} - Click to review`}
                   >
                     <img
                       src={sub.userAvatar}
