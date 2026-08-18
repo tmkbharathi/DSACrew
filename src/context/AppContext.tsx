@@ -72,42 +72,41 @@ const BROADCAST_CHANNEL_NAME = 'leettracker_realtime_channel';
 export const normalizeHandle = (value?: string) => value?.trim().toLowerCase() || '';
 
 export const isUserHostOfRoom = (room?: Room, user?: User): boolean => {
-  if (!room || !user) return false;
+  if (!room || !user || !user.username) return false;
   if (user.systemRole === 'SuperAdmin') return true;
 
   const userHandle = normalizeHandle(user.username);
   const creatorHandle = normalizeHandle(room.creatorUsername);
 
+  // 1. Match creator by unique LeetCode handle
   if (creatorHandle && userHandle && creatorHandle === userHandle) {
     return true;
   }
 
-  if (room.creatorId && (room.creatorId === user.id || room.creatorId === 'usr_main')) {
+  // 2. Match creator by creator ID (excluding generic placeholder ID)
+  if (room.creatorId && room.creatorId === user.id && user.id !== 'usr_main') {
     return true;
   }
 
-  const member = room.members?.find(
-    (m) => m.id === user.id || (userHandle && normalizeHandle(m.username) === userHandle)
-  );
-  return member?.role === 'Admin';
+  return false;
 };
 
 export const isUserInRoom = (room?: Room, user?: User): boolean => {
-  if (!room || !user) return false;
+  if (!room || !user || !user.isLoggedIn || !user.username) return false;
   if (user.systemRole === 'SuperAdmin') return true;
 
   const userHandle = normalizeHandle(user.username);
   const creatorHandle = normalizeHandle(room.creatorUsername);
 
-  if (room.creatorId && (room.creatorId === user.id || room.creatorId === 'usr_main')) {
+  if (creatorHandle && userHandle && creatorHandle === userHandle) {
     return true;
   }
-  if (creatorHandle && userHandle && creatorHandle === userHandle) {
+  if (room.creatorId && room.creatorId === user.id && user.id !== 'usr_main') {
     return true;
   }
 
   return (room.members || []).some(
-    (m) => m.id === user.id || (userHandle && normalizeHandle(m.username) === userHandle)
+    (m) => (m.id && m.id === user.id && user.id !== 'usr_main') || (userHandle && normalizeHandle(m.username) === userHandle)
   );
 };
 
@@ -816,10 +815,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     const newRoom: Room = {
       id: `room_${Date.now()}`,
-      name,
+      name: name.trim(),
       code,
-      description,
+      description: description.trim(),
       creatorId: currentUser.id,
+      creatorUsername: currentUser.username,
+      creatorName: currentUser.name,
       createdAt: new Date().toISOString().split('T')[0],
       targetDailyGoal,
       members: [{ ...currentUser, role: 'Admin' }],
