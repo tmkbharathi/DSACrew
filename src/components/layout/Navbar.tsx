@@ -77,8 +77,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-[#161b22] border-b border-[#30363d] px-3 sm:px-6 py-2.5 sm:py-3 transition-colors">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
+      <header className="sticky top-0 z-50 w-full bg-[#161b22] border-b border-[#30363d] px-3 sm:px-6 2xl:px-8 py-2.5 sm:py-3 transition-colors">
+        <div className="max-w-7xl xl:max-w-[1500px] 2xl:max-w-[1880px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
           {/* Brand & Room Switcher Group */}
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             {/* Mobile Menu Button */}

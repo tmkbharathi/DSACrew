@@ -265,7 +265,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* Desktop Persistent Sidebar (>= md) */}
-      <aside className="hidden md:flex w-64 bg-[#161b22] border-r border-[#30363d] flex-col overflow-hidden shrink-0">
+      <aside className="hidden md:flex w-64 xl:w-72 2xl:w-80 bg-[#161b22] border-r border-[#30363d] flex-col overflow-hidden shrink-0">
         {sidebarContent}
       </aside>
 
