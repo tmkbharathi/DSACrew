@@ -18,6 +18,7 @@ import {
   X,
   Copy,
   Check,
+  Layers,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -127,6 +128,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         <div className="flex gap-1.5 pt-0.5">
+          <button
+            onClick={() => {
+              if (typeof (window as any).__setLandingView === 'function') {
+                (window as any).__setLandingView(true);
+              }
+            }}
+            className="flex-1 bg-[#161b22] hover:bg-[#21262d] text-slate-200 border border-[#30363d] rounded-lg py-1.5 flex justify-center items-center gap-1.5 text-xs font-medium transition-colors"
+            title="Switch or Join Practice Rooms"
+          >
+            <Layers className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Rooms Hub</span>
+          </button>
+
           <button
             onClick={() => setIsInviteOpen(true)}
             className="flex-1 bg-[#161b22] hover:bg-[#21262d] text-slate-200 border border-[#30363d] rounded-lg py-1.5 flex justify-center items-center gap-1.5 text-xs font-medium transition-colors"

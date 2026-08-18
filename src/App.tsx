@@ -15,7 +15,7 @@ import { Flame, Trophy, Zap, Target } from 'lucide-react';
 export const App = () => {
   const { activeRoom, currentUser, isLoggedIn } = useApp();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [showLanding, setShowLanding] = useState(false);
+  const [showLanding, setShowLanding] = useState(true);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   // Allow global switching back to landing page overview
@@ -24,7 +24,10 @@ export const App = () => {
   if (!isLoggedIn || showLanding) {
     return (
       <LandingPage
-        onEnterRoom={() => {
+        onEnterRoom={(roomId) => {
+          if (roomId) {
+            // Room already selected via switchActiveRoom
+          }
           if (isLoggedIn) setShowLanding(false);
         }}
         onEnterWorkspace={() => {

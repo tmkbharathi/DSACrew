@@ -182,6 +182,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
                       </div>
                     ))}
                   </div>
+
+                  <div className="p-1 border-t border-[#30363d] mt-1">
+                    <button
+                      onClick={() => {
+                        if (typeof (window as any).__setLandingView === 'function') {
+                          (window as any).__setLandingView(true);
+                        }
+                        setIsRoomDropdownOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 p-2 rounded-lg text-xs font-semibold text-[#3fb950] hover:bg-[#2ea043]/15 transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Join or Create Another Room...</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

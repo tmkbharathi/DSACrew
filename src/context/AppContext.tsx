@@ -92,6 +92,25 @@ export const isUserHostOfRoom = (room?: Room, user?: User): boolean => {
   return member?.role === 'Admin';
 };
 
+export const isUserInRoom = (room?: Room, user?: User): boolean => {
+  if (!room || !user) return false;
+  if (user.systemRole === 'SuperAdmin') return true;
+
+  const userHandle = normalizeHandle(user.username);
+  const creatorHandle = normalizeHandle(room.creatorUsername);
+
+  if (room.creatorId && (room.creatorId === user.id || room.creatorId === 'usr_main')) {
+    return true;
+  }
+  if (creatorHandle && userHandle && creatorHandle === userHandle) {
+    return true;
+  }
+
+  return (room.members || []).some(
+    (m) => m.id === user.id || (userHandle && normalizeHandle(m.username) === userHandle)
+  );
+};
+
 // Helper to safely parse LocalStorage JSON
 function safeGetStorage<T>(key: string, fallback: T): T {
   try {
