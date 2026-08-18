@@ -20,6 +20,8 @@ import {
   Flame,
   CheckCircle2,
   Code,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import type { Problem } from '../../types';
 
@@ -73,6 +75,27 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [isPostOpen, setIsPostOpen] = useState(false);
   const [selectedCodeSnippet, setSelectedCodeSnippet] = useState<{ name: string; code: string; lang: string } | null>(null);
+  const [isCardHidden, setIsCardHidden] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('leettracker_hide_daily_hero');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+      return true; // Default is hidden
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleHideCard = () => {
+    setIsCardHidden((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('leettracker_hide_daily_hero', String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   const isAdmin = isHost;
   const todayStr = getTodayStr();
@@ -230,8 +253,42 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
             </Button>
           </div>
         </div>
+      ) : isCardHidden ? (
+        /* Collapsed / Hidden Challenge Strip */
+        <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-4 sm:p-4.5 flex items-center justify-between shadow-md">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#3fb950] shrink-0 animate-pulse" />
+            <div className="min-w-0 flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-medium text-slate-400 font-sans">
+                {selectedDate === todayStr ? "Today's Challenge:" : `Challenge (${formatDisplayDate(selectedDate)}):`}
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-white truncate max-w-[200px] sm:max-w-md font-sans">
+                {activeProblem.title}
+              </span>
+              <Badge variant={difficultyVariant} size="sm">
+                {activeProblem.difficulty}
+              </Badge>
+              {isSolved && (
+                <span className="bg-[#2ea043]/20 text-[#3fb950] text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-[#2ea043]/30">
+                  SOLVED
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={toggleHideCard}
+              className="flex items-center gap-1.5 text-xs text-[#3fb950] hover:text-[#4ade80] font-semibold px-3 py-1.5 rounded-xl bg-[#2ea043]/10 hover:bg-[#2ea043]/20 border border-[#2ea043]/30 transition-all shadow-sm"
+              title="Expand Challenge Details"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Show Challenge</span>
+            </button>
+          </div>
+        </div>
       ) : (
-        <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-5 sm:p-6 relative overflow-hidden shadow-lg space-y-4">
+        <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-5 sm:p-6 relative overflow-hidden shadow-lg space-y-4">
           {/* Completion reward banner */}
           {isSolved && (
             <div className="bg-[#2ea043]/10 border border-[#2ea043]/30 rounded-lg px-3.5 py-2 flex items-center justify-between flex-wrap gap-2">
@@ -265,14 +322,26 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5 relative z-10">
             <div className="min-w-0 flex-1 space-y-2.5">
               {/* Problem Metadata Header */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-medium text-slate-400">
-                  {selectedDate === todayStr ? "TODAY'S CHALLENGE" : `SCHEDULED: ${activeProblem.date}`}
-                </span>
-                <span className="text-slate-600">•</span>
-                <Badge variant={difficultyVariant} size="sm">
-                  {activeProblem.difficulty}
-                </Badge>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-medium text-slate-400">
+                    {selectedDate === todayStr ? "TODAY'S CHALLENGE" : `SCHEDULED: ${activeProblem.date}`}
+                  </span>
+                  <span className="text-slate-600">•</span>
+                  <Badge variant={difficultyVariant} size="sm">
+                    {activeProblem.difficulty}
+                  </Badge>
+                </div>
+
+                {/* Hide Card Toggle Button */}
+                <button
+                  onClick={toggleHideCard}
+                  className="px-2.5 py-1 text-slate-400 hover:text-white hover:bg-[#21262d] rounded-lg transition-colors flex items-center gap-1.5 text-xs border border-[#30363d]"
+                  title="Hide challenge card"
+                >
+                  <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Hide Card</span>
+                </button>
               </div>
 
               {/* Problem Title */}

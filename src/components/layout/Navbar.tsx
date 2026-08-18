@@ -6,14 +6,11 @@ import {
   VolumeX,
   Plus,
   Share2,
-  ChevronDown,
   UserCheck,
   ShieldCheck,
   RotateCcw,
   Sparkles,
   ExternalLink,
-  Trash2,
-  Search,
   LogOut,
   Layers,
   Menu,
@@ -33,13 +30,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
   const {
     currentUser,
     activeRoom,
-    rooms,
-    switchActiveRoom,
     unreadCount,
     soundEnabled,
     setSoundEnabled,
     resetToDefault,
-    deleteRoom,
     signOut,
   } = useApp();
 
@@ -47,20 +41,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isRoomDropdownOpen, setIsRoomDropdownOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [roomSearch, setRoomSearch] = useState('');
 
-  const roomDropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Handle outside click for dropdowns
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
-      if (roomDropdownRef.current && !roomDropdownRef.current.contains(e.target as Node)) {
-        setIsRoomDropdownOpen(false);
-      }
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setIsUserMenuOpen(false);
       }
@@ -68,10 +56,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
-
-  const filteredRooms = rooms.filter((r) =>
-    r.name.toLowerCase().includes(roomSearch.toLowerCase())
-  );
 
   const isRoomHost = isUserHostOfRoom(activeRoom, currentUser);
 
@@ -110,96 +94,23 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
               </span>
             </div>
 
-            {/* Room Switcher Dropdown */}
-            <div className="relative min-w-0" ref={roomDropdownRef}>
-              <button
-                onClick={() => setIsRoomDropdownOpen(!isRoomDropdownOpen)}
-                className="flex items-center gap-1.5 sm:gap-2 bg-[#0d1117] hover:bg-[#21262d] border border-[#30363d] rounded-lg px-2.5 sm:px-3 py-1.5 transition-colors text-left max-w-[180px] xs:max-w-[220px] sm:max-w-[280px]"
-                aria-label="Switch Practice Room"
+            {/* Active Room Indicator Pill */}
+            {activeRoom && (
+              <div
+                onClick={() => {
+                  if (typeof (window as any).__setLandingView === 'function') {
+                    (window as any).__setLandingView(true);
+                  }
+                }}
+                className="flex items-center gap-2 bg-[#0d1117] hover:bg-[#21262d] border border-[#30363d] rounded-lg px-2.5 sm:px-3 py-1.5 transition-colors cursor-pointer max-w-[160px] xs:max-w-[200px] sm:max-w-[280px]"
+                title="Active Room • Click to switch in Rooms Hub"
               >
                 <div className="w-2 h-2 rounded-full bg-[#3fb950] shrink-0 animate-pulse" />
                 <span className="font-semibold text-xs sm:text-sm text-white truncate font-sans">
-                  {activeRoom ? activeRoom.name : 'Select Room'}
+                  {activeRoom.name}
                 </span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${
-                    isRoomDropdownOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-
-              {/* Room Menu Dropdown */}
-              {isRoomDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-72 sm:w-80 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl p-2 z-50 animate-in fade-in-50 zoom-in-95">
-                  <div className="p-2 border-b border-[#30363d]">
-                    <div className="relative">
-                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-                      <input
-                        type="text"
-                        placeholder="Search rooms..."
-                        value={roomSearch}
-                        onChange={(e) => setRoomSearch(e.target.value)}
-                        className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#3fb950]"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="max-h-60 overflow-y-auto py-1 space-y-1">
-                    {filteredRooms.map((room) => (
-                      <div
-                        key={room.id}
-                        onClick={() => {
-                          switchActiveRoom(room.id);
-                          setIsRoomDropdownOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors group ${
-                          activeRoom?.id === room.id
-                            ? 'bg-[#2ea043]/15 text-[#3fb950] font-bold border border-[#2ea043]/30'
-                            : 'hover:bg-[#21262d] text-slate-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 truncate font-sans">
-                          <div
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              activeRoom?.id === room.id ? 'bg-[#3fb950]' : 'bg-slate-500'
-                            }`}
-                          />
-                          <span className="truncate">{room.name}</span>
-                        </div>
-
-                        {isUserHostOfRoom(room, currentUser) && rooms.length > 1 && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteRoom(room.id);
-                            }}
-                            className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-rose-400 rounded transition-all"
-                            title={`Delete ${room.name}`}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="p-1 border-t border-[#30363d] mt-1">
-                    <button
-                      onClick={() => {
-                        if (typeof (window as any).__setLandingView === 'function') {
-                          (window as any).__setLandingView(true);
-                        }
-                        setIsRoomDropdownOpen(false);
-                      }}
-                      className="w-full flex items-center gap-2 p-2 rounded-lg text-xs font-semibold text-[#3fb950] hover:bg-[#2ea043]/15 transition-colors"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Join or Create Another Room...</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Right Header Actions Group */}
