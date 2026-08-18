@@ -21,7 +21,7 @@ export const App = () => {
   // Allow global switching back to landing page overview
   (window as any).__setLandingView = setShowLanding;
 
-  if (!isLoggedIn || showLanding) {
+  if (!isLoggedIn || showLanding || !activeRoom) {
     return (
       <LandingPage
         onEnterRoom={(roomId) => {
@@ -34,17 +34,6 @@ export const App = () => {
           if (isLoggedIn) setShowLanding(false);
         }}
       />
-    );
-  }
-
-  if (!activeRoom) {
-    return (
-      <div className="min-h-screen bg-[#0d1117] text-white flex items-center justify-center p-4">
-        <div className="text-center space-y-3 max-w-md">
-          <h2 className="text-xl font-bold">No Active Room Found</h2>
-          <p className="text-sm text-slate-400">Please join or create a practice room to access the workspace.</p>
-        </div>
-      </div>
     );
   }
 

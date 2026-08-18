@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import type { ReactNode } from 'react';
 import confetti from 'canvas-confetti';
 import type { Room, User, Problem, Submission, Notification, Difficulty, AuthCredential } from '../types';
-import { INITIAL_CURRENT_USER, MOCK_ROOMS, INITIAL_NOTIFICATIONS } from '../data/mockData';
+import { INITIAL_CURRENT_USER, INITIAL_NOTIFICATIONS } from '../data/mockData';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
 import { fetchLeetCodeDaily, fetchLeetCodeProfile } from '../services/leetcodeApi';
 
@@ -167,13 +167,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   });
 
   const [rooms, setRooms] = useState<Room[]>(() => {
-    const loaded = safeGetStorage(`${LOCAL_STORAGE_KEY}_rooms`, MOCK_ROOMS);
-    return Array.isArray(loaded) && loaded.length > 0 ? loaded : MOCK_ROOMS;
+    const loaded = safeGetStorage<Room[]>(`${LOCAL_STORAGE_KEY}_rooms`, []);
+    return Array.isArray(loaded) ? loaded : [];
   });
 
   const [activeRoomId, setActiveRoomId] = useState<string>(() => {
-    const loaded = safeGetStorage(`${LOCAL_STORAGE_KEY}_activeRoomId`, rooms[0]?.id || MOCK_ROOMS[0].id);
-    return rooms.some((r) => r.id === loaded) ? loaded : (rooms[0]?.id || MOCK_ROOMS[0].id);
+    const loaded = safeGetStorage(`${LOCAL_STORAGE_KEY}_activeRoomId`, '');
+    return loaded || '';
   });
 
   const [notifications, setNotifications] = useState<Notification[]>(() =>
@@ -864,36 +864,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return { success: false, message: 'Permission denied. Only the room creator/host can delete this room.' };
     }
 
-    let updatedRooms = rooms.filter((r) => r.id !== roomId);
-
-    if (updatedRooms.length === 0) {
-      const defaultRoom: Room = {
-        ...MOCK_ROOMS[0],
-        creatorId: currentUser.id,
-        members: [{ ...currentUser, role: 'Admin' }],
-      };
-      updatedRooms = [defaultRoom];
-      setActiveRoomId(defaultRoom.id);
-      setRooms(updatedRooms);
-      const toastMsg = {
-        title: 'Room Reset',
-        message: 'Default practice room restored so your workspace remains accessible.',
-        type: 'info',
-      };
-      setToast(toastMsg);
-      broadcastState(updatedRooms, notifications, toastMsg);
-      return { success: true, message: `Deleted room ${roomToDelete.name} (Restored default room)` };
-    }
-
+    const updatedRooms = rooms.filter((r) => r.id !== roomId);
     setRooms(updatedRooms);
 
     if (activeRoomId === roomId) {
-      setActiveRoomId(updatedRooms[0].id);
+      setActiveRoomId(updatedRooms[0]?.id || '');
+    }
+
+    // Always redirect to the dedicated post-login room selection page
+    if (typeof (window as any).__setLandingView === 'function') {
+      (window as any).__setLandingView(true);
     }
 
     const toastMsg = {
       title: 'Room Deleted',
-      message: `"${roomToDelete.name}" has been permanently deleted.`,
+      message: `"${roomToDelete.name}" has been deleted. Redirected to Room Hub.`,
       type: 'warning',
     };
 
@@ -1289,14 +1274,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (e) {}
 
     setCurrentUser(INITIAL_CURRENT_USER);
-    setRooms(MOCK_ROOMS);
-    setActiveRoomId(MOCK_ROOMS[0].id);
-    setNotifications(INITIAL_NOTIFICATIONS);
+    setRooms([]);
+    setActiveRoomId('');
+    setNotifications([]);
     setAuthVault([]);
     setRegisteredAccounts([]);
+    if (typeof (window as any).__setLandingView === 'function') {
+      (window as any).__setLandingView(true);
+    }
     setToast({
       title: 'Workspace Reset',
-      message: 'Reset back to fresh workspace state.',
+      message: 'Reset back to clean initial state.',
       type: 'info',
     });
   };

@@ -19,31 +19,6 @@ export const MOCK_USERS: User[] = [
   INITIAL_CURRENT_USER,
 ];
 
-export const MOCK_ROOMS: Room[] = [
-  {
-    id: 'room_daily_algorithms',
-    name: 'Daily LeetCode Masters 🚀',
-    code: '7X9K2P',
-    description: 'Collaborative daily practice room. Auto-fetch the official daily challenge or post custom problems!',
-    creatorId: 'usr_main',
-    creatorUsername: '',
-    creatorName: 'You',
-    createdAt: new Date().toISOString().split('T')[0],
-    targetDailyGoal: 1,
-    members: [INITIAL_CURRENT_USER],
-    activeProblemId: undefined,
-    dailyProblems: [],
-  },
-];
+export const MOCK_ROOMS: Room[] = [];
 
-export const INITIAL_NOTIFICATIONS: Notification[] = [
-  {
-    id: 'notif_welcome',
-    roomId: 'room_daily_algorithms',
-    type: 'SYSTEM',
-    title: 'Welcome to LeetTracker! 🎯',
-    message: 'Link your LeetCode handle in Profile settings to auto-sync your real stats and track daily problem completions.',
-    timestamp: 'Just now',
-    read: false,
-  },
-];
+export const INITIAL_NOTIFICATIONS: Notification[] = [];
