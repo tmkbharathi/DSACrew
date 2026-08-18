@@ -101,12 +101,37 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
 
   const todayStr = getTodayStr();
 
-  // Find all problems matching selectedDate
+  // Find all problems in room and on selectedDate
+  const allProblems = activeRoom?.dailyProblems || [];
   const problemsOnDate = activeRoom?.dailyProblems.filter((p) => p.date === selectedDate) || [];
   const activeProblem =
     problemsOnDate.find((p) => p.id === activeRoom?.activeProblemId) ||
     problemsOnDate[0] ||
+    allProblems.find((p) => p.id === activeRoom?.activeProblemId) ||
+    allProblems[0] ||
     (selectedDate === todayStr ? initialProblem : undefined);
+
+  const currentProblemIndex = allProblems.findIndex((p) => p.id === activeProblem?.id);
+
+  const handlePrevProblem = () => {
+    if (allProblems.length <= 1) return;
+    const prevIdx = currentProblemIndex > 0 ? currentProblemIndex - 1 : allProblems.length - 1;
+    const prevProb = allProblems[prevIdx];
+    if (prevProb) {
+      setSelectedDate(prevProb.date);
+      setActiveProblemId(prevProb.id);
+    }
+  };
+
+  const handleNextProblem = () => {
+    if (allProblems.length <= 1) return;
+    const nextIdx = currentProblemIndex >= 0 && currentProblemIndex < allProblems.length - 1 ? currentProblemIndex + 1 : 0;
+    const nextProb = allProblems[nextIdx];
+    if (nextProb) {
+      setSelectedDate(nextProb.date);
+      setActiveProblemId(nextProb.id);
+    }
+  };
 
   const canDeleteProblem = Boolean(
     activeProblem && (isHost || activeProblem.postedBy.id === currentUser.id)
@@ -300,9 +325,34 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
         </div>
       ) : isCardHidden ? (
         /* Collapsed / Hidden Challenge Strip */
-        <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-4 sm:p-4.5 flex items-center justify-between shadow-md">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-4 sm:p-4.5 flex items-center justify-between shadow-md gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-2.5 h-2.5 rounded-full bg-[#3fb950] shrink-0 animate-pulse" />
+            
+            {allProblems.length > 1 && (
+              <div className="flex items-center gap-1 bg-[#0d1117] border border-[#30363d] rounded-lg p-0.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handlePrevProblem(); }}
+                  className="p-1 text-slate-400 hover:text-white hover:bg-[#21262d] rounded transition-colors"
+                  title="Previous Problem"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-[10px] font-mono text-slate-300 font-bold px-1">
+                  {(currentProblemIndex >= 0 ? currentProblemIndex + 1 : 1)}/{allProblems.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleNextProblem(); }}
+                  className="p-1 text-slate-400 hover:text-white hover:bg-[#21262d] rounded transition-colors"
+                  title="Next Problem"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
             <div className="min-w-0 flex items-center gap-2 flex-wrap">
               <span className="text-xs font-medium text-slate-400 font-sans">
                 {selectedDate === todayStr ? "Today's Challenge:" : `Challenge (${formatDisplayDate(selectedDate)}):`}
@@ -334,29 +384,88 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
         </div>
       ) : (
         <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-5 sm:p-6 relative overflow-hidden shadow-lg space-y-4">
-          {/* Multi-Problem Selector Switcher & Add Problem Action */}
-          <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-[#30363d]">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Problems ({problemsOnDate.length}):
-            </span>
-            <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+          {/* Header Bar with Date, Difficulty, Arrow Switcher & Actions */}
+          <div className="flex items-center justify-between gap-2 flex-wrap pb-3 border-b border-[#30363d]">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                {selectedDate === todayStr ? "TODAY'S CHALLENGE" : `SCHEDULED: ${activeProblem.date}`}
+              </span>
+              <span className="text-slate-600">•</span>
+              <Badge variant={difficultyVariant} size="sm">
+                {activeProblem.difficulty}
+              </Badge>
+
+              {/* Prev / Next Problem Navigation Arrows */}
+              {allProblems.length > 1 && (
+                <div className="flex items-center gap-1 bg-[#0d1117] border border-[#30363d] rounded-lg px-1.5 py-0.5 shadow-sm">
+                  <button
+                    type="button"
+                    onClick={handlePrevProblem}
+                    className="p-1 text-slate-400 hover:text-white hover:bg-[#21262d] rounded transition-colors flex items-center gap-0.5"
+                    title="Previous Problem"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-mono hidden sm:inline">Prev</span>
+                  </button>
+
+                  <span className="text-[11px] font-mono text-emerald-400 font-bold px-1.5 border-x border-[#30363d]">
+                    {(currentProblemIndex >= 0 ? currentProblemIndex + 1 : 1)} of {allProblems.length}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={handleNextProblem}
+                    className="p-1 text-slate-400 hover:text-white hover:bg-[#21262d] rounded transition-colors flex items-center gap-0.5"
+                    title="Next Problem"
+                  >
+                    <span className="text-[10px] font-mono hidden sm:inline">Next</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                onClick={() => setIsPostOpen(true)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-[#3fb950] hover:text-[#4ade80] bg-[#2ea043]/10 hover:bg-[#2ea043]/20 border border-[#2ea043]/30 transition-all"
+                title="Add another problem"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Add Problem</span>
+              </button>
+
+              <button
+                onClick={toggleHideCard}
+                className="px-2.5 py-1 text-slate-400 hover:text-white hover:bg-[#21262d] rounded-lg transition-colors flex items-center gap-1.5 text-xs border border-[#30363d]"
+                title="Hide challenge card"
+              >
+                <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                <span>Hide Card</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Multi-Problem Pills for Selected Date (if multiple) */}
+          {problemsOnDate.length > 1 && (
+            <div className="flex items-center gap-1.5 flex-wrap pt-0.5 pb-1">
+              <span className="text-[11px] font-mono text-slate-400">Date Problems ({problemsOnDate.length}):</span>
               {problemsOnDate.map((prob, idx) => {
                 const isSelected = prob.id === activeProblem?.id;
                 const probSolved = prob.submissions?.some((s) => s.userId === currentUser.id);
-                const diffVar =
-                  prob.difficulty === 'Easy' ? 'easy' : prob.difficulty === 'Medium' ? 'medium' : 'hard';
+                const diffVar = prob.difficulty === 'Easy' ? 'easy' : prob.difficulty === 'Medium' ? 'medium' : 'hard';
 
                 return (
                   <button
                     key={prob.id}
                     onClick={() => setActiveProblemId(prob.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
                       isSelected
                         ? 'bg-[#2ea043]/25 border border-[#2ea043]/60 text-white font-bold shadow-sm'
                         : 'bg-[#0d1117] border border-[#30363d] text-slate-300 hover:text-white hover:border-slate-500'
                     }`}
                   >
-                    {probSolved && <CheckCircle2 className="w-3.5 h-3.5 text-[#3fb950]" />}
+                    {probSolved && <CheckCircle2 className="w-3 h-3 text-[#3fb950]" />}
                     <span className="truncate max-w-[120px] sm:max-w-[180px]">
                       #{idx + 1} {prob.title}
                     </span>
@@ -367,16 +476,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
                 );
               })}
             </div>
-
-            <button
-              onClick={() => setIsPostOpen(true)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-[#3fb950] hover:text-[#4ade80] bg-[#2ea043]/10 hover:bg-[#2ea043]/20 border border-[#2ea043]/30 transition-all ml-auto shrink-0"
-              title="Add another problem for this date"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>Add Problem</span>
-            </button>
-          </div>
+          )}
 
           {/* Completion reward banner */}
           {isSolved && (
@@ -408,31 +508,8 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
             </div>
           )}
 
-          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5 relative z-10">
+          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5 relative z-10 pt-1">
             <div className="min-w-0 flex-1 space-y-2.5">
-              {/* Problem Metadata Header */}
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-medium text-slate-400">
-                    {selectedDate === todayStr ? "TODAY'S CHALLENGE" : `SCHEDULED: ${activeProblem.date}`}
-                  </span>
-                  <span className="text-slate-600">•</span>
-                  <Badge variant={difficultyVariant} size="sm">
-                    {activeProblem.difficulty}
-                  </Badge>
-                </div>
-
-                {/* Hide Card Toggle Button */}
-                <button
-                  onClick={toggleHideCard}
-                  className="px-2.5 py-1 text-slate-400 hover:text-white hover:bg-[#21262d] rounded-lg transition-colors flex items-center gap-1.5 text-xs border border-[#30363d]"
-                  title="Hide challenge card"
-                >
-                  <EyeOff className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Hide Card</span>
-                </button>
-              </div>
-
               {/* Problem Title */}
               <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight break-words font-sans">
                 {activeProblem.title}
