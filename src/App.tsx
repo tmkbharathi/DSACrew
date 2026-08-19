@@ -10,6 +10,8 @@ import { CompletionMatrix } from './components/leaderboard/CompletionMatrix';
 import { AnalyticsCharts } from './components/leaderboard/AnalyticsCharts';
 import { ToastContainer } from './components/notifications/ToastContainer';
 import { LandingPage } from './components/landing/LandingPage';
+import { SpiderCrawler } from './components/fun/SpiderCrawler';
+import { SnakeGameModal } from './components/fun/SnakeGameModal';
 import { Flame, Trophy, Zap, Target } from 'lucide-react';
 
 export const App = () => {
@@ -17,6 +19,7 @@ export const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showLanding, setShowLanding] = useState(true);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isSnakeOpen, setIsSnakeOpen] = useState(false);
 
   // Allow global switching back to landing page overview
   (window as any).__setLandingView = setShowLanding;
@@ -184,6 +187,8 @@ export const App = () => {
         </main>
       </div>
 
+      <SpiderCrawler onOpenSnakeGame={() => setIsSnakeOpen(true)} />
+      <SnakeGameModal isOpen={isSnakeOpen} onClose={() => setIsSnakeOpen(false)} />
       <ToastContainer />
     </div>
   );
