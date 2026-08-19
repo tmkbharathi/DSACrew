@@ -225,11 +225,20 @@ export function detectLanguageFromCode(code: string): string {
 }
 
 /**
- * Fetches real user profile stats directly from LeetCode GraphQL
+ * Result type for LeetCode profile fetch - distinguishes between network errors and user not found
  */
-export async function fetchLeetCodeProfile(username: string): Promise<LeetCodeProfileStats | null> {
+export type LeetCodeProfileResult = 
+  | { status: 'success'; data: LeetCodeProfileStats }
+  | { status: 'not_found'; data: null }
+  | { status: 'network_error'; data: null; message: string };
+
+/**
+ * Fetches real user profile stats directly from LeetCode GraphQL
+ * Returns a result object that distinguishes between network errors and user not found
+ */
+export async function fetchLeetCodeProfileWithStatus(username: string): Promise<LeetCodeProfileResult> {
   const cleanUsername = username.trim();
-  if (!cleanUsername) return null;
+  if (!cleanUsername) return { status: 'not_found', data: null };
 
   const query = `
     query getUserProfile($username: String!) {
@@ -252,21 +261,37 @@ export async function fetchLeetCodeProfile(username: string): Promise<LeetCodePr
 
   try {
     const data = await executeLeetCodeGraphQL(query, { username: cleanUsername });
+    
+    // If we got a response but no data at all, it's likely a network/CORS issue
+    if (!data) {
+      return { 
+        status: 'network_error', 
+        data: null, 
+        message: 'Could not connect to LeetCode API. This may be due to network restrictions or CORS policies.' 
+      };
+    }
+
     const user = data?.data?.matchedUser;
 
-    if (user) {
-      const acStats = user.submitStatsGlobal?.acSubmissionNum || [];
-      const getCount = (diff: string) => {
-        const item = acStats.find((s: { difficulty: string; count: number }) => s.difficulty.toLowerCase() === diff.toLowerCase());
-        return item ? item.count : 0;
-      };
+    // matchedUser is null when the user genuinely doesn't exist on LeetCode
+    if (!user) {
+      return { status: 'not_found', data: null };
+    }
 
-      const totalSolved = getCount('All');
-      const easySolved = getCount('Easy');
-      const mediumSolved = getCount('Medium');
-      const hardSolved = getCount('Hard');
+    const acStats = user.submitStatsGlobal?.acSubmissionNum || [];
+    const getCount = (diff: string) => {
+      const item = acStats.find((s: { difficulty: string; count: number }) => s.difficulty.toLowerCase() === diff.toLowerCase());
+      return item ? item.count : 0;
+    };
 
-      return {
+    const totalSolved = getCount('All');
+    const easySolved = getCount('Easy');
+    const mediumSolved = getCount('Medium');
+    const hardSolved = getCount('Hard');
+
+    return {
+      status: 'success',
+      data: {
         username: user.username,
         realName: user.profile?.realName || user.username,
         avatar: user.profile?.userAvatar || undefined,
@@ -275,13 +300,25 @@ export async function fetchLeetCodeProfile(username: string): Promise<LeetCodePr
         easySolved,
         mediumSolved,
         hardSolved,
-      };
-    }
+      }
+    };
   } catch (e) {
     console.warn('Could not fetch real LeetCode user profile stats:', e);
+    return { 
+      status: 'network_error', 
+      data: null, 
+      message: 'Network error while connecting to LeetCode API.' 
+    };
   }
+}
 
-  return null;
+/**
+ * Fetches real user profile stats directly from LeetCode GraphQL
+ * Legacy wrapper that returns null for both network errors and user not found
+ */
+export async function fetchLeetCodeProfile(username: string): Promise<LeetCodeProfileStats | null> {
+  const result = await fetchLeetCodeProfileWithStatus(username);
+  return result.data;
 }
 
 /**

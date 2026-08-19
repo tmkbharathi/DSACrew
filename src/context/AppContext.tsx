@@ -30,7 +30,7 @@ import {
   subscribeToRoom,
   unsubscribeFromChannel,
 } from '../services/supabase';
-import { fetchLeetCodeProfile } from '../services/leetcodeApi';
+import { fetchLeetCodeProfile, fetchLeetCodeProfileWithStatus } from '../services/leetcodeApi';
 
 interface AppContextType {
   currentUser: User;
@@ -338,10 +338,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     // Verify LeetCode username exists
-    const lcStats = await fetchLeetCodeProfile(cleanUsername);
-    if (!lcStats) {
+    const lcResult = await fetchLeetCodeProfileWithStatus(cleanUsername);
+    
+    if (lcResult.status === 'network_error') {
+      return { 
+        success: false, 
+        message: `Unable to verify LeetCode profile. ${lcResult.message} Please check your internet connection and try again.` 
+      };
+    }
+    
+    if (lcResult.status === 'not_found' || !lcResult.data) {
       return { success: false, message: `LeetCode handle "@${cleanUsername}" not found. Please verify your public profile.` };
     }
+    
+    const lcStats = lcResult.data;
 
     const email = `${cleanUsername}@leettracker.app`;
     const { user, error } = await signUpUser(email, cleanPassword, {
