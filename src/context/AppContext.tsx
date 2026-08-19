@@ -278,7 +278,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return { success: false, message: 'Database not configured. Please set up Supabase.' };
     }
 
-    const email = `${clean}@example.com`;
+    const email = `${clean}+leetcode@gmail.com`;
     const { user, error } = await signInUser(email, password.trim());
 
     if (error || !user) {
@@ -353,7 +353,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     
     const lcStats = lcResult.data;
 
-    const email = `${cleanUsername}@example.com`;
+    const email = `${cleanUsername}+leetcode@gmail.com`;
     const { user, error } = await signUpUser(email, cleanPassword, {
       username: lcStats.username,
       name: cleanName || lcStats.realName || lcStats.username,
