@@ -1,9 +1,37 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import confetti from 'canvas-confetti';
-import type { Room, User, Problem, Submission, Notification, Difficulty, AuthCredential } from '../types';
+import type { Room, User, Problem, Notification, Difficulty } from '../types';
 import { INITIAL_CURRENT_USER, INITIAL_NOTIFICATIONS } from '../data/mockData';
-import { supabase, isSupabaseConfigured } from '../services/supabase';
+import {
+  supabase,
+  isSupabaseConfigured,
+  signUpUser,
+  signInUser,
+  signOutUser,
+  createUserProfile,
+  getUserProfile,
+  getUserByUsername,
+  updateUserProfile,
+  createRoom as dbCreateRoom,
+  getRoomById,
+  getRoomByCode,
+  getUserRooms,
+  joinRoom as dbJoinRoom,
+  leaveRoom as dbLeaveRoom,
+  deleteRoom as dbDeleteRoom,
+  createProblem as dbCreateProblem,
+  deleteProblem as dbDeleteProblem,
+  createSubmission as dbCreateSubmission,
+  createComment as dbCreateComment,
+  deleteComment as dbDeleteComment,
+  getUserNotifications,
+  markNotificationRead as dbMarkNotificationRead,
+  markAllNotificationsRead as dbMarkAllNotificationsRead,
+  createNotification,
+  subscribeToRoom,
+  unsubscribeFromChannel,
+} from '../services/supabase';
 import { fetchLeetCodeProfile } from '../services/leetcodeApi';
 
 interface AppContextType {
@@ -24,14 +52,15 @@ interface AppContextType {
   isCloudConnected: boolean;
   isAdmin: boolean;
   isHost: boolean;
+  isLoading: boolean;
   login: (usernameOrHandle: string, password?: string) => Promise<{ success: boolean; message: string }>;
   registerAccount: (name: string, username: string, password?: string) => Promise<{ success: boolean; message: string }>;
-  
+
   // Actions
   switchActiveRoom: (roomId: string) => void;
-  createRoom: (name: string, description: string, targetDailyGoal?: number) => Room;
-  deleteRoom: (roomId: string) => { success: boolean; message: string };
-  joinRoomByCode: (code: string) => { success: boolean; message: string };
+  createRoom: (name: string, description: string, targetDailyGoal?: number) => Promise<Room | null>;
+  deleteRoom: (roomId: string) => Promise<{ success: boolean; message: string }>;
+  joinRoomByCode: (code: string) => Promise<{ success: boolean; message: string }>;
   postDailyProblem: (problem: {
     title: string;
     url: string;
@@ -39,9 +68,9 @@ interface AppContextType {
     tags: string[];
     targetTimeMinutes?: number;
     date?: string;
-  }) => void;
+  }) => Promise<void>;
   setActiveProblemId: (problemId: string) => void;
-  deleteProblem: (problemId: string) => void;
+  deleteProblem: (problemId: string) => Promise<void>;
   submitSolution: (
     problemId: string,
     data?: {
@@ -53,465 +82,133 @@ interface AppContextType {
       notes?: string;
       verifiedLeetCode?: boolean;
     }
-  ) => void;
-  addComment: (problemId: string, content: string, codeSnippet?: string) => void;
-  deleteComment: (problemId: string, commentId: string) => void;
-  removeMember: (roomId: string, memberId: string) => void;
+  ) => Promise<void>;
+  addComment: (problemId: string, content: string, codeSnippet?: string) => Promise<void>;
+  deleteComment: (problemId: string, commentId: string) => Promise<void>;
+  removeMember: (roomId: string, memberId: string) => Promise<void>;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   resetDemoData: () => void;
   resetToDefault: () => void;
   signOut: () => void;
+  refreshRooms: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_KEY = 'leettracker_state_v2';
-const LOCAL_STORAGE_KEY_AUTH = 'leettracker_auth_vault';
-const BROADCAST_CHANNEL_NAME = 'leettracker_realtime_channel';
 
 export const normalizeHandle = (value?: string) => value?.trim().toLowerCase() || '';
 
 export const isUserHostOfRoom = (room?: Room, user?: User): boolean => {
   if (!room || !user || !user.username) return false;
   if (user.systemRole === 'SuperAdmin') return true;
-
-  const userHandle = normalizeHandle(user.username);
-  const creatorHandle = normalizeHandle(room.creatorUsername);
-
-  // 1. Match creator by unique LeetCode handle
-  if (creatorHandle && userHandle && creatorHandle === userHandle) {
-    return true;
-  }
-
-  // 2. Match creator by creator ID (excluding generic placeholder ID)
-  if (room.creatorId && room.creatorId === user.id && user.id !== 'usr_main') {
-    return true;
-  }
-
-  return false;
+  return room.creatorId === user.id;
 };
 
 export const isUserInRoom = (room?: Room, user?: User): boolean => {
   if (!room || !user || !user.isLoggedIn || !user.username) return false;
   if (user.systemRole === 'SuperAdmin') return true;
-
-  const userHandle = normalizeHandle(user.username);
-  const creatorHandle = normalizeHandle(room.creatorUsername);
-
-  if (creatorHandle && userHandle && creatorHandle === userHandle) {
-    return true;
-  }
-  if (room.creatorId && room.creatorId === user.id && user.id !== 'usr_main') {
-    return true;
-  }
-
-  return (room.members || []).some(
-    (m) => (m.id && m.id === user.id && user.id !== 'usr_main') || (userHandle && normalizeHandle(m.username) === userHandle)
-  );
+  if (room.creatorId === user.id) return true;
+  return (room.members || []).some((m) => m.id === user.id);
 };
 
-// Helper to safely parse LocalStorage JSON
-function safeGetStorage<T>(key: string, fallback: T): T {
-  try {
-    const saved = localStorage.getItem(key);
-    if (!saved) return fallback;
-    const parsed = JSON.parse(saved);
-    return parsed !== null && parsed !== undefined ? parsed : fallback;
-  } catch (e) {
-    console.warn(`Failed to parse LocalStorage key ${key}, using default fallback:`, e);
-    return fallback;
-  }
-}
-
-// Generate random salt for per-user cryptographic hashing
-function generateSalt(): string {
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    const array = new Uint8Array(16);
-    crypto.getRandomValues(array);
-    return Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('');
-  }
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
-}
-
-// WebCrypto SHA-256 password hashing with per-user salt
-async function hashSecretWithSalt(password: string, salt: string): Promise<string> {
-  if (typeof crypto !== 'undefined' && crypto.subtle) {
-    try {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(`${salt}:${password}:${salt}`);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-    } catch {
-      // Fallback below
-    }
-  }
-
-  let hash = 0;
-  const combo = `${salt}:${password}:${salt}`;
-  for (let i = 0; i < combo.length; i++) {
-    hash = ((hash << 5) - hash) + combo.charCodeAt(i);
-    hash |= 0;
-  }
-  return `sha_fallback_${Math.abs(hash).toString(16)}`;
-}
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User>(() => {
-    const saved = safeGetStorage(`${LOCAL_STORAGE_KEY}_user`, INITIAL_CURRENT_USER);
-    if (saved && (saved.name === 'LeetCode Engineer' || !saved.name)) {
-      return { ...saved, name: 'You' };
-    }
-    return saved;
-  });
-
-  const [rooms, setRooms] = useState<Room[]>(() => {
-    const loaded = safeGetStorage<Room[]>(`${LOCAL_STORAGE_KEY}_rooms`, []);
-    return Array.isArray(loaded) ? loaded : [];
-  });
-
-  const [activeRoomId, setActiveRoomId] = useState<string>(() => {
-    const loaded = safeGetStorage(`${LOCAL_STORAGE_KEY}_activeRoomId`, '');
-    return loaded || '';
-  });
-
-  const [notifications, setNotifications] = useState<Notification[]>(() =>
-    safeGetStorage(`${LOCAL_STORAGE_KEY}_notifications`, INITIAL_NOTIFICATIONS)
-  );
-
-  const [authVault, setAuthVault] = useState<AuthCredential[]>(() =>
-    safeGetStorage(LOCAL_STORAGE_KEY_AUTH, [])
-  );
-
+  const [currentUser, setCurrentUser] = useState<User>(INITIAL_CURRENT_USER);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [activeRoomId, setActiveRoomId] = useState<string>('');
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [toast, setToast] = useState<{ title: string; message: string; type?: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const isLoggedIn = Boolean(
-    currentUser.isLoggedIn && currentUser.username && currentUser.username.trim().length > 0
-  );
-
-  // Daily rollover evaluation for streak and solvedToday
-  const checkDailyRollover = useCallback(() => {
-    if (!currentUser || !currentUser.username) return;
-
-    const todayStr = new Date().toISOString().split('T')[0];
-    const lastSolved = currentUser.lastSolvedDate;
-
-    if (!lastSolved) {
-      if (currentUser.solvedToday) {
-        setCurrentUser((prev) => ({ ...prev, solvedToday: false, streak: 0 }));
-      }
-      return;
-    }
-
-    if (lastSolved === todayStr) {
-      if (!currentUser.solvedToday) {
-        setCurrentUser((prev) => ({ ...prev, solvedToday: true }));
-      }
-    } else {
-      const todayDate = new Date(todayStr);
-      const lastDate = new Date(lastSolved);
-      const diffTime = Math.abs(todayDate.getTime() - lastDate.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays === 1) {
-        if (currentUser.solvedToday) {
-          setCurrentUser((prev) => ({ ...prev, solvedToday: false }));
-        }
-      } else if (diffDays > 1) {
-        if (currentUser.solvedToday || currentUser.streak > 0) {
-          setCurrentUser((prev) => ({ ...prev, solvedToday: false, streak: 0 }));
-        }
-      }
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
-    checkDailyRollover();
-    const onFocus = () => checkDailyRollover();
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
-  }, [checkDailyRollover]);
-
-  const logout = () => {
-    if (isSupabaseConfigured && supabase) {
-      supabase.auth.signOut().catch(() => {});
-    }
-
-    const unlogged: User = {
-      ...INITIAL_CURRENT_USER,
-      isLoggedIn: false,
-      username: '',
-    };
-    setCurrentUser(unlogged);
-    try {
-      localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(unlogged));
-    } catch (e) {}
-    setToast({
-      title: 'Signed Out',
-      message: 'You have been signed out from the workspace.',
-      type: 'info',
-    });
-  };
-
+  const isLoggedIn = Boolean(currentUser.isLoggedIn && currentUser.username?.trim());
   const activeRoom = rooms.find((r) => r.id === activeRoomId) || rooms[0];
   const unreadCount = notifications.filter((n) => !n.read && n.roomId === activeRoomId).length;
-  // Real room-scoped administrator / host detection
   const isHost = isUserHostOfRoom(activeRoom, currentUser);
   const isAdmin = isHost;
 
-  // Persist state to LocalStorage
+  // Initialize auth state from Supabase session
   useEffect(() => {
-    try {
-      localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(currentUser));
-    } catch (e) {}
-  }, [currentUser]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(`${LOCAL_STORAGE_KEY}_rooms`, JSON.stringify(rooms));
-    } catch (e) {}
-  }, [rooms]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(`${LOCAL_STORAGE_KEY}_activeRoomId`, activeRoomId);
-    } catch (e) {}
-  }, [activeRoomId]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(`${LOCAL_STORAGE_KEY}_notifications`, JSON.stringify(notifications));
-    } catch (e) {}
-  }, [notifications]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY_AUTH, JSON.stringify(authVault));
-    } catch (e) {}
-  }, [authVault]);
-
-  // Synchronize and STRICTLY DEDUPLICATE room members
-  useEffect(() => {
-    if (!currentUser.id || !isLoggedIn) return;
-
-    setRooms((prevRooms) => {
-      let changed = false;
-      const updated = prevRooms.map((room) => {
-        const currentUsername = normalizeHandle(currentUser.username);
-        const adminMember = (room.members || []).find((m) => m.role === 'Admin' && m.id !== 'usr_main');
-        const roomCreatorUsername = normalizeHandle(room.creatorUsername);
-        const currentUserOwnsLegacyRoom =
-          room.creatorId === 'usr_main' ||
-          room.creatorId === currentUser.id ||
-          Boolean(currentUsername && roomCreatorUsername === currentUsername) ||
-          Boolean(currentUsername && !roomCreatorUsername && adminMember && normalizeHandle(adminMember.username) === currentUsername);
-
-        const creatorId = currentUserOwnsLegacyRoom ? currentUser.id : room.creatorId;
-        const creatorUsername = currentUserOwnsLegacyRoom
-          ? currentUser.username
-          : room.creatorUsername || adminMember?.username || '';
-        const creatorName = currentUserOwnsLegacyRoom
-          ? currentUser.name
-          : room.creatorName || adminMember?.name || '';
-
-        // Deduplicate members list by username / id
-        const memberMap = new Map<string, User>();
-        (room.members || []).forEach((m) => {
-          if (m.id === 'usr_alex' || m.id === 'usr_sarah' || m.id === 'usr_david') return;
-          const key = normalizeHandle(m.username || m.name || m.id);
-
-          if (
-            m.id === currentUser.id ||
-            (currentUsername && normalizeHandle(m.username) === currentUsername) ||
-            (m.id === 'usr_main')
-          ) {
-            const role = creatorId === currentUser.id || Boolean(currentUsername && normalizeHandle(creatorUsername) === currentUsername) ? 'Admin' : m.role;
-            memberMap.set('current_user_key', { ...currentUser, id: currentUser.id, role });
-          } else if (!memberMap.has(key)) {
-            memberMap.set(key, m);
-          }
-        });
-
-        if (!memberMap.has('current_user_key') && creatorId === currentUser.id) {
-          memberMap.set('current_user_key', { ...currentUser, id: currentUser.id, role: 'Admin' });
-        }
-
-        const dedupedMembers = Array.from(memberMap.values());
-
-        if (
-          dedupedMembers.length !== (room.members || []).length ||
-          room.creatorId !== creatorId ||
-          room.creatorUsername !== creatorUsername ||
-          room.creatorName !== creatorName ||
-          dedupedMembers.some((dm, i) => dm !== room.members[i])
-        ) {
-          changed = true;
-          return {
-            ...room,
-            creatorId,
-            creatorUsername,
-            creatorName,
-            members: dedupedMembers,
-          };
-        }
-
-        return room;
-      });
-
-      return changed ? updated : prevRooms;
-    });
-  }, [currentUser, isLoggedIn]);
-
-  // Note: Auto-daily is disabled by default so empty rooms remain clean until a problem is chosen/posted.
-
-  // Supabase Real-time Cloud Sync + Fallback to BroadcastChannel
-  useEffect(() => {
-    if (isSupabaseConfigured && supabase) {
-      const client = supabase;
-
-      client.from('rooms').select('*').then(({ data: cloudRooms, error }) => {
-        if (!error && cloudRooms && cloudRooms.length > 0) {
-          const parsedRooms: Room[] = cloudRooms.map((row: any) => row.data || row);
-          setRooms(parsedRooms);
-        }
-      });
-
-      client.from('notifications').select('*').limit(30).then(({ data: cloudNotifs, error }) => {
-        if (!error && cloudNotifs && cloudNotifs.length > 0) {
-          const parsedNotifs: Notification[] = cloudNotifs.map((row: any) => row.data || row);
-          setNotifications(parsedNotifs);
-        }
-      });
-
-      const { data: authListener } = client.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const email = session.user.email || '';
-          const handle = session.user.user_metadata?.username || email.split('@')[0];
-          const stats = await fetchLeetCodeProfile(handle);
-          const cloudUser: User = {
-            id: session.user.id,
-            name: session.user.user_metadata?.name || stats?.realName || handle,
-            username: handle,
-            avatar: stats?.avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80`,
-            role: 'Admin',
-            systemRole: 'User',
-            points: 0,
-            streak: 0,
-            solvedCount: 0,
-            roomSolvedCount: 0,
-            leetcodeTotalSolved: stats?.totalSolved || 0,
-            solvedToday: false,
-            joinedAt: new Date().toISOString().split('T')[0],
-            isLoggedIn: true,
-          };
-          setCurrentUser(cloudUser);
-        } else if (event === 'SIGNED_OUT') {
-          setCurrentUser(INITIAL_CURRENT_USER);
-        }
-      });
-
-      const roomChannel = client
-        .channel('public:rooms')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, (payload) => {
-          if (payload.new && (payload.new as any).data) {
-            const updatedRoom = (payload.new as any).data as Room;
-            setRooms((prev) => {
-              const exists = prev.some((r) => r.id === updatedRoom.id);
-              return exists ? prev.map((r) => (r.id === updatedRoom.id ? updatedRoom : r)) : [updatedRoom, ...prev];
-            });
-          }
-        })
-        .subscribe();
-
-      const notifChannel = client
-        .channel('public:notifications')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
-          if (payload.new && (payload.new as any).data) {
-            const updatedNotif = (payload.new as any).data as Notification;
-            setNotifications((prev) => {
-              const exists = prev.some((n) => n.id === updatedNotif.id);
-              return exists ? prev.map((n) => (n.id === updatedNotif.id ? updatedNotif : n)) : [updatedNotif, ...prev];
-            });
-          }
-        })
-        .subscribe();
-
-      return () => {
-        authListener.subscription.unsubscribe();
-        client.removeChannel(roomChannel);
-        client.removeChannel(notifChannel);
-      };
-    } else {
-      let bc: BroadcastChannel | null = null;
-      try {
-        if (typeof BroadcastChannel !== 'undefined') {
-          bc = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
-          bc.onmessage = (event) => {
-            const { type, payload } = event.data;
-            if (type === 'STATE_SYNC') {
-              if (payload.rooms && Array.isArray(payload.rooms)) setRooms(payload.rooms);
-              if (payload.notifications && Array.isArray(payload.notifications)) setNotifications(payload.notifications);
-              if (payload.toast) {
-                setToast(payload.toast);
-                playAudioNotification();
-              }
-            }
-          };
-        }
-      } catch (e) {}
-      return () => {
-        if (bc) bc.close();
-      };
+    if (!isSupabaseConfigured || !supabase) {
+      setIsLoading(false);
+      return;
     }
+
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          const profile = await getUserProfile(session.user.id);
+          if (profile) {
+            setCurrentUser({ ...profile, isLoggedIn: true });
+            const userRooms = await getUserRooms(session.user.id);
+            setRooms(userRooms);
+            if (userRooms.length > 0) {
+              setActiveRoomId(userRooms[0].id);
+            }
+            const userNotifications = await getUserNotifications(session.user.id);
+            setNotifications(userNotifications);
+          }
+        }
+      } catch (err) {
+        console.error('Error initializing auth:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const profile = await getUserProfile(session.user.id);
+        if (profile) {
+          setCurrentUser({ ...profile, isLoggedIn: true });
+          const userRooms = await getUserRooms(session.user.id);
+          setRooms(userRooms);
+          if (userRooms.length > 0) setActiveRoomId(userRooms[0].id);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentUser(INITIAL_CURRENT_USER);
+        setRooms([]);
+        setActiveRoomId('');
+        setNotifications([]);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const broadcastState = (newRooms: Room[], newNotifications: Notification[], toastPayload?: any) => {
-    if (isSupabaseConfigured && supabase) {
-      const client = supabase;
-      try {
-        newRooms.forEach(async (room) => {
-          await client.from('rooms').upsert({
-            id: room.id,
-            name: room.name,
-            code: room.code,
-            description: room.description || '',
-            creator_id: room.creatorId,
-            target_daily_goal: room.targetDailyGoal || 1,
-            data: room,
-            updated_at: new Date().toISOString(),
-          });
-        });
 
-        newNotifications.slice(0, 30).forEach(async (notif) => {
-          await client.from('notifications').upsert({
-            id: notif.id,
-            room_id: notif.roomId,
-            data: notif,
-            created_at: new Date().toISOString(),
-          });
-        });
-      } catch (e) {
-        console.warn('Supabase cloud sync error:', e);
-      }
-    }
+  // Subscribe to realtime updates for active room
+  useEffect(() => {
+    if (!isSupabaseConfigured || !activeRoomId) return;
 
+    const channel = subscribeToRoom(activeRoomId, {
+      onProblemChange: () => refreshRooms(),
+      onSubmissionChange: () => refreshRooms(),
+      onMemberChange: () => refreshRooms(),
+    });
+
+    return () => {
+      if (channel) unsubscribeFromChannel(channel);
+    };
+  }, [activeRoomId]);
+
+  const refreshRooms = useCallback(async () => {
+    if (!isSupabaseConfigured || !currentUser.id) return;
+    
     try {
-      if (typeof BroadcastChannel !== 'undefined') {
-        const bc = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
-        bc.postMessage({
-          type: 'STATE_SYNC',
-          payload: {
-            rooms: newRooms,
-            notifications: newNotifications,
-            toast: toastPayload,
-          },
-        });
-        bc.close();
-      }
-    } catch (e) {}
-  };
+      const userRooms = await getUserRooms(currentUser.id);
+      setRooms(userRooms);
+    } catch (err) {
+      console.error('Error refreshing rooms:', err);
+    }
+  }, [currentUser.id]);
 
   const playAudioNotification = () => {
     if (!soundEnabled) return;
@@ -531,17 +228,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (e) {}
   };
 
-  const updateCurrentUser = (updates: Partial<User>) => {
-    setCurrentUser((prev) => {
-      const updated = { ...prev, ...updates };
-      setRooms((prevRooms) =>
-        prevRooms.map((room) => ({
-          ...room,
-          members: room.members.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)),
-        }))
-      );
-      return updated;
-    });
+  const logout = async () => {
+    if (isSupabaseConfigured) {
+      await signOutUser();
+    }
+    setCurrentUser({ ...INITIAL_CURRENT_USER, isLoggedIn: false, username: '' });
+    setRooms([]);
+    setActiveRoomId('');
+    setNotifications([]);
+    setToast({ title: 'Signed Out', message: 'You have been signed out.', type: 'info' });
+  };
+
+
+  const updateCurrentUser = async (updates: Partial<User>) => {
+    setCurrentUser((prev) => ({ ...prev, ...updates }));
+    
+    if (isSupabaseConfigured && currentUser.id) {
+      await updateUserProfile(currentUser.id, {
+        name: updates.name,
+        avatar: updates.avatar,
+        points: updates.points,
+        streak: updates.streak,
+        solved_count: updates.solvedCount || updates.roomSolvedCount,
+        leetcode_total_solved: updates.leetcodeTotalSolved,
+        last_solved_date: updates.lastSolvedDate,
+      });
+    }
   };
 
   const syncUserProfileFromLeetCode = async (usernameToSync?: string): Promise<boolean> => {
@@ -550,7 +262,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const stats = await fetchLeetCodeProfile(handle.trim());
     if (stats) {
-      updateCurrentUser({
+      await updateCurrentUser({
         username: stats.username,
         name: stats.realName || currentUser.name || stats.username,
         avatar: stats.avatar || currentUser.avatar,
@@ -561,158 +273,109 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return false;
   };
 
-  const [registeredAccounts, setRegisteredAccounts] = useState<User[]>(() =>
-    safeGetStorage(`${LOCAL_STORAGE_KEY}_registered_accounts`, [])
-  );
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(registeredAccounts));
-    } catch (e) {}
-  }, [registeredAccounts]);
-
   const login = async (usernameOrHandle: string, password?: string): Promise<{ success: boolean; message: string }> => {
-    const clean = usernameOrHandle.trim();
+    const clean = usernameOrHandle.trim().toLowerCase();
     if (!clean) return { success: false, message: 'Please enter your LeetCode username.' };
-    const cleanPassword = password ? password.trim() : '';
+    if (!password?.trim()) return { success: false, message: 'Password is required.' };
 
-    if (!cleanPassword) {
-      return { success: false, message: 'Password is required to sign in.' };
+    if (!isSupabaseConfigured) {
+      return { success: false, message: 'Database not configured. Please set up Supabase.' };
     }
 
-    const cleanLower = clean.toLowerCase();
+    const email = `${clean}@leettracker.app`;
+    const { user, error } = await signInUser(email, password.trim());
 
-    if (isSupabaseConfigured && supabase) {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: `${cleanLower}@leettracker.internal`,
-        password: cleanPassword,
-      });
+    if (error || !user) {
+      return { success: false, message: error || 'Invalid credentials.' };
+    }
 
-      if (authError || !authData.user) {
-        return { success: false, message: authError?.message || 'Invalid credentials in Supabase Auth.' };
+    const profile = await getUserProfile(user.id);
+    if (!profile) {
+      return { success: false, message: 'User profile not found.' };
+    }
+
+    setCurrentUser({ ...profile, isLoggedIn: true });
+
+    // Load user's rooms
+    const userRooms = await getUserRooms(user.id);
+    setRooms(userRooms);
+    if (userRooms.length > 0) setActiveRoomId(userRooms[0].id);
+
+    // Load notifications
+    const userNotifications = await getUserNotifications(user.id);
+    setNotifications(userNotifications);
+
+    // Sync LeetCode stats
+    fetchLeetCodeProfile(profile.username).then((stats) => {
+      if (stats) {
+        updateCurrentUser({
+          leetcodeTotalSolved: stats.totalSolved,
+          avatar: stats.avatar || profile.avatar,
+        });
       }
-    }
-
-    const credential = authVault.find((c) => c.username.toLowerCase() === cleanLower);
-
-    if (!credential) {
-      return {
-        success: false,
-        message: `Account "@${clean}" not found. Please click "Create Profile" to register with your LeetCode handle and password.`,
-      };
-    }
-
-    const inputHash = await hashSecretWithSalt(cleanPassword, credential.salt || 'leettracker_salt_2026');
-    if (inputHash !== credential.passwordHash) {
-      return { success: false, message: 'Incorrect password. Please verify and try again.' };
-    }
-
-    const foundUser = registeredAccounts.find((u) => u.username.toLowerCase() === cleanLower);
-
-    const loggedUser: User = foundUser
-      ? { ...foundUser, isLoggedIn: true, role: 'Admin' }
-      : {
-          id: credential.userId,
-          name: credential.username,
-          username: credential.username,
-          avatar: `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80`,
-          role: 'Admin',
-          systemRole: 'User',
-          points: 0,
-          streak: 0,
-          solvedCount: 0,
-          roomSolvedCount: 0,
-          solvedToday: false,
-          joinedAt: credential.createdAt.split('T')[0],
-          isLoggedIn: true,
-        };
-
-    setCurrentUser(loggedUser);
-
-    if (loggedUser.username) {
-      fetchLeetCodeProfile(loggedUser.username).then((stats) => {
-        if (stats) {
-          updateCurrentUser({
-            leetcodeTotalSolved: stats.totalSolved,
-            avatar: stats.avatar || loggedUser.avatar,
-            name: stats.realName || loggedUser.name,
-          });
-        }
-      }).catch(() => {});
-    }
-
-    // Set active room & ensure creator alignment
-    setRooms((prev) =>
-      prev.map((r) => {
-        const creatorId = r.creatorId === 'usr_main' ? loggedUser.id : r.creatorId;
-        const dedupedMembers = r.members
-          .filter((m) => m.id !== 'usr_main' && m.username.toLowerCase() !== cleanLower)
-          .concat([{ ...loggedUser, id: loggedUser.id, role: creatorId === loggedUser.id ? 'Admin' : 'Member' }]);
-        return {
-          ...r,
-          creatorId,
-          members: dedupedMembers,
-        };
-      })
-    );
-
-    const userRoom = rooms.find((r) => r.members.some((m) => m.id === loggedUser.id) || r.creatorId === loggedUser.id);
-    if (userRoom) {
-      setActiveRoomId(userRoom.id);
-    }
-
-    setToast({
-      title: `Signed In as ${loggedUser.name}`,
-      message: `Welcome back @${loggedUser.username}!`,
-      type: 'success',
     });
 
-    return { success: true, message: `Welcome back, ${loggedUser.name}!` };
+    setToast({ title: `Welcome back, ${profile.name}!`, message: `Signed in as @${profile.username}`, type: 'success' });
+    return { success: true, message: 'Login successful.' };
   };
 
+
   const registerAccount = async (name: string, username: string, password?: string): Promise<{ success: boolean; message: string }> => {
-    const cleanUsername = username.trim();
+    const cleanUsername = username.trim().toLowerCase();
     const cleanName = name.trim();
-    const cleanPassword = password ? password.trim() : '';
+    const cleanPassword = password?.trim();
 
     if (!cleanUsername) return { success: false, message: 'LeetCode username is required.' };
     if (!cleanName) return { success: false, message: 'Display name is required.' };
-    if (!cleanPassword || cleanPassword.length < 4) {
-      return { success: false, message: 'Password must be at least 4 characters.' };
+    if (!cleanPassword || cleanPassword.length < 6) {
+      return { success: false, message: 'Password must be at least 6 characters.' };
     }
 
-    const cleanLower = cleanUsername.toLowerCase();
-    if (authVault.some((c) => c.username.toLowerCase() === cleanLower)) {
-      return { success: false, message: `Username "@${cleanUsername}" is already registered. Please sign in instead.` };
+    if (!isSupabaseConfigured) {
+      return { success: false, message: 'Database not configured. Please set up Supabase.' };
     }
 
-    // STRICT LeetCode API Verification
+    // Check if username already exists
+    const existingUser = await getUserByUsername(cleanUsername);
+    if (existingUser) {
+      return { success: false, message: `Username "@${cleanUsername}" is already registered.` };
+    }
+
+    // Verify LeetCode username exists
     const lcStats = await fetchLeetCodeProfile(cleanUsername);
     if (!lcStats) {
-      return {
-        success: false,
-        message: `LeetCode handle "@${cleanUsername}" does not exist on LeetCode. Please check spelling or verify your public profile on leetcode.com.`,
-      };
+      return { success: false, message: `LeetCode handle "@${cleanUsername}" not found. Please verify your public profile.` };
     }
 
-    if (isSupabaseConfigured && supabase) {
-      await supabase.auth.signUp({
-        email: `${cleanLower}@leettracker.internal`,
-        password: cleanPassword,
-        options: {
-          data: {
-            name: cleanName,
-            username: cleanUsername,
-          },
-        },
-      });
+    const email = `${cleanUsername}@leettracker.app`;
+    const { user, error } = await signUpUser(email, cleanPassword, {
+      username: lcStats.username,
+      name: cleanName || lcStats.realName || lcStats.username,
+      avatar: lcStats.avatar,
+    });
+
+    if (error || !user) {
+      return { success: false, message: error || 'Registration failed.' };
+    }
+
+    // Create user profile in lt_users table
+    const { error: profileError } = await createUserProfile({
+      id: user.id,
+      username: lcStats.username,
+      name: cleanName || lcStats.realName || lcStats.username,
+      avatar: lcStats.avatar,
+      leetcode_total_solved: lcStats.totalSolved,
+    });
+
+    if (profileError) {
+      return { success: false, message: profileError };
     }
 
     const newUser: User = {
-      id: `user_${Date.now()}`,
-      name: cleanName || lcStats.realName || cleanUsername,
+      id: user.id,
+      name: cleanName || lcStats.realName || lcStats.username,
       username: lcStats.username,
-      avatar: lcStats.avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80`,
+      avatar: lcStats.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${lcStats.username}`,
       role: 'Admin',
       systemRole: 'User',
       points: 0,
@@ -725,43 +388,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       isLoggedIn: true,
     };
 
-    const userSalt = generateSalt();
-    const passwordHash = await hashSecretWithSalt(cleanPassword, userSalt);
-    const newCred: AuthCredential = {
-      userId: newUser.id,
-      username: newUser.username,
-      passwordHash,
-      salt: userSalt,
-      createdAt: new Date().toISOString(),
-    };
-
-    setAuthVault((prev) => [...prev, newCred]);
-    setRegisteredAccounts((prev) => [...prev.filter((u) => u.username.toLowerCase() !== cleanLower), newUser]);
     setCurrentUser(newUser);
-
-    // Ensure default rooms adopt this registered user as creator and replace placeholder
-    setRooms((prev) =>
-      prev.map((r) => {
-        const creatorId = r.creatorId === 'usr_main' ? newUser.id : r.creatorId;
-        const dedupedMembers = r.members
-          .filter((m) => m.id !== 'usr_main' && m.username.toLowerCase() !== cleanLower)
-          .concat([{ ...newUser, role: creatorId === newUser.id ? 'Admin' : 'Member' }]);
-        return {
-          ...r,
-          creatorId,
-          members: dedupedMembers,
-        };
-      })
-    );
-
     setToast({
-      title: 'Account Registered! 🎉',
-      message: `Welcome ${newUser.name}! Verified LeetCode @${lcStats.username} (${lcStats.totalSolved} solved).`,
+      title: 'Account Created!',
+      message: `Welcome ${newUser.name}! Verified @${lcStats.username} (${lcStats.totalSolved} solved).`,
       type: 'success',
     });
 
     return { success: true, message: 'Account registered successfully.' };
   };
+
 
   const switchActiveRoom = (roomId: string) => {
     if (rooms.some((r) => r.id === roomId)) {
@@ -769,136 +405,81 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const createRoom = (name: string, description: string, targetDailyGoal = 1): Room => {
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const newRoom: Room = {
-      id: `room_${Date.now()}`,
+  const createRoom = async (name: string, description: string, targetDailyGoal = 1): Promise<Room | null> => {
+    if (!isSupabaseConfigured || !currentUser.id) {
+      setToast({ title: 'Error', message: 'Please sign in to create a room.', type: 'error' });
+      return null;
+    }
+
+    const { room, error } = await dbCreateRoom({
       name: name.trim(),
-      code,
       description: description.trim(),
-      creatorId: currentUser.id,
-      creatorUsername: currentUser.username,
-      creatorName: currentUser.name,
-      createdAt: new Date().toISOString().split('T')[0],
-      targetDailyGoal,
-      members: [{ ...currentUser, role: 'Admin' }],
-      dailyProblems: [],
-    };
-
-    const updatedRooms = [newRoom, ...rooms];
-    setRooms(updatedRooms);
-    setActiveRoomId(newRoom.id);
-
-    const newNotif: Notification = {
-      id: `notif_${Date.now()}`,
-      roomId: newRoom.id,
-      type: 'SYSTEM',
-      title: 'Room Created! 🎉',
-      message: `Welcome to "${name}". Share invite code ${code} with your teammates!`,
-      timestamp: 'Just now',
-      read: false,
-    };
-
-    const updatedNotifs = [newNotif, ...notifications];
-    setNotifications(updatedNotifs);
-    broadcastState(updatedRooms, updatedNotifs);
-
-    setToast({
-      title: 'Room Created!',
-      message: `Invite code: ${code}`,
-      type: 'success',
+      creator_id: currentUser.id,
+      target_daily_goal: targetDailyGoal,
     });
 
-    return newRoom;
+    if (error || !room) {
+      setToast({ title: 'Error', message: error || 'Failed to create room.', type: 'error' });
+      return null;
+    }
+
+    setRooms((prev) => [room, ...prev]);
+    setActiveRoomId(room.id);
+
+    setToast({ title: 'Room Created!', message: `Invite code: ${room.code}`, type: 'success' });
+    playAudioNotification();
+
+    return room;
   };
 
-  const deleteRoom = (roomId: string): { success: boolean; message: string } => {
+  const deleteRoom = async (roomId: string): Promise<{ success: boolean; message: string }> => {
     const roomToDelete = rooms.find((r) => r.id === roomId);
-    if (!roomToDelete) {
-      return { success: false, message: 'Room not found.' };
+    if (!roomToDelete) return { success: false, message: 'Room not found.' };
+
+    if (roomToDelete.creatorId !== currentUser.id && currentUser.systemRole !== 'SuperAdmin') {
+      return { success: false, message: 'Permission denied.' };
     }
 
-    const isAuthorized = roomToDelete.creatorId === currentUser.id || currentUser.systemRole === 'SuperAdmin';
-    if (!isAuthorized) {
-      return { success: false, message: 'Permission denied. Only the room creator/host can delete this room.' };
-    }
+    const { error } = await dbDeleteRoom(roomId);
+    if (error) return { success: false, message: error };
 
-    const updatedRooms = rooms.filter((r) => r.id !== roomId);
-    setRooms(updatedRooms);
-
+    setRooms((prev) => prev.filter((r) => r.id !== roomId));
     if (activeRoomId === roomId) {
-      setActiveRoomId(updatedRooms[0]?.id || '');
+      const remaining = rooms.filter((r) => r.id !== roomId);
+      setActiveRoomId(remaining[0]?.id || '');
     }
 
-    // Always redirect to the dedicated post-login room selection page
-    if (typeof (window as any).__setLandingView === 'function') {
-      (window as any).__setLandingView(true);
-    }
-
-    const toastMsg = {
-      title: 'Room Deleted',
-      message: `"${roomToDelete.name}" has been deleted. Redirected to Room Hub.`,
-      type: 'warning',
-    };
-
-    setToast(toastMsg);
-    broadcastState(updatedRooms, notifications, toastMsg);
-
-    return { success: true, message: `Deleted room ${roomToDelete.name}` };
+    setToast({ title: 'Room Deleted', message: `"${roomToDelete.name}" has been deleted.`, type: 'warning' });
+    return { success: true, message: 'Room deleted.' };
   };
 
-  const joinRoomByCode = (code: string): { success: boolean; message: string } => {
-    const cleanCode = code.trim().toUpperCase();
-    const targetRoom = rooms.find((r) => r.code.toUpperCase() === cleanCode);
+  const joinRoomByCode = async (code: string): Promise<{ success: boolean; message: string }> => {
+    if (!isSupabaseConfigured || !currentUser.id) {
+      return { success: false, message: 'Please sign in to join a room.' };
+    }
 
+    const targetRoom = await getRoomByCode(code.trim().toUpperCase());
     if (!targetRoom) {
-      return { success: false, message: 'Invalid room code. Please check and try again.' };
+      return { success: false, message: 'Invalid room code.' };
     }
 
-    const isMember = targetRoom.members.some(
-      (m) => m.id === currentUser.id || (currentUser.username && m.username?.toLowerCase() === currentUser.username.toLowerCase())
-    );
-
-    let updatedRooms = rooms;
+    const isMember = targetRoom.members.some((m) => m.id === currentUser.id);
     if (!isMember) {
-      updatedRooms = rooms.map((r) => {
-        if (r.id === targetRoom.id) {
-          return {
-            ...r,
-            members: [...r.members, { ...currentUser, role: 'Member' as const }],
-          };
-        }
-        return r;
-      });
-      setRooms(updatedRooms);
+      const { error } = await dbJoinRoom(targetRoom.id, currentUser.id);
+      if (error) return { success: false, message: error };
     }
 
+    await refreshRooms();
     setActiveRoomId(targetRoom.id);
 
-    const newNotif: Notification = {
-      id: `notif_${Date.now()}`,
-      roomId: targetRoom.id,
-      type: 'SYSTEM',
-      title: `${currentUser.name} joined the room! 👋`,
-      message: `@${currentUser.username || currentUser.name} entered "${targetRoom.name}".`,
-      timestamp: 'Just now',
-      read: false,
-    };
-
-    const updatedNotifs = [newNotif, ...notifications];
-    setNotifications(updatedNotifs);
-    broadcastState(updatedRooms, updatedNotifs);
-
-    setToast({
-      title: 'Room Joined! 🎉',
-      message: `Welcome to ${targetRoom.name}!`,
-      type: 'success',
-    });
+    setToast({ title: 'Room Joined!', message: `Welcome to ${targetRoom.name}!`, type: 'success' });
+    playAudioNotification();
 
     return { success: true, message: `Joined ${targetRoom.name}` };
   };
 
-  const postDailyProblem = (problemData: {
+
+  const postDailyProblem = async (problemData: {
     title: string;
     url: string;
     difficulty: Difficulty;
@@ -906,93 +487,53 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     targetTimeMinutes?: number;
     date?: string;
   }) => {
-    const newProblem: Problem = {
-      id: `prob_${Date.now()}`,
+    if (!isSupabaseConfigured || !activeRoomId || !currentUser.id) return;
+
+    const { problem, error } = await dbCreateProblem({
+      room_id: activeRoomId,
       title: problemData.title,
       url: problemData.url,
       difficulty: problemData.difficulty,
       tags: problemData.tags,
-      targetTimeMinutes: problemData.targetTimeMinutes,
-      date: problemData.date || new Date().toISOString().split('T')[0],
-      postedBy: {
-        id: currentUser.id,
-        name: currentUser.name,
-        avatar: currentUser.avatar,
-      },
-      submissions: [],
-      comments: [],
-    };
-
-    const updatedRooms = rooms.map((r) => {
-      if (r.id === activeRoomId) {
-        return {
-          ...r,
-          activeProblemId: newProblem.id,
-          dailyProblems: [newProblem, ...r.dailyProblems],
-        };
-      }
-      return r;
+      target_time_minutes: problemData.targetTimeMinutes,
+      posted_by: currentUser.id,
+      date: problemData.date,
     });
 
-    setRooms(updatedRooms);
+    if (error || !problem) {
+      setToast({ title: 'Error', message: error || 'Failed to post problem.', type: 'error' });
+      return;
+    }
 
-    const newNotif: Notification = {
-      id: `notif_${Date.now()}`,
-      roomId: activeRoomId,
-      type: 'NEW_PROBLEM',
-      title: `New Daily Challenge Posted: ${newProblem.title} 🚀`,
-      message: `${currentUser.name} posted today's ${newProblem.difficulty} problem: "${newProblem.title}".`,
-      timestamp: 'Just now',
-      read: false,
-      authorName: currentUser.name,
-      authorAvatar: currentUser.avatar,
-    };
-
-    const updatedNotifs = [newNotif, ...notifications];
-    setNotifications(updatedNotifs);
-    broadcastState(updatedRooms, updatedNotifs);
-
-    setToast({
-      title: 'Problem Added!',
-      message: `"${newProblem.title}" scheduled for ${newProblem.date}.`,
-      type: 'success',
-    });
+    await refreshRooms();
+    setToast({ title: 'Problem Added!', message: `"${problem.title}" scheduled.`, type: 'success' });
+    playAudioNotification();
   };
 
   const setActiveProblemId = (problemId: string) => {
     setRooms((prev) =>
-      prev.map((r) =>
-        r.id === activeRoomId ? { ...r, activeProblemId: problemId } : r
-      )
+      prev.map((r) => (r.id === activeRoomId ? { ...r, activeProblemId: problemId } : r))
     );
   };
 
-  const deleteProblem = (problemId: string) => {
+  const deleteProblem = async (problemId: string) => {
     const targetProblem = activeRoom?.dailyProblems.find((p) => p.id === problemId);
-    const isAuthorized = isHost || targetProblem?.postedBy.id === currentUser.id;
-    if (!isAuthorized) {
-      setToast({ title: 'Permission Denied', message: 'Only the room host or problem author can delete this challenge.', type: 'warning' });
+    if (!isHost && targetProblem?.postedBy.id !== currentUser.id) {
+      setToast({ title: 'Permission Denied', message: 'Only host or author can delete.', type: 'warning' });
       return;
     }
 
-    const updatedRooms = rooms.map((r) => {
-      if (r.id === activeRoomId) {
-        const filtered = r.dailyProblems.filter((p) => p.id !== problemId);
-        return {
-          ...r,
-          activeProblemId: r.activeProblemId === problemId ? filtered[0]?.id : r.activeProblemId,
-          dailyProblems: filtered,
-        };
-      }
-      return r;
-    });
+    const { error } = await dbDeleteProblem(problemId);
+    if (error) {
+      setToast({ title: 'Error', message: error, type: 'error' });
+      return;
+    }
 
-    setRooms(updatedRooms);
-    setToast({ title: 'Problem Removed', message: 'Challenge removed from room history.', type: 'info' });
-    broadcastState(updatedRooms, notifications);
+    await refreshRooms();
+    setToast({ title: 'Problem Removed', message: 'Challenge removed.', type: 'info' });
   };
 
-  const submitSolution = (
+  const submitSolution = async (
     problemId: string,
     data?: {
       language?: string;
@@ -1004,10 +545,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       verifiedLeetCode?: boolean;
     }
   ) => {
+    if (!isSupabaseConfigured || !currentUser.id) return;
+
     const targetProblem = activeRoom?.dailyProblems.find((p) => p.id === problemId);
     const existingSubmission = targetProblem?.submissions.find((s) => s.userId === currentUser.id);
     const isFirstSubmission = !existingSubmission;
-    const todayStr = new Date().toISOString().split('T')[0];
 
     let earnedPoints = 50;
     if (targetProblem) {
@@ -1016,245 +558,136 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       else earnedPoints = 30;
     }
 
-    const newSubmission: Submission = {
-      id: existingSubmission ? existingSubmission.id : `sub_${Date.now()}`,
-      problemId,
-      userId: currentUser.id,
-      userName: currentUser.name,
-      userAvatar: currentUser.avatar,
+    const { error } = await dbCreateSubmission({
+      problem_id: problemId,
+      user_id: currentUser.id,
       status: 'Accepted',
-      language: data?.language || 'LeetCode',
-      codeSnippet: data?.codeSnippet || '',
-      timeSpentMinutes: data?.timeSpentMinutes ?? 15,
-      runtimeMs: data?.runtimeMs || undefined,
-      memoryMb: data?.memoryMb || undefined,
+      language: data?.language,
+      code_snippet: data?.codeSnippet,
+      time_spent_minutes: data?.timeSpentMinutes,
+      runtime_ms: data?.runtimeMs,
+      memory_mb: data?.memoryMb,
       notes: data?.notes,
-      submittedAt: existingSubmission ? existingSubmission.submittedAt : 'Just now',
-      verifiedLeetCode: data?.verifiedLeetCode === true,
-    };
+      verified_leetcode: data?.verifiedLeetCode,
+    });
 
-    let updatedUser = currentUser;
+    if (error) {
+      setToast({ title: 'Error', message: error, type: 'error' });
+      return;
+    }
+
     if (isFirstSubmission) {
+      const todayStr = new Date().toISOString().split('T')[0];
       const newStreak = currentUser.solvedToday ? currentUser.streak : currentUser.streak + 1;
-      const newPoints = currentUser.points + earnedPoints;
-      const newRoomSolved = (currentUser.roomSolvedCount || 0) + 1;
-
-      updatedUser = {
-        ...currentUser,
-        points: newPoints,
+      
+      await updateCurrentUser({
+        points: currentUser.points + earnedPoints,
         streak: newStreak,
-        roomSolvedCount: newRoomSolved,
-        solvedCount: newRoomSolved,
+        roomSolvedCount: (currentUser.roomSolvedCount || 0) + 1,
+        solvedCount: (currentUser.solvedCount || 0) + 1,
         lastSolvedDate: todayStr,
         solvedToday: true,
-      };
-      setCurrentUser(updatedUser);
-    }
+      });
 
-    const updatedRooms = rooms.map((r) => {
-      if (r.id === activeRoomId) {
-        return {
-          ...r,
-          members: r.members.map((m) => (m.id === currentUser.id ? updatedUser : m)),
-          dailyProblems: r.dailyProblems.map((p) => {
-            if (p.id === problemId) {
-              return {
-                ...p,
-                submissions: [newSubmission, ...p.submissions.filter((s) => s.userId !== currentUser.id)],
-              };
-            }
-            return p;
-          }),
-        };
-      }
-      return r;
-    });
-
-    setRooms(updatedRooms);
-
-    if (isFirstSubmission) {
       try {
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#2ea043', '#58a6ff', '#d29922', '#f0883e'],
-        });
+        confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
       } catch (e) {}
 
-      const newNotif: Notification = {
-        id: `notif_${Date.now()}`,
-        roomId: activeRoomId,
-        type: 'PROBLEM_SOLVED',
-        title: `${currentUser.name} solved today's challenge! 🔥`,
-        message: `Completed "${targetProblem?.title || 'Daily Problem'}" (+${earnedPoints} pts).`,
-        timestamp: 'Just now',
-        read: false,
-        authorName: currentUser.name,
-        authorAvatar: currentUser.avatar,
-      };
-
-      const updatedNotifs = [newNotif, ...notifications];
-      setNotifications(updatedNotifs);
-      broadcastState(updatedRooms, updatedNotifs);
-
-      setToast({
-        title: 'Challenge Solved! 🎉',
-        message: `+${earnedPoints} Points Earned! Streak updated.`,
-        type: 'success',
-      });
+      setToast({ title: 'Challenge Solved!', message: `+${earnedPoints} Points!`, type: 'success' });
     } else {
-      setToast({
-        title: 'Solution Updated!',
-        message: 'Your submission status has been saved.',
-        type: 'info',
-      });
+      setToast({ title: 'Solution Updated!', message: 'Submission saved.', type: 'info' });
     }
+
+    await refreshRooms();
+    playAudioNotification();
   };
 
-  const addComment = (problemId: string, content: string, codeSnippet?: string) => {
-    const newComment = {
-      id: `comment_${Date.now()}`,
-      userId: currentUser.id,
-      userName: currentUser.name,
-      userAvatar: currentUser.avatar,
-      content,
-      codeSnippet,
-      createdAt: 'Just now',
-    };
 
-    const updatedRooms = rooms.map((r) => {
-      if (r.id === activeRoomId) {
-        return {
-          ...r,
-          dailyProblems: r.dailyProblems.map((p) => {
-            if (p.id === problemId) {
-              return {
-                ...p,
-                comments: [newComment, ...p.comments],
-              };
-            }
-            return p;
-          }),
-        };
-      }
-      return r;
+  const addComment = async (problemId: string, content: string, codeSnippet?: string) => {
+    if (!isSupabaseConfigured || !currentUser.id) return;
+
+    const { error } = await dbCreateComment({
+      problem_id: problemId,
+      user_id: currentUser.id,
+      content,
+      code_snippet: codeSnippet,
     });
 
-    setRooms(updatedRooms);
+    if (error) {
+      setToast({ title: 'Error', message: error, type: 'error' });
+      return;
+    }
 
-    const targetProblem = activeRoom?.dailyProblems.find((p) => p.id === problemId);
-    const newNotif: Notification = {
-      id: `notif_${Date.now()}`,
-      roomId: activeRoomId,
-      type: 'COMMENT',
-      title: `New Comment on ${targetProblem?.title || 'Problem'}`,
-      message: `${currentUser.name}: "${content.length > 60 ? content.substring(0, 60) + '...' : content}"`,
-      timestamp: 'Just now',
-      read: false,
-      authorName: currentUser.name,
-      authorAvatar: currentUser.avatar,
-    };
-
-    const updatedNotifs = [newNotif, ...notifications];
-    setNotifications(updatedNotifs);
-    broadcastState(updatedRooms, updatedNotifs);
+    await refreshRooms();
   };
 
-  const deleteComment = (problemId: string, commentId: string) => {
+  const deleteComment = async (problemId: string, commentId: string) => {
     if (!activeRoom) return;
 
-    const targetComment = activeRoom.dailyProblems.flatMap((p) => p.comments).find((c) => c.id === commentId);
-    if (!isHost && targetComment?.userId !== currentUser.id) return;
+    const targetComment = activeRoom.dailyProblems
+      .flatMap((p) => p.comments)
+      .find((c) => c.id === commentId);
+    
+    if (!isHost && targetComment?.userId !== currentUser.id) {
+      setToast({ title: 'Permission Denied', message: 'Cannot delete this comment.', type: 'warning' });
+      return;
+    }
 
-    const updatedRooms = rooms.map((r) => {
-      if (r.id === activeRoomId) {
-        return {
-          ...r,
-          dailyProblems: r.dailyProblems.map((p) => {
-            if (p.id === problemId) {
-              return {
-                ...p,
-                comments: p.comments.filter((c) => c.id !== commentId),
-              };
-            }
-            return p;
-          }),
-        };
-      }
-      return r;
-    });
+    const { error } = await dbDeleteComment(commentId);
+    if (error) {
+      setToast({ title: 'Error', message: error, type: 'error' });
+      return;
+    }
 
-    setRooms(updatedRooms);
+    await refreshRooms();
     setToast({ title: 'Comment Removed', message: 'Comment deleted.', type: 'info' });
-    broadcastState(updatedRooms, notifications);
   };
 
-  const removeMember = (roomId: string, memberId: string) => {
+  const removeMember = async (roomId: string, memberId: string) => {
     const targetRoom = rooms.find((r) => r.id === roomId);
     if (!targetRoom) return;
 
-    const isRoomHost = targetRoom.creatorId === currentUser.id || currentUser.systemRole === 'SuperAdmin';
-    if (!isRoomHost) {
-      setToast({ title: 'Permission Denied', message: 'Only the room host can remove members.', type: 'warning' });
+    if (targetRoom.creatorId !== currentUser.id && currentUser.systemRole !== 'SuperAdmin') {
+      setToast({ title: 'Permission Denied', message: 'Only host can remove members.', type: 'warning' });
       return;
     }
 
     if (memberId === currentUser.id) {
-      setToast({ title: 'Notice', message: 'You cannot remove yourself from your own room.', type: 'info' });
+      setToast({ title: 'Notice', message: 'Cannot remove yourself.', type: 'info' });
       return;
     }
 
-    const updatedRooms = rooms.map((r) => {
-      if (r.id === roomId) {
-        return {
-          ...r,
-          members: r.members.filter((m) => m.id !== memberId),
-        };
-      }
-      return r;
-    });
+    const { error } = await dbLeaveRoom(roomId, memberId);
+    if (error) {
+      setToast({ title: 'Error', message: error, type: 'error' });
+      return;
+    }
 
-    setRooms(updatedRooms);
-    setToast({ title: 'Member Removed', message: 'Member was removed from the room.', type: 'warning' });
-    broadcastState(updatedRooms, notifications);
+    await refreshRooms();
+    setToast({ title: 'Member Removed', message: 'Member removed from room.', type: 'warning' });
   };
 
-  const markNotificationRead = (id: string) => {
+  const markNotificationRead = async (id: string) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    if (isSupabaseConfigured) {
+      await dbMarkNotificationRead(id);
+    }
   };
 
-  const markAllNotificationsRead = () => {
+  const markAllNotificationsRead = async () => {
     setNotifications((prev) =>
       prev.map((n) => (n.roomId === activeRoomId ? { ...n, read: true } : n))
     );
-  };
-
-  const resetDemoData = () => {
-    try {
-      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_user`);
-      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_rooms`);
-      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_activeRoomId`);
-      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_notifications`);
-      localStorage.removeItem(LOCAL_STORAGE_KEY_AUTH);
-      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_registered_accounts`);
-    } catch (e) {}
-
-    setCurrentUser(INITIAL_CURRENT_USER);
-    setRooms([]);
-    setActiveRoomId('');
-    setNotifications([]);
-    setAuthVault([]);
-    setRegisteredAccounts([]);
-    if (typeof (window as any).__setLandingView === 'function') {
-      (window as any).__setLandingView(true);
+    if (isSupabaseConfigured && currentUser.id) {
+      await dbMarkAllNotificationsRead(currentUser.id, activeRoomId);
     }
-    setToast({
-      title: 'Workspace Reset',
-      message: 'Reset back to clean initial state.',
-      type: 'info',
-    });
   };
+
+  const resetDemoData = async () => {
+    await logout();
+    setToast({ title: 'Workspace Reset', message: 'Signed out and cleared local data.', type: 'info' });
+  };
+
 
   return (
     <AppContext.Provider
@@ -1276,6 +709,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         isCloudConnected: isSupabaseConfigured,
         isAdmin,
         isHost,
+        isLoading,
         login,
         registerAccount,
         switchActiveRoom,
@@ -1294,6 +728,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         resetDemoData,
         resetToDefault: resetDemoData,
         signOut: logout,
+        refreshRooms,
       }}
     >
       {children}
