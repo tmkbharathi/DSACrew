@@ -10,13 +10,12 @@ export interface LeetCodeDailyChallenge {
 }
 
 const CORS_PROXIES = [
-  // Local Vite development proxy
+  // Vercel serverless function proxy (works in both dev and production)
+  '/api/leetcode-proxy',
+  // Local Vite development proxy fallback
   typeof window !== 'undefined' ? '/leetcode-graphql' : '',
-  // Direct endpoint
+  // Direct endpoint (rarely works due to CORS)
   'https://leetcode.com/graphql',
-  // Public CORS gateways for production deployments
-  'https://corsproxy.io/?https://leetcode.com/graphql',
-  'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://leetcode.com/graphql'),
 ].filter(Boolean);
 
 async function executeLeetCodeGraphQL(query: string, variables: Record<string, any> = {}): Promise<any> {
