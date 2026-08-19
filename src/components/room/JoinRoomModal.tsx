@@ -16,12 +16,12 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({ isOpen, onClose, o
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (!code.trim()) return;
 
-    const res = joinRoomByCode(code);
+    const res = await joinRoomByCode(code);
     if (res.success) {
       setCode('');
       onClose();

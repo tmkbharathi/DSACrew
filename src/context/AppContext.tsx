@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import confetti from 'canvas-confetti';
-import type { Room, User, Problem, Notification, Difficulty } from '../types';
-import { INITIAL_CURRENT_USER, INITIAL_NOTIFICATIONS } from '../data/mockData';
+import type { Room, User, Notification, Difficulty } from '../types';
+import { INITIAL_CURRENT_USER } from '../data/mockData';
 import {
   supabase,
   isSupabaseConfigured,
@@ -14,7 +14,6 @@ import {
   getUserByUsername,
   updateUserProfile,
   createRoom as dbCreateRoom,
-  getRoomById,
   getRoomByCode,
   getUserRooms,
   joinRoom as dbJoinRoom,
@@ -28,7 +27,6 @@ import {
   getUserNotifications,
   markNotificationRead as dbMarkNotificationRead,
   markAllNotificationsRead as dbMarkAllNotificationsRead,
-  createNotification,
   subscribeToRoom,
   unsubscribeFromChannel,
 } from '../services/supabase';
@@ -96,8 +94,6 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_KEY = 'leettracker_state_v2';
-
 export const normalizeHandle = (value?: string) => value?.trim().toLowerCase() || '';
 
 export const isUserHostOfRoom = (room?: Room, user?: User): boolean => {
@@ -138,7 +134,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const initAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase!.auth.getSession();
         
         if (session?.user) {
           const profile = await getUserProfile(session.user.id);
@@ -621,7 +617,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await refreshRooms();
   };
 
-  const deleteComment = async (problemId: string, commentId: string) => {
+  const deleteComment = async (_problemId: string, commentId: string) => {
     if (!activeRoom) return;
 
     const targetComment = activeRoom.dailyProblems

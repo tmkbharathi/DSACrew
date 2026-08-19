@@ -98,7 +98,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
     }
   };
 
-  const handleQuickJoin = (e: React.FormEvent) => {
+  const handleQuickJoin = async (e: React.FormEvent) => {
     e.preventDefault();
     setJoinError('');
     setJoinSuccess('');
@@ -108,7 +108,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
       return;
     }
 
-    const res = joinRoomByCode(clean);
+    const res = await joinRoomByCode(clean);
     if (res.success) {
       setJoinSuccess(res.message);
       setRoomCode('');
