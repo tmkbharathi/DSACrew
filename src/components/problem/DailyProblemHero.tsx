@@ -587,7 +587,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5 relative z-10 pt-1">
             <div className="min-w-0 flex-1 space-y-2.5">
               {/* Problem Title */}
-              <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight break-words font-sans">
+              <h2 className={`text-xl sm:text-2xl font-extrabold tracking-tight break-words font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
                 {activeProblem.title}
               </h2>
 
@@ -596,18 +596,22 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
                 {activeProblem.tags.map((tag, i) => (
                   <span
                     key={i}
-                    className="bg-[#21262d] text-slate-100 text-xs px-2.5 py-1 rounded-md border border-[#30363d] flex items-center gap-1.5 font-sans font-medium shadow-sm"
+                    className={`text-xs px-2.5 py-1 rounded-md border flex items-center gap-1.5 font-sans font-medium shadow-sm ${
+                      isIllustrative
+                        ? 'bg-[#f7f3eb] text-[#212d27] border-[#ede4d4]'
+                        : 'bg-[#21262d] text-slate-100 border-[#30363d]'
+                    }`}
                   >
-                    <Tag className="w-3 h-3 text-slate-400" /> {tag}
+                    <Tag className={`w-3 h-3 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`} /> {tag}
                   </span>
                 ))}
               </div>
 
               {/* Posted by context */}
-              <div className="text-xs text-slate-300 flex items-center gap-1.5 font-sans pt-0.5">
-                <span className="text-slate-400">Posted by</span>
-                <img src={activeProblem.postedBy.avatar} alt="" className="w-4 h-4 rounded-full object-cover border border-[#30363d]" />
-                <span className="text-slate-100 font-semibold">{activeProblem.postedBy.name}</span>
+              <div className={`text-xs flex items-center gap-1.5 font-sans pt-0.5 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-300'}`}>
+                <span className={isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}>Posted by</span>
+                <img src={activeProblem.postedBy.avatar} alt="" className={`w-4 h-4 rounded-full object-cover border ${isIllustrative ? 'border-[#ede4d4]' : 'border-[#30363d]'}`} />
+                <span className={`font-semibold ${isIllustrative ? 'text-[#212d27]' : 'text-slate-100'}`}>{activeProblem.postedBy.name}</span>
               </div>
             </div>
 
