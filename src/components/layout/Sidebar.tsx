@@ -31,7 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen = false,
   onMobileClose,
 }) => {
-  const { activeRoom, currentUser, isHost, deleteRoom, removeMember, setToast, setIsLandingView, theme } = useApp();
+  const { activeRoom, currentUser, isHost, deleteRoom, removeMember, setToast, setIsLandingView, theme, onlineUserIds } = useApp();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDesktopMembersOpen, setIsDesktopMembersOpen] = useState(true);
@@ -194,7 +194,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }`}
         >
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider">ONLINE MEMBERS ({uniqueMembers.length})</span>
+            <span className="text-xs font-bold uppercase tracking-wider">ROOM MEMBERS ({uniqueMembers.length})</span>
           </div>
           {isDesktopMembersOpen ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
         </button>
@@ -204,6 +204,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {uniqueMembers.map((member) => {
               const isCurrent = member.id === currentUser.id || (currentUser.username && member.username?.toLowerCase() === currentUser.username?.toLowerCase());
               const memberIsHost = isUserHostOfRoom(activeRoom, member);
+              const isOnline =
+                isCurrent ||
+                (onlineUserIds &&
+                  (onlineUserIds.includes(member.id) ||
+                    (member.username &&
+                      onlineUserIds
+                        .map((u) => u.toLowerCase())
+                        .includes(member.username.toLowerCase()))));
 
               return (
                 <div
@@ -218,22 +226,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       : 'bg-[#0d1117] border-[#30363d] text-slate-300'
                   }`}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="relative">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="relative shrink-0">
                       <img
                         src={member.avatar}
                         alt=""
                         className="w-6 h-6 rounded-full object-cover border border-[#ede4d4] shrink-0"
                       />
-                      <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-white" />
+                      {isOnline ? (
+                        <div
+                          className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-white"
+                          title={isCurrent ? "Online (You)" : "Online now"}
+                        />
+                      ) : (
+                        <div
+                          className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-slate-500/60 ring-1 ring-slate-800"
+                          title="Offline"
+                        />
+                      )}
                     </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1 font-sans">
-                        <span className="text-xs font-semibold truncate max-w-[90px]">
-                          {isCurrent ? `${currentUser.name.split(' ')[0]} (You)` : member.name.split(' ')[0]}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 font-sans min-w-0">
+                        <span
+                          className="text-xs font-semibold truncate"
+                          title={(isCurrent ? currentUser.name : member.name).length > 15 ? (isCurrent ? currentUser.name : member.name) : undefined}
+                        >
+                          {isCurrent ? currentUser.name : member.name}
                         </span>
                         {memberIsHost && (
-                          <span className="text-[8px] bg-purple-100 text-purple-800 px-1 py-0.2 rounded font-bold border border-purple-200 font-mono">
+                          <span className="text-[8px] bg-purple-100 text-purple-800 px-1 py-0.2 rounded font-bold border border-purple-200 font-mono shrink-0">
                             HOST
                           </span>
                         )}

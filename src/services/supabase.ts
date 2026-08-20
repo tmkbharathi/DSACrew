@@ -635,12 +635,20 @@ export function subscribeToRoom(
     onProblemChange?: () => void;
     onSubmissionChange?: () => void;
     onMemberChange?: () => void;
-  }
+    onPresenceChange?: (onlineUserIds: string[]) => void;
+  },
+  currentUserInfo?: { id: string; username: string; name: string }
 ) {
   if (!supabase) return null;
 
   const channel = supabase
-    .channel(`room_${roomId}`)
+    .channel(`room_${roomId}`, {
+      config: {
+        presence: {
+          key: currentUserInfo?.id || 'anon',
+        },
+      },
+    })
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'lt_problems', filter: `room_id=eq.${roomId}` },
@@ -656,7 +664,31 @@ export function subscribeToRoom(
       { event: '*', schema: 'public', table: 'lt_room_members', filter: `room_id=eq.${roomId}` },
       () => callbacks.onMemberChange?.()
     )
-    .subscribe();
+    .on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState();
+      const onlineIds: string[] = [];
+      Object.keys(state).forEach((key) => {
+        onlineIds.push(key);
+        const presences = state[key] as any[];
+        if (Array.isArray(presences)) {
+          presences.forEach((entry: any) => {
+            if (entry?.username) onlineIds.push(entry.username.toLowerCase());
+            if (entry?.id) onlineIds.push(entry.id);
+          });
+        }
+      });
+      callbacks.onPresenceChange?.(Array.from(new Set(onlineIds)));
+    })
+    .subscribe(async (status) => {
+      if (status === 'SUBSCRIBED' && currentUserInfo && currentUserInfo.id) {
+        await channel.track({
+          id: currentUserInfo.id,
+          username: currentUserInfo.username,
+          name: currentUserInfo.name,
+          online_at: new Date().toISOString(),
+        });
+      }
+    });
 
   return channel;
 }

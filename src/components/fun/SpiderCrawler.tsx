@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Gamepad2 } from 'lucide-react';
 import { sounds } from './soundEffects';
 import { useApp } from '../../context/AppContext';
 
@@ -34,7 +33,6 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
   });
 
   const [isHovered, setIsHovered] = useState(false);
-  const [showNotification, setShowNotification] = useState(true);
 
   const targetRef = useRef<{ x: number; y: number }>({ x: 200, y: 200 });
   const posRef = useRef(pos);
@@ -65,13 +63,6 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
       silkStartY: 0,
     });
     targetRef.current = { x: startX, y: startY };
-
-    // Auto-dismiss the initial notification bubble after 7 seconds
-    const timer = setTimeout(() => {
-      setShowNotification(false);
-    }, 7000);
-
-    return () => clearTimeout(timer);
   }, []);
 
   // Spider motion loop: picking new random points strictly within bottom-left empty area
@@ -334,28 +325,6 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
               <circle cx="42" cy="36" r="1.3" fill="#3fb950" opacity="0.8" />
               <circle cx="58" cy="36" r="1.3" fill="#3fb950" opacity="0.8" />
             </svg>
-
-            {/* Floating Tooltip / Invitation Bubble */}
-            <div
-              className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 rounded-xl bg-[#161b22]/95 border border-[#30363d] shadow-2xl backdrop-blur-md text-xs whitespace-nowrap transition-all duration-300 pointer-events-none flex items-center gap-2 z-50 ${
-                isHovered || showNotification
-                  ? 'opacity-100 translate-y-0 scale-100'
-                  : 'opacity-0 translate-y-1 scale-95 pointer-events-none'
-              }`}
-              style={{
-                // Counter-rotate tooltip so it stays right-side up regardless of spider's angle
-                transform: `translateX(-50%) rotate(${-pos.angle}deg)`,
-              }}
-            >
-              <div className="w-2 h-2 rounded-full bg-[#3fb950] animate-ping" />
-              <span className="font-semibold text-slate-200 flex items-center gap-1.5">
-                <Gamepad2 className="w-3.5 h-3.5 text-[#3fb950]" />
-                <span>Relax with Snake!</span>
-              </span>
-              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-mono">
-                Click me
-              </span>
-            </div>
           </div>
         </div>
       )}

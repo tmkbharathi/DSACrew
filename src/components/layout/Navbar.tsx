@@ -16,11 +16,14 @@ import {
   Sun,
   Moon,
   Palette,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { PostProblemModal } from '../problem/PostProblemModal';
 import { InviteModal } from '../room/InviteModal';
 import { NotificationDrawer } from '../notifications/NotificationDrawer';
 import { UserProfileModal } from '../profile/UserProfileModal';
+import { SnakeGameModal } from '../fun/SnakeGameModal';
 import { Tooltip } from '../ui/Tooltip';
 import { Button } from '../ui/Button';
 
@@ -48,6 +51,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isSnakeOpen, setIsSnakeOpen] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -360,12 +364,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
 
                     <button
                       onClick={() => {
-                        const newSound = !soundEnabled;
-                        setSoundEnabled(newSound);
+                        const isCurrentlyVisible = currentUser?.preferences?.spiderVisible !== false;
                         updateCurrentUser({
                           preferences: {
                             ...currentUser.preferences,
-                            soundEnabled: newSound,
+                            spiderVisible: !isCurrentlyVisible,
                           },
                         });
                       }}
@@ -373,12 +376,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
                         isIllustrative ? 'hover:bg-[#f4ede0]' : 'hover:bg-[#21262d]'
                       }`}
                     >
-                      {soundEnabled ? (
-                        <Volume2 className="w-4 h-4 text-emerald-500" />
+                      {currentUser?.preferences?.spiderVisible !== false ? (
+                        <EyeOff className="w-4 h-4 text-slate-400" />
                       ) : (
-                        <VolumeX className="w-4 h-4 text-slate-400" />
+                        <Eye className="w-4 h-4 text-emerald-500" />
                       )}
-                      <span>Audio: {soundEnabled ? 'Enabled' : 'Muted'}</span>
+                      <span>
+                        {currentUser?.preferences?.spiderVisible !== false ? 'Hide Spider' : 'Show Spider'}
+                      </span>
                     </button>
 
                     <button
@@ -448,6 +453,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
       )}
       <NotificationDrawer isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
       <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+      <SnakeGameModal isOpen={isSnakeOpen} onClose={() => setIsSnakeOpen(false)} />
 
       {/* Reset Confirmation Dialog */}
       {showResetConfirm && (

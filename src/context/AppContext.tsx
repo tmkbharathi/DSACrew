@@ -98,6 +98,7 @@ interface AppContextType {
   setTheme: (theme: 'dark' | 'illustrative') => void;
   selectedDate: string;
   setSelectedDate: (date: string) => void;
+  onlineUserIds: string[];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -125,6 +126,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isLandingView, setIsLandingView] = useState<boolean>(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
   const [theme, setThemeState] = useState<'dark' | 'illustrative'>(() => {
     try {
       const saved = localStorage.getItem('leettracker_theme') as 'dark' | 'illustrative' | null;
@@ -275,6 +277,43 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return () => subscription.unsubscribe();
   }, [loadUserData]);
 
+  // Check URL query parameters on initial mount / room load to auto-select room (?code=XXXX)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code')?.trim().toUpperCase();
+      if (code && (rooms.length > 0 || communityRooms.length > 0)) {
+        const matched =
+          rooms.find((r) => r.code?.toUpperCase() === code) ||
+          communityRooms.find((r) => r.code?.toUpperCase() === code);
+        if (matched) {
+          setActiveRoomId(matched.id);
+          setIsLandingView(false);
+        }
+      }
+    } catch (e) {}
+  }, [rooms, communityRooms]);
+
+  // Synchronize browser URL query param (?code=XXXX) with current activeRoom in real-time
+  useEffect(() => {
+    try {
+      if (!isLandingView && activeRoom && activeRoom.code) {
+        const currentUrl = new URL(window.location.href);
+        if (currentUrl.searchParams.get('code') !== activeRoom.code) {
+          currentUrl.searchParams.set('code', activeRoom.code);
+          window.history.replaceState({}, '', currentUrl.toString());
+        }
+      } else if (isLandingView) {
+        const currentUrl = new URL(window.location.href);
+        if (currentUrl.searchParams.has('code')) {
+          currentUrl.searchParams.delete('code');
+          const cleanPath = currentUrl.pathname + (currentUrl.search ? currentUrl.search : '');
+          window.history.replaceState({}, '', cleanPath);
+        }
+      }
+    } catch (e) {}
+  }, [isLandingView, activeRoom?.code]);
+
   // Synchronize activeRoomId when rooms change to prevent broken room actions
   useEffect(() => {
     if (rooms.length > 0) {
@@ -288,20 +327,62 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [rooms, activeRoomId]);
 
-  // Subscribe to realtime updates for active room
+  // Subscribe to realtime updates & presence for active room
   useEffect(() => {
     if (!isSupabaseConfigured || !activeRoomId) return;
 
-    const channel = subscribeToRoom(activeRoomId, {
-      onProblemChange: () => refreshRooms(),
-      onSubmissionChange: () => refreshRooms(),
-      onMemberChange: () => refreshRooms(),
-    });
+    const channel = subscribeToRoom(
+      activeRoomId,
+      {
+        onProblemChange: () => refreshRooms(),
+        onSubmissionChange: () => refreshRooms(),
+        onMemberChange: () => refreshRooms(),
+        onPresenceChange: (onlineIds) => {
+          setOnlineUserIds(onlineIds);
+        },
+      },
+      currentUser.isLoggedIn
+        ? { id: currentUser.id, username: currentUser.username, name: currentUser.name }
+        : undefined
+    );
 
     return () => {
       if (channel) unsubscribeFromChannel(channel);
     };
-  }, [activeRoomId]);
+  }, [activeRoomId, currentUser.id, currentUser.username, currentUser.isLoggedIn]);
+
+  // Inter-tab / local broadcast presence synchronization
+  useEffect(() => {
+    if (!currentUser.isLoggedIn || !currentUser.username) return;
+
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel('dsacrew_presence_channel');
+
+      const announce = () => {
+        bc?.postMessage({
+          type: 'ONLINE_PING',
+          id: currentUser.id,
+          username: currentUser.username.toLowerCase(),
+        });
+      };
+
+      bc.onmessage = (event) => {
+        if (event.data?.type === 'ONLINE_PING' && event.data.id) {
+          setOnlineUserIds((prev) =>
+            Array.from(new Set([...prev, event.data.id, event.data.username]))
+          );
+        }
+      };
+
+      announce();
+      const interval = setInterval(announce, 8000);
+      return () => {
+        clearInterval(interval);
+        bc?.close();
+      };
+    } catch (e) {}
+  }, [currentUser.id, currentUser.username, currentUser.isLoggedIn]);
 
   const refreshRooms = useCallback(async () => {
     if (!isSupabaseConfigured) return;
@@ -881,6 +962,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setTheme,
         selectedDate,
         setSelectedDate,
+        onlineUserIds,
       }}
     >
       {children}
