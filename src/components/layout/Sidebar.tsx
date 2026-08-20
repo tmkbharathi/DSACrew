@@ -44,7 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'history', label: 'Problem History', icon: History },
-    { id: 'discussion', label: 'Discussions', icon: MessageSquare },
+    { id: 'discussion', label: 'Quick Join', icon: MessageSquare },
     { id: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
   ];
 

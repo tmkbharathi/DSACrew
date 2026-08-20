@@ -702,11 +702,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                   </p>
                 </div>
 
-                {/* 3 Quick Stats Badges */}
-                <div className="flex flex-wrap items-center gap-3 pt-1">
-                  {/* Streak Stat */}
+                {/* 4 Quick Stats Badges — Matching Mockup */}
+                <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                  {/* 1. Day Streak */}
                   <div
-                    className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border shadow-sm ${
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border shadow-sm ${
                       isIllustrative
                         ? 'bg-white border-[#ede4d4]'
                         : 'bg-[#161b22] border-[#30363d]'
@@ -723,9 +723,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                     </div>
                   </div>
 
-                  {/* Solved Stat */}
+                  {/* 2. Code / Problems Solved Stat */}
                   <div
-                    className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border shadow-sm ${
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border shadow-sm ${
                       isIllustrative
                         ? 'bg-white border-[#ede4d4]'
                         : 'bg-[#161b22] border-[#30363d]'
@@ -742,9 +742,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                     </div>
                   </div>
 
-                  {/* Global Rank Stat */}
+                  {/* 3. Past Streak */}
                   <div
-                    className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border shadow-sm ${
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border shadow-sm ${
+                      isIllustrative
+                        ? 'bg-white border-[#ede4d4]'
+                        : 'bg-[#161b22] border-[#30363d]'
+                    }`}
+                  >
+                    <Trophy className={`w-4 h-4 ${isIllustrative ? 'text-[#d97706]' : 'text-amber-400'}`} />
+                    <div className="text-left">
+                      <div className={`text-xs font-bold font-mono leading-none ${isIllustrative ? 'text-[#d97706]' : 'text-amber-400'}`}>
+                        {(currentUser as any).pastStreak || 20}
+                      </div>
+                      <div className={`text-[10px] font-sans ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
+                        Past Streak
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4. Global Rank Stat */}
+                  <div
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border shadow-sm ${
                       isIllustrative
                         ? 'bg-white border-[#ede4d4]'
                         : 'bg-[#161b22] border-[#30363d]'

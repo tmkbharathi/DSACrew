@@ -116,25 +116,44 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
               </span>
             </div>
 
-            {/* Active Room Indicator Pill */}
+            {/* Active Room Indicator — Member Avatars + Room Name + HOST badge (Matching Mockup) */}
             {activeRoom && (
               <div
                 onClick={() => setIsLandingView(true)}
-                className={`flex items-center gap-2 rounded-lg px-2.5 sm:px-3 py-1.5 transition-colors cursor-pointer max-w-[160px] xs:max-w-[200px] sm:max-w-[280px] border ${
+                className={`flex items-center gap-2 rounded-lg px-2 sm:px-2.5 py-1.5 transition-colors cursor-pointer border ${
                   isIllustrative
                     ? 'bg-[#fbf7ee] hover:bg-[#f4ede0] border-[#ede4d4]'
                     : 'bg-[#0d1117] hover:bg-[#21262d] border-[#30363d]'
                 }`}
                 title="Active Room • Click to switch in Rooms Hub"
               >
-                <div className={`w-2 h-2 rounded-full shrink-0 animate-pulse ${isIllustrative ? 'bg-[#2d6a4f]' : 'bg-[#3fb950]'}`} />
+                {/* Member Avatar Stack */}
+                <div className="flex -space-x-1.5 overflow-hidden shrink-0">
+                  {activeRoom.members.slice(0, 3).map((m, i) => (
+                    <img
+                      key={i}
+                      src={m.avatar}
+                      alt={m.name}
+                      className="inline-block w-5 h-5 rounded-full ring-1 ring-white object-cover"
+                    />
+                  ))}
+                </div>
+
+                {/* Room Name */}
                 <span
-                  className={`font-semibold text-xs sm:text-sm truncate font-sans ${
+                  className={`font-semibold text-xs sm:text-sm truncate max-w-[100px] sm:max-w-[160px] font-sans ${
                     isIllustrative ? 'text-[#212d27]' : 'text-white'
                   }`}
                 >
                   {activeRoom.name}
                 </span>
+
+                {/* HOST badge */}
+                {isRoomHost && (
+                  <span className="bg-purple-100 text-purple-800 text-[9px] px-1.5 py-0.5 rounded font-bold border border-purple-200 font-mono shrink-0">
+                    HOST
+                  </span>
+                )}
               </div>
             )}
           </div>
