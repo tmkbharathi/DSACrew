@@ -15,10 +15,12 @@ import { SnakeGameModal } from './components/fun/SnakeGameModal';
 import { Flame, Trophy, Zap, Target } from 'lucide-react';
 
 export const App = () => {
-  const { activeRoom, currentUser, isLoggedIn, isLandingView, setIsLandingView } = useApp();
+  const { activeRoom, currentUser, isLoggedIn, isLandingView, setIsLandingView, theme } = useApp();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isSnakeOpen, setIsSnakeOpen] = useState(false);
+
+  const isIllustrative = theme === 'illustrative';
 
   if (!isLoggedIn || isLandingView || !activeRoom) {
     return (
@@ -60,7 +62,13 @@ export const App = () => {
   const targetGoal = activeRoom.targetDailyGoal || 1;
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#f0f6fc] flex flex-col font-sans selection:bg-[#2ea043]/20 selection:text-[#3fb950]">
+    <div
+      className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${
+        isIllustrative
+          ? 'bg-[#fbf7ee] text-[#212d27] selection:bg-[#2d6a4f]/20 selection:text-[#1b4332]'
+          : 'bg-[#0d1117] text-[#f0f6fc] selection:bg-[#2ea043]/20 selection:text-[#3fb950]'
+      }`}
+    >
       <Navbar onMobileMenuToggle={() => setIsMobileDrawerOpen(true)} />
 
       <div className="flex-1 flex flex-col md:flex-row min-h-0">
@@ -72,88 +80,136 @@ export const App = () => {
         />
 
         {/* Dynamic Main Workspace View */}
-        <main className="flex-1 bg-[#0d1117] overflow-y-auto p-4 sm:p-6 lg:p-8 2xl:p-10 flex flex-col gap-6 relative min-w-0 pb-16 md:pb-8">
+        <main
+          className={`flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 2xl:p-10 flex flex-col gap-6 relative min-w-0 pb-16 md:pb-8 transition-colors duration-200 ${
+            isIllustrative ? 'bg-[#fbf7ee]' : 'bg-[#0d1117]'
+          }`}
+        >
           <div className="max-w-7xl xl:max-w-[1500px] 2xl:max-w-[1880px] w-full mx-auto space-y-6 2xl:space-y-8">
             {/* Top Stat Summary (Standardized 4 Cards) */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 2xl:gap-6 relative z-10">
               {/* 1. STREAK */}
-              <div className="bg-[#161b22] rounded-2xl p-4 sm:p-5 border border-[#30363d] flex items-center gap-4 shadow-sm hover:border-[#f0883e]/40 transition-colors">
-                <div className="w-11 h-11 2xl:w-12 2xl:h-12 rounded-xl bg-[#f0883e]/10 text-[#f0883e] flex items-center justify-center shrink-0 border border-[#f0883e]/20">
-                  <Flame className="w-5 h-5 2xl:w-6 2xl:h-6 fill-[#f0883e] text-[#f0883e]" />
+              <div
+                className={`rounded-2xl p-4 sm:p-5 border flex items-center gap-4 shadow-sm transition-all cozy-card ${
+                  isIllustrative
+                    ? 'bg-white border-[#ede4d4]'
+                    : 'bg-[#161b22] border-[#30363d] hover:border-[#f0883e]/40'
+                }`}
+              >
+                <div
+                  className={`w-11 h-11 2xl:w-12 2xl:h-12 rounded-xl flex items-center justify-center shrink-0 border ${
+                    isIllustrative
+                      ? 'bg-[#ffedd5] text-[#ea580c] border-[#fed7aa]'
+                      : 'bg-[#f0883e]/10 text-[#f0883e] border-[#f0883e]/20'
+                  }`}
+                >
+                  <Flame className="w-5 h-5 2xl:w-6 2xl:h-6 fill-current" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs 2xl:text-sm font-medium text-slate-400">
+                  <div className={`text-xs 2xl:text-sm font-medium ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
                     Streak
                   </div>
-                  <div className="text-base sm:text-lg 2xl:text-xl font-bold text-[#f0883e] font-sans truncate leading-tight mt-0.5">
+                  <div className="text-base sm:text-lg 2xl:text-xl font-bold text-[#ea580c] font-sans truncate leading-tight mt-0.5">
                     {currentUser.streak} {currentUser.streak === 1 ? 'day' : 'days'}
                   </div>
-                  <div className="text-xs text-slate-400 font-sans truncate mt-0.5">
-                    {currentUser.streak > 0 ? 'Consecutive streak' : 'Solve today to start streak!'}
+                  <div className={`text-xs truncate mt-0.5 ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
+                    {currentUser.streak > 0 ? 'Consecutive streak' : 'Solve today to start!'}
                   </div>
                 </div>
               </div>
 
               {/* 2. POINTS */}
-              <div className="bg-[#161b22] rounded-2xl p-4 sm:p-5 border border-[#30363d] flex items-center gap-4 shadow-sm hover:border-[#d29922]/40 transition-colors">
-                <div className="w-11 h-11 2xl:w-12 2xl:h-12 rounded-xl bg-[#d29922]/10 text-[#d29922] flex items-center justify-center shrink-0 border border-[#d29922]/20">
-                  <Trophy className="w-5 h-5 2xl:w-6 2xl:h-6 text-[#d29922]" />
+              <div
+                className={`rounded-2xl p-4 sm:p-5 border flex items-center gap-4 shadow-sm transition-all cozy-card ${
+                  isIllustrative
+                    ? 'bg-white border-[#ede4d4]'
+                    : 'bg-[#161b22] border-[#30363d] hover:border-[#d29922]/40'
+                }`}
+              >
+                <div
+                  className={`w-11 h-11 2xl:w-12 2xl:h-12 rounded-xl flex items-center justify-center shrink-0 border ${
+                    isIllustrative
+                      ? 'bg-[#fef3c7] text-[#d97706] border-[#fde68a]'
+                      : 'bg-[#d29922]/10 text-[#d29922] border-[#d29922]/20'
+                  }`}
+                >
+                  <Trophy className="w-5 h-5 2xl:w-6 2xl:h-6" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs 2xl:text-sm font-medium text-slate-400">
+                  <div className={`text-xs 2xl:text-sm font-medium ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
                     Points
                   </div>
-                  <div className="text-base sm:text-lg 2xl:text-xl font-bold text-[#d29922] font-sans truncate leading-tight mt-0.5">
+                  <div className="text-base sm:text-lg 2xl:text-xl font-bold text-[#d97706] font-sans truncate leading-tight mt-0.5">
                     {currentUser.points} pts
                   </div>
-                  <div className="text-xs text-slate-400 font-sans truncate mt-0.5">
-                    {pointsThisWeek > 0 ? `This week: +${pointsThisWeek} pts` : 'Earn +30 to +100 on AC'}
+                  <div className={`text-xs truncate mt-0.5 ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
+                    {pointsThisWeek > 0 ? `This week: +${pointsThisWeek} pts` : 'Earn +30 to +100'}
                   </div>
                 </div>
               </div>
 
               {/* 3. SOLVED */}
-              <div className="bg-[#161b22] rounded-2xl p-4 sm:p-5 border border-[#30363d] flex items-center gap-4 shadow-sm hover:border-[#3fb950]/40 transition-colors">
-                <div className="w-11 h-11 2xl:w-12 2xl:h-12 rounded-xl bg-[#2ea043]/10 text-[#3fb950] flex items-center justify-center shrink-0 border border-[#2ea043]/20">
-                  <Zap className="w-5 h-5 2xl:w-6 2xl:h-6 text-[#3fb950]" />
+              <div
+                className={`rounded-2xl p-4 sm:p-5 border flex items-center gap-4 shadow-sm transition-all cozy-card ${
+                  isIllustrative
+                    ? 'bg-white border-[#ede4d4]'
+                    : 'bg-[#161b22] border-[#30363d] hover:border-[#3fb950]/40'
+                }`}
+              >
+                <div
+                  className={`w-11 h-11 2xl:w-12 2xl:h-12 rounded-xl flex items-center justify-center shrink-0 border ${
+                    isIllustrative
+                      ? 'bg-[#d8f3dc] text-[#2d6a4f] border-[#b7e4c7]'
+                      : 'bg-[#2ea043]/10 text-[#3fb950] border-[#2ea043]/20'
+                  }`}
+                >
+                  <Zap className="w-5 h-5 2xl:w-6 2xl:h-6" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs 2xl:text-sm font-medium text-slate-400">
+                  <div className={`text-xs 2xl:text-sm font-medium ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
                     Room Solves
                   </div>
-                  <div className="text-base sm:text-lg 2xl:text-xl font-bold text-[#3fb950] font-sans truncate leading-tight mt-0.5">
+                  <div className={`text-base sm:text-lg 2xl:text-xl font-bold font-sans truncate leading-tight mt-0.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`}>
                     {roomSolvesCount}
                   </div>
-                  <div className="text-xs text-slate-400 font-sans truncate mt-0.5">
-                    {currentUser.leetcodeTotalSolved ? `LeetCode Total: ${currentUser.leetcodeTotalSolved}` : 'Room Problems'}
+                  <div className={`text-xs truncate mt-0.5 ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
+                    {activeRoom.dailyProblems.length} challenges posted
                   </div>
                 </div>
               </div>
 
               {/* 4. DAILY GOAL */}
-              <div className={`bg-[#161b22] rounded-2xl p-4 sm:p-5 border transition-colors flex items-center gap-4 shadow-sm ${
-                isGoalComplete ? 'border-[#2ea043]/40' : 'border-[#30363d] hover:border-[#58a6ff]/40'
-              }`}>
-                <div className={`w-11 h-11 2xl:w-12 2xl:h-12 rounded-xl flex items-center justify-center shrink-0 border ${
-                  isGoalComplete
-                    ? 'bg-[#2ea043]/15 text-[#3fb950] border-[#2ea043]/30'
-                    : 'bg-[#58a6ff]/10 text-[#58a6ff] border-[#58a6ff]/20'
-                }`}>
+              <div
+                className={`rounded-2xl p-4 sm:p-5 border flex items-center gap-4 shadow-sm transition-all cozy-card ${
+                  isIllustrative
+                    ? 'bg-white border-[#ede4d4]'
+                    : 'bg-[#161b22] border-[#30363d] hover:border-cyan-500/40'
+                }`}
+              >
+                <div
+                  className={`w-11 h-11 2xl:w-12 2xl:h-12 rounded-xl flex items-center justify-center shrink-0 border ${
+                    isIllustrative
+                      ? 'bg-[#e0f2fe] text-[#0284c7] border-[#bae6fd]'
+                      : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+                  }`}
+                >
                   <Target className="w-5 h-5 2xl:w-6 2xl:h-6" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs 2xl:text-sm font-medium text-slate-400">
+                  <div className={`text-xs 2xl:text-sm font-medium ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
                     Daily Goal
                   </div>
-                  <div className={`text-base sm:text-lg 2xl:text-xl font-bold font-sans truncate leading-tight mt-0.5 ${
-                    isGoalComplete ? 'text-[#3fb950]' : 'text-slate-200'
-                  }`}>
-                    {isGoalComplete ? 1 : 0} / {targetGoal}
+                  <div
+                    className={`text-base sm:text-lg 2xl:text-xl font-bold font-sans truncate leading-tight mt-0.5 ${
+                      isGoalComplete
+                        ? (isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]')
+                        : 'text-amber-500'
+                    }`}
+                  >
+                    {isGoalComplete ? `${targetGoal} / ${targetGoal} Met ✓` : `0 / ${targetGoal} Pending`}
                   </div>
-                  <div className={`text-xs truncate mt-0.5 ${
-                    isGoalComplete ? 'text-[#3fb950] font-medium' : 'text-slate-500 font-mono'
-                  }`}>
-                    {isGoalComplete ? 'Completed today' : 'Not started'}
+                  <div className={`text-xs truncate mt-0.5 ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
+                    {isGoalComplete ? 'Daily target achieved!' : 'Solve today to achieve'}
                   </div>
                 </div>
               </div>

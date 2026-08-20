@@ -3,9 +3,9 @@ import { useApp, isUserHostOfRoom, isUserInRoom } from '../../context/AppContext
 import { AuthModal } from '../auth/AuthModal';
 import { CreateRoomModal } from '../room/CreateRoomModal';
 import { JoinRoomModal } from '../room/JoinRoomModal';
+import { CozyCoderIllustration } from '../illustrations/CozyCoderIllustration';
 import { fetchLeetCodeDaily, type LeetCodeDailyChallenge } from '../../services/leetcodeApi';
 import {
-  Code2,
   Users,
   Trophy,
   ArrowRight,
@@ -30,6 +30,9 @@ import {
   Check,
   AlertCircle,
   Zap,
+  Sun,
+  Moon,
+  Layers,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -50,6 +53,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
     logout,
     setToast,
     setIsLandingView,
+    theme,
+    setTheme,
   } = useApp();
 
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -172,27 +177,136 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
     }
   };
 
+  const isIllustrative = theme === 'illustrative';
+
   return (
-    <div className="min-h-screen w-full bg-[#0d1117] text-[#f0f6fc] flex flex-col justify-between overflow-y-auto relative selection:bg-[#2ea043]/20 selection:text-[#3fb950]">
+    <div
+      className={`min-h-screen w-full flex flex-col justify-between overflow-y-auto relative transition-colors duration-300 ${
+        isIllustrative
+          ? 'bg-[#faf5ea] text-[#212d27] selection:bg-[#2d6a4f]/20 selection:text-[#1b4332]'
+          : 'bg-[#0d1117] text-[#f0f6fc] selection:bg-[#2ea043]/20 selection:text-[#3fb950]'
+      }`}
+    >
       {/* Ambient Background Gradient Glow */}
-      <div className="absolute inset-0 pointer-events-none hero-gradient" />
+      <div className={`absolute inset-0 pointer-events-none ${isIllustrative ? 'opacity-40' : 'hero-gradient'}`} />
 
       {/* Top Navigation Bar */}
-      <header className="relative z-20 border-b border-[#30363d] px-4 sm:px-8 py-3.5 bg-[#161b22]/90 backdrop-blur-md shrink-0">
-        <div className="max-w-7xl xl:max-w-[1500px] 2xl:max-w-[1880px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl border border-[#30363d] flex items-center justify-center bg-[#0d1117] shadow-sm">
-              <Code2 className="w-5 h-5 text-[#3fb950]" />
+      <header
+        className={`relative z-20 px-4 sm:px-8 py-3.5 backdrop-blur-md shrink-0 transition-colors duration-300 ${
+          isIllustrative
+            ? 'bg-[#faf5ea]/90 border-b border-[#ede4d4]'
+            : 'bg-[#161b22]/90 border-b border-[#30363d]'
+        }`}
+      >
+        <div className="max-w-7xl xl:max-w-[1500px] 2xl:max-w-[1880px] mx-auto flex items-center justify-between gap-4">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5 select-none">
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center font-mono font-bold text-sm shadow-sm transition-colors ${
+                isIllustrative
+                  ? 'bg-white border border-[#ede4d4] text-[#2d6a4f]'
+                  : 'bg-[#0d1117] border border-[#30363d] text-[#3fb950]'
+              }`}
+            >
+              &lt;/&gt;
             </div>
-            <span className="font-extrabold text-xl tracking-tight text-white font-sans">
-              Leet<span className="text-[#3fb950]">Tracker</span>
+            <span
+              className={`font-extrabold text-xl tracking-tight font-sans transition-colors ${
+                isIllustrative ? 'text-[#212d27]' : 'text-white'
+              }`}
+            >
+              Leet<span className={isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}>Tracker</span>
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Center Navigation Links (Matching Reference UI) */}
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-medium">
+            <button
+              onClick={() => {
+                if (isLoggedIn) setIsLandingView(false);
+                else {
+                  setAuthDefaultRegister(false);
+                  setIsAuthOpen(true);
+                }
+              }}
+              className={`flex items-center gap-1.5 transition-colors ${
+                isIllustrative
+                  ? 'text-[#5c6b63] hover:text-[#2d6a4f]'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              <Layers className="w-4 h-4 opacity-70" />
+              <span>Rooms</span>
+            </button>
+
+            <button
+              onClick={handleFetchDailyPreview}
+              disabled={loadingDaily}
+              className={`flex items-center gap-1.5 transition-colors ${
+                isIllustrative
+                  ? 'text-[#5c6b63] hover:text-[#2d6a4f]'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+              title="Preview today's official LeetCode Challenge"
+            >
+              <Zap className="w-4 h-4 opacity-70 text-amber-500" />
+              <span>Challenges</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (isLoggedIn) setIsLandingView(false);
+                else {
+                  setAuthDefaultRegister(false);
+                  setIsAuthOpen(true);
+                }
+              }}
+              className={`flex items-center gap-1.5 transition-colors ${
+                isIllustrative
+                  ? 'text-[#5c6b63] hover:text-[#2d6a4f]'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              <Trophy className="w-4 h-4 opacity-70 text-amber-500" />
+              <span>Leaderboard</span>
+            </button>
+
             <button
               onClick={() => setTourStep(1)}
-              className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-[#21262d] transition-colors text-slate-300 hover:text-white"
+              className={`flex items-center gap-1.5 transition-colors ${
+                isIllustrative
+                  ? 'text-[#5c6b63] hover:text-[#2d6a4f]'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              <HelpCircle className="w-4 h-4 opacity-70" />
+              <span>About</span>
+            </button>
+          </nav>
+
+          {/* Right Action Group (Theme toggle + Sign In) */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={() => setTheme(isIllustrative ? 'dark' : 'illustrative')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-sm ${
+                isIllustrative
+                  ? 'bg-white hover:bg-[#f4ede0] text-[#2d6a4f] border-[#ede4d4]'
+                  : 'bg-[#161b22] hover:bg-[#21262d] text-amber-400 border-[#30363d]'
+              }`}
+              title={`Switch to ${isIllustrative ? 'Dark Mode' : 'Illustrative Theme'}`}
+            >
+              {isIllustrative ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{isIllustrative ? 'Dark Mode' : 'Illustrative'}</span>
+            </button>
+
+            <button
+              onClick={() => setTourStep(1)}
+              className={`flex md:hidden items-center justify-center w-9 h-9 rounded-xl border transition-colors ${
+                isIllustrative
+                  ? 'bg-white hover:bg-[#f4ede0] border-[#ede4d4] text-[#5c6b63]'
+                  : 'bg-[#161b22] hover:bg-[#21262d] border-[#30363d] text-slate-300'
+              }`}
               title="How It Works / Tour"
               aria-label="How It Works"
             >
@@ -200,21 +314,33 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
             </button>
 
             {isLoggedIn ? (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2.5 bg-[#0d1117] px-3.5 py-1.5 rounded-xl border border-[#30363d] shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl border shadow-sm ${
+                    isIllustrative
+                      ? 'bg-white border-[#ede4d4]'
+                      : 'bg-[#0d1117] border-[#30363d]'
+                  }`}
+                >
                   <img
                     src={currentUser.avatar}
                     alt={currentUser.name}
-                    className="w-6 h-6 rounded-full object-cover border border-[#30363d]"
+                    className="w-6 h-6 rounded-full object-cover border border-[#ede4d4]"
                   />
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-white hidden sm:inline">{currentUser.name}</span>
-                    <span className="text-xs font-mono text-cyan-400">@{currentUser.username}</span>
+                    <span className="text-xs font-bold hidden sm:inline">{currentUser.name}</span>
+                    <span className={`text-xs font-mono ${isIllustrative ? 'text-[#2d6a4f]' : 'text-cyan-400'}`}>
+                      @{currentUser.username}
+                    </span>
                   </div>
                 </div>
                 <button
                   onClick={logout}
-                  className="p-2 rounded-lg border border-[#30363d] hover:bg-[#21262d] transition-colors text-slate-400 hover:text-rose-400"
+                  className={`p-2 rounded-xl border transition-colors ${
+                    isIllustrative
+                      ? 'bg-white hover:bg-rose-50 border-[#ede4d4] text-slate-400 hover:text-rose-600'
+                      : 'border-[#30363d] hover:bg-[#21262d] text-slate-400 hover:text-rose-400'
+                  }`}
                   title="Sign Out"
                   aria-label="Sign Out"
                 >
@@ -222,17 +348,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                 </button>
               </div>
             ) : (
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
                 onClick={() => {
                   setAuthDefaultRegister(false);
                   setIsAuthOpen(true);
                 }}
-                leftIcon={<LogIn className="w-3.5 h-3.5" />}
+                className={`flex items-center gap-1.5 px-5 py-2 rounded-xl font-semibold text-xs sm:text-sm transition-all shadow-sm ${
+                  isIllustrative
+                    ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white active:scale-95'
+                    : 'bg-[#2ea043] hover:bg-[#3fb950] text-white active:scale-95'
+                }`}
               >
-                Sign In
-              </Button>
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </button>
             )}
           </div>
         </div>
@@ -242,71 +371,162 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
       <main className="flex-1 relative z-10 max-w-7xl xl:max-w-[1500px] 2xl:max-w-[1880px] mx-auto px-4 sm:px-8 flex flex-col justify-center w-full py-8 sm:py-12 2xl:py-16">
         {!isLoggedIn ? (
           /* =========================================================================
-             LOGGED-OUT WIDESCREEN HERO (Optimized for 1080p & 1440p)
+             LOGGED-OUT HERO (Matching Reference Design with Cozy Illustration)
              ========================================================================= */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 xl:gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center">
             {/* Left Hero Column */}
             <div className="lg:col-span-7 space-y-6 text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#30363d] bg-[#161b22] shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-[#3fb950] animate-pulse" />
-                <span className="text-xs font-mono uppercase tracking-wider text-slate-300 font-semibold">
-                  REAL-TIME LEETCODE COLLABORATION • V1.0
-                </span>
-              </div>
-
-              <h1 className="text-4xl sm:text-5xl xl:text-6xl font-black text-white leading-tight tracking-tight font-sans">
+              <h1
+                className={`text-4xl sm:text-5xl xl:text-6xl font-black leading-tight tracking-tight font-sans ${
+                  isIllustrative ? 'text-[#212d27]' : 'text-white'
+                }`}
+              >
                 Crack LeetCode Together with Your{' '}
-                <span className="text-[#3fb950] inline-block">Crew</span>.
+                <span className={isIllustrative ? 'text-[#2d6a4f] inline-block' : 'text-[#3fb950] inline-block'}>
+                  Crew
+                </span>
+                .
               </h1>
 
-              <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed font-sans">
+              <p
+                className={`text-base sm:text-lg max-w-2xl leading-relaxed font-sans ${
+                  isIllustrative ? 'text-[#5c6b63]' : 'text-slate-300'
+                }`}
+              >
                 Create collaborative practice rooms, schedule daily algorithm challenges, sync live solutions with verified LeetCode runtime metrics, and compete on room leaderboards.
               </p>
 
-              {/* Quick Feature Highlights in Hero */}
+              {/* Quick Feature Highlights in Hero (Matching Reference 3-Card Design) */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
-                <div className="bg-[#161b22]/80 border border-[#30363d] rounded-xl p-3.5 space-y-1">
-                  <div className="text-[#3fb950] font-bold text-xs font-mono flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5" /> DAILY CHALLENGES
+                <div
+                  className={`rounded-2xl p-4 space-y-1.5 border transition-all cozy-card ${
+                    isIllustrative
+                      ? 'bg-white/80 border-[#ede4d4] shadow-sm'
+                      : 'bg-[#161b22]/80 border-[#30363d]'
+                  }`}
+                >
+                  <div
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                      isIllustrative ? 'bg-[#d8f3dc] text-[#2d6a4f]' : 'bg-[#2ea043]/20 text-[#3fb950]'
+                    }`}
+                  >
+                    <Zap className="w-4 h-4" />
                   </div>
-                  <p className="text-xs text-slate-400">Official LeetCode daily sync &amp; difficulty points</p>
-                </div>
-                <div className="bg-[#161b22]/80 border border-[#30363d] rounded-xl p-3.5 space-y-1">
-                  <div className="text-cyan-400 font-bold text-xs font-mono flex items-center gap-1.5">
-                    <Radio className="w-3.5 h-3.5" /> REAL-TIME SYNC
+                  <div className={`font-bold text-xs font-mono ${isIllustrative ? 'text-[#212d27]' : 'text-[#3fb950]'}`}>
+                    Daily Challenges
                   </div>
-                  <p className="text-xs text-slate-400">Inter-tab broadcasts &amp; cloud team updates</p>
+                  <p className={`text-xs leading-snug ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                    Official daily sync &amp; difficulty points
+                  </p>
                 </div>
-                <div className="bg-[#161b22]/80 border border-[#30363d] rounded-xl p-3.5 space-y-1">
-                  <div className="text-amber-400 font-bold text-xs font-mono flex items-center gap-1.5">
-                    <Trophy className="w-3.5 h-3.5" /> LEADERBOARDS
+
+                <div
+                  className={`rounded-2xl p-4 space-y-1.5 border transition-all cozy-card ${
+                    isIllustrative
+                      ? 'bg-white/80 border-[#ede4d4] shadow-sm'
+                      : 'bg-[#161b22]/80 border-[#30363d]'
+                  }`}
+                >
+                  <div
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                      isIllustrative ? 'bg-[#e0f2fe] text-[#0284c7]' : 'bg-cyan-950/40 text-cyan-400'
+                    }`}
+                  >
+                    <Radio className="w-4 h-4" />
                   </div>
-                  <p className="text-xs text-slate-400">Room streak rankings &amp; solution code review</p>
+                  <div className={`font-bold text-xs font-mono ${isIllustrative ? 'text-[#212d27]' : 'text-cyan-400'}`}>
+                    Real-time Sync
+                  </div>
+                  <p className={`text-xs leading-snug ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                    Inter-tab broadcasts &amp; cloud updates
+                  </p>
                 </div>
+
+                <div
+                  className={`rounded-2xl p-4 space-y-1.5 border transition-all cozy-card ${
+                    isIllustrative
+                      ? 'bg-white/80 border-[#ede4d4] shadow-sm'
+                      : 'bg-[#161b22]/80 border-[#30363d]'
+                  }`}
+                >
+                  <div
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                      isIllustrative ? 'bg-[#ffedd5] text-[#ea580c]' : 'bg-amber-950/40 text-amber-400'
+                    }`}
+                  >
+                    <Trophy className="w-4 h-4" />
+                  </div>
+                  <div className={`font-bold text-xs font-mono ${isIllustrative ? 'text-[#212d27]' : 'text-amber-400'}`}>
+                    Leaderboards
+                  </div>
+                  <p className={`text-xs leading-snug ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                    Room streak rankings &amp; review
+                  </p>
+                </div>
+              </div>
+
+              {/* Cozy Developer Illustration */}
+              <div className="pt-2">
+                <CozyCoderIllustration className="w-full max-w-sm sm:max-w-md" />
               </div>
             </div>
 
-            {/* Right Auth Card Column */}
+            {/* Right Auth Card Column (Matching Reference Design) */}
             <div className="lg:col-span-5 w-full">
-              <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-6 sm:p-8 shadow-2xl text-left space-y-5">
-                <div className="flex justify-between items-center pb-3.5 border-b border-[#30363d]">
+              <div
+                className={`rounded-3xl p-6 sm:p-8 text-left space-y-5 transition-all shadow-xl ${
+                  isIllustrative
+                    ? 'bg-white border border-[#ede4d4]'
+                    : 'bg-[#161b22] border border-[#30363d]'
+                }`}
+              >
+                <div
+                  className={`flex justify-between items-center pb-3.5 border-b ${
+                    isIllustrative ? 'border-[#ede4d4]' : 'border-[#30363d]'
+                  }`}
+                >
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-[#3fb950]" />
-                    <h2 className="text-base sm:text-lg font-bold text-white font-sans">Sign In with LeetCode</h2>
+                    <ShieldCheck className={`w-5 h-5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
+                    <h2
+                      className={`text-base sm:text-lg font-bold font-sans ${
+                        isIllustrative ? 'text-[#212d27]' : 'text-white'
+                      }`}
+                    >
+                      Sign In with LeetCode
+                    </h2>
                   </div>
-                  <span className="text-xs text-slate-300 font-medium bg-[#0d1117] px-2.5 py-1 rounded-md border border-[#30363d]">
+                  <span
+                    className={`text-xs font-semibold px-2.5 py-1 rounded-md border ${
+                      isIllustrative
+                        ? 'bg-[#f7f3eb] text-[#5c6b63] border-[#ede4d4]'
+                        : 'bg-[#0d1117] text-slate-300 border-[#30363d]'
+                    }`}
+                  >
                     Step 1 to Access
                   </span>
                 </div>
 
                 <form onSubmit={handleHeroLogin} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs text-slate-200 font-medium block" htmlFor="username">
+                    <label
+                      className={`text-xs font-medium block ${
+                        isIllustrative ? 'text-[#5c6b63]' : 'text-slate-200'
+                      }`}
+                      htmlFor="username"
+                    >
                       LeetCode Username / Handle
                     </label>
                     <div className="relative group">
                       <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                        <span className="text-xs font-mono text-slate-400 group-focus-within:text-[#3fb950] transition-colors">@</span>
+                        <span
+                          className={`text-xs font-mono transition-colors ${
+                            isIllustrative
+                              ? 'text-slate-400 group-focus-within:text-[#2d6a4f]'
+                              : 'text-slate-400 group-focus-within:text-[#3fb950]'
+                          }`}
+                        >
+                          @
+                        </span>
                       </span>
                       <input
                         id="username"
@@ -318,18 +538,33 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                           setLoginError('');
                         }}
                         placeholder="e.g. tourist or neal_wu"
-                        className="w-full bg-[#0d1117] border border-[#30363d] text-white text-xs sm:text-sm font-mono rounded-xl pl-8 pr-3.5 py-3 focus:outline-none focus:border-[#3fb950] transition-all placeholder-slate-500"
+                        className={`w-full text-xs sm:text-sm font-mono rounded-xl pl-8 pr-3.5 py-3 focus:outline-none transition-all ${
+                          isIllustrative
+                            ? 'bg-[#f7f3eb] border border-[#ede4d4] text-[#212d27] placeholder:text-[#8d9a93] focus:border-[#2d6a4f] focus:bg-white'
+                            : 'bg-[#0d1117] border border-[#30363d] text-white placeholder-slate-500 focus:border-[#3fb950]'
+                        }`}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs text-slate-200 font-medium block" htmlFor="password">
+                    <label
+                      className={`text-xs font-medium block ${
+                        isIllustrative ? 'text-[#5c6b63]' : 'text-slate-200'
+                      }`}
+                      htmlFor="password"
+                    >
                       Password
                     </label>
                     <div className="relative group">
                       <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                        <Lock className="w-4 h-4 text-slate-400 group-focus-within:text-[#3fb950] transition-colors" />
+                        <Lock
+                          className={`w-4 h-4 transition-colors ${
+                            isIllustrative
+                              ? 'text-slate-400 group-focus-within:text-[#2d6a4f]'
+                              : 'text-slate-400 group-focus-within:text-[#3fb950]'
+                          }`}
+                        />
                       </span>
                       <input
                         id="password"
@@ -340,12 +575,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                           setLoginError('');
                         }}
                         placeholder="Enter password"
-                        className="w-full bg-[#0d1117] border border-[#30363d] text-white text-xs sm:text-sm rounded-xl pl-9 pr-10 py-3 focus:outline-none focus:border-[#3fb950] transition-all placeholder-slate-500"
+                        className={`w-full text-xs sm:text-sm rounded-xl pl-9 pr-10 py-3 focus:outline-none transition-all ${
+                          isIllustrative
+                            ? 'bg-[#f7f3eb] border border-[#ede4d4] text-[#212d27] placeholder:text-[#8d9a93] focus:border-[#2d6a4f] focus:bg-white'
+                            : 'bg-[#0d1117] border border-[#30363d] text-white placeholder-slate-500 focus:border-[#3fb950]'
+                        }`}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors"
+                        className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -353,46 +592,58 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                   </div>
 
                   {loginError && (
-                    <div className="text-xs text-rose-400 bg-rose-950/40 p-3 rounded-xl border border-rose-500/30 leading-relaxed font-sans">
+                    <div className="text-xs text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-200 leading-relaxed font-sans">
                       {loginError}
                     </div>
                   )}
 
                   <div className="flex gap-2.5 pt-1">
-                    <Button
-                      variant="primary"
-                      size="md"
+                    <button
                       type="submit"
                       disabled={loginLoading}
-                      className="flex-1 py-3"
-                      leftIcon={loginLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+                      className={`flex-1 py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-50 ${
+                        isIllustrative
+                          ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white'
+                          : 'bg-[#2ea043] hover:bg-[#3fb950] text-white'
+                      }`}
                     >
-                      {loginLoading ? 'Verifying...' : 'Sign In & Enter'}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="md"
+                      {loginLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+                      <span>{loginLoading ? 'Verifying...' : 'Sign In & Enter'}</span>
+                    </button>
+                    <button
                       type="button"
                       onClick={() => {
                         setAuthDefaultRegister(false);
                         setIsAuthOpen(true);
                       }}
-                      className="py-3"
+                      className={`py-3 px-4 rounded-xl font-medium text-xs sm:text-sm border transition-colors ${
+                        isIllustrative
+                          ? 'bg-[#f7f3eb] hover:bg-[#ede4d4] text-[#212d27] border-[#ede4d4]'
+                          : 'bg-[#21262d] hover:bg-[#30363d] text-white border-[#30363d]'
+                      }`}
                     >
                       Options
-                    </Button>
+                    </button>
                   </div>
                 </form>
 
-                <div className="pt-3.5 border-t border-[#30363d] flex justify-between items-center text-xs">
-                  <span className="text-slate-300 font-sans">New to LeetTracker?</span>
+                <div
+                  className={`pt-3.5 border-t flex justify-between items-center text-xs ${
+                    isIllustrative ? 'border-[#ede4d4]' : 'border-[#30363d]'
+                  }`}
+                >
+                  <span className={isIllustrative ? 'text-[#5c6b63] font-sans' : 'text-slate-300 font-sans'}>
+                    New to LeetTracker?
+                  </span>
                   <button
                     type="button"
                     onClick={() => {
                       setAuthDefaultRegister(true);
                       setIsAuthOpen(true);
                     }}
-                    className="text-[#3fb950] hover:underline font-semibold font-mono"
+                    className={`font-semibold font-mono hover:underline ${
+                      isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'
+                    }`}
                   >
                     Create Profile →
                   </button>
