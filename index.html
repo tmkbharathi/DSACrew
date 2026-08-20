@@ -4,7 +4,47 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>leettracker</title>
+    <title>DSACrew – LeetCode Daily Practice Tracker</title>
+    <!-- Automatic Redirect from GitHub Pages to Vercel with 4s Countdown -->
+    <script>
+      if (window.location.hostname.endsWith('github.io')) {
+        document.addEventListener('DOMContentLoaded', () => {
+          document.body.innerHTML = `
+            <div style="min-height: 100vh; background: #0d1117; color: #f0f6fc; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', ui-monospace, monospace; padding: 20px; box-sizing: border-box;">
+              <div style="max-width: 460px; width: 100%; background: #161b22; border: 1px solid #30363d; border-radius: 20px; padding: 36px 28px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+                <div style="width: 56px; height: 56px; margin: 0 auto 18px; background: rgba(63, 185, 80, 0.1); border: 1px solid rgba(63, 185, 80, 0.3); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; color: #3fb950;">
+                  &lt;/&gt;
+                </div>
+                <h2 style="margin: 0 0 10px; font-size: 20px; font-weight: 700; color: #ffffff;">We've Moved to Vercel!</h2>
+                <p style="margin: 0 0 22px; font-size: 13px; color: #8b949e; line-height: 1.6;">
+                  DSACrew is now hosted on Vercel for real-time practice, audio &amp; instant sync.
+                </p>
+                <div style="background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 14px; margin-bottom: 22px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; color: #3fb950; font-weight: 600;">
+                  <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3fb950; animation: pulse 1s infinite;"></span>
+                  <span>Auto-redirecting in <strong id="redir-count" style="font-size: 16px; color: #ffffff;">4</strong>s...</span>
+                </div>
+                <a href="https://dsa-crew.vercel.app" style="display: block; width: 100%; box-sizing: border-box; background: #238636; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 13px;">
+                  Click here to proceed immediately &rarr;
+                </a>
+              </div>
+            </div>
+            <style>
+              @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.7); } }
+            </style>
+          `;
+          let seconds = 4;
+          const countEl = document.getElementById('redir-count');
+          const interval = setInterval(() => {
+            seconds--;
+            if (countEl) countEl.textContent = seconds;
+            if (seconds <= 0) {
+              clearInterval(interval);
+              window.location.replace('https://dsa-crew.vercel.app');
+            }
+          }, 1000);
+        });
+      }
+    </script>
     <!-- JetBrains Mono – Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

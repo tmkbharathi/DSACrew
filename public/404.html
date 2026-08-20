@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="refresh" content="4; url=https://dsa-crew.vercel.app" />
+    <title>Redirecting to DSACrew on Vercel...</title>
+    <!-- JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        min-height: 100vh;
+        background: #0d1117;
+        color: #f0f6fc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        padding: 20px;
+      }
+      .card {
+        max-width: 460px;
+        width: 100%;
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 20px;
+        padding: 36px 28px;
+        text-align: center;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      }
+      .logo {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 18px;
+        background: rgba(63, 185, 80, 0.1);
+        border: 1px solid rgba(63, 185, 80, 0.3);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: bold;
+        color: #3fb950;
+      }
+      h2 {
+        margin: 0 0 10px;
+        font-size: 20px;
+        font-weight: 700;
+        color: #ffffff;
+      }
+      p {
+        margin: 0 0 22px;
+        font-size: 13px;
+        color: #8b949e;
+        line-height: 1.6;
+      }
+      .counter-pill {
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #3fb950;
+        font-weight: 600;
+      }
+      .pulse-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #3fb950;
+        animation: pulse 1s infinite;
+      }
+      .btn {
+        display: block;
+        width: 100%;
+        background: #238636;
+        color: #ffffff;
+        text-decoration: none;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 13px;
+        transition: background 0.2s;
+      }
+      .btn:hover {
+        background: #2ea043;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.3; transform: scale(0.7); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="logo">&lt;/&gt;</div>
+      <h2>We've Moved to Vercel!</h2>
+      <p>DSACrew is now hosted on Vercel for real-time practice, audio &amp; instant sync.</p>
+      
+      <div class="counter-pill">
+        <span class="pulse-dot"></span>
+        <span>Auto-redirecting in <strong id="redir-count" style="font-size: 16px; color: #ffffff;">4</strong>s...</span>
+      </div>
+
+      <a href="https://dsa-crew.vercel.app" class="btn">
+        Click here to proceed immediately &rarr;
+      </a>
+    </div>
+
+    <script>
+      let seconds = 4;
+      const countEl = document.getElementById('redir-count');
+      const interval = setInterval(() => {
+        seconds--;
+        if (countEl) countEl.textContent = seconds;
+        if (seconds <= 0) {
+          clearInterval(interval);
+          window.location.replace('https://dsa-crew.vercel.app');
+        }
+      }, 1000);
+    </script>
+  </body>
+</html>
