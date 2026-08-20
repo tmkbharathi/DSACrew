@@ -891,8 +891,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                 </div>
 
                 {/* 3 Crew Illustration */}
-                <div className="pt-2">
-                  <CrewIllustration className="w-full max-w-lg" />
+                <div className="pt-1 -mb-3">
+                  <CrewIllustration className="w-full max-w-lg mx-auto" />
                 </div>
 
                 {/* Today's Official Daily Challenge Banner Card */}
