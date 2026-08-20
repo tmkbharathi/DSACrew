@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
-import type { User, Room, Problem, Submission, Comment, Notification, Difficulty } from '../types';
+import type { User, Room, Problem, Submission, Comment, Notification, Difficulty, FileAttachment } from '../types';
 
 // Read Supabase environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
@@ -488,20 +488,41 @@ export async function getSubmissionsForProblem(problemId: string): Promise<Submi
 // COMMENT FUNCTIONS
 // =====================================================
 
+export function parseCommentAttachments(rawContent: string): { cleanContent: string; attachments?: FileAttachment[] } {
+  if (!rawContent) return { cleanContent: '' };
+  const match = rawContent.match(/<!--ATTACHMENTS:(.*?)-->/s);
+  if (match) {
+    try {
+      const attachments = JSON.parse(match[1]);
+      const cleanContent = rawContent.replace(/<!--ATTACHMENTS:(.*?)-->/s, '').trim();
+      return { cleanContent, attachments };
+    } catch {
+      return { cleanContent: rawContent };
+    }
+  }
+  return { cleanContent: rawContent };
+}
+
 export async function createComment(comment: {
   problem_id: string;
   user_id: string;
   content: string;
   code_snippet?: string;
+  attachments?: FileAttachment[];
 }): Promise<{ comment: Comment | null; error: string | null }> {
   if (!supabase) return { comment: null, error: 'Supabase not configured' };
+
+  const contentWithAttachments =
+    comment.attachments && comment.attachments.length > 0
+      ? `${comment.content}\n\n<!--ATTACHMENTS:${JSON.stringify(comment.attachments)}-->`
+      : comment.content;
 
   const { data, error } = await supabase
     .from('lt_comments')
     .insert({
       problem_id: comment.problem_id,
       user_id: comment.user_id,
-      content: comment.content,
+      content: contentWithAttachments,
       code_snippet: comment.code_snippet,
     })
     .select(`
@@ -712,13 +733,15 @@ function dbSubmissionToAppSubmission(dbSubmission: any): Submission {
 }
 
 function dbCommentToAppComment(dbComment: any): Comment {
+  const { cleanContent, attachments } = parseCommentAttachments(dbComment.content || '');
   return {
     id: dbComment.id,
     userId: dbComment.user_id,
     userName: dbComment.user?.name || 'Unknown',
     userAvatar: dbComment.user?.avatar || '',
-    content: dbComment.content,
+    content: cleanContent || dbComment.content,
     codeSnippet: dbComment.code_snippet,
+    attachments: attachments || dbComment.attachments,
     createdAt: dbComment.created_at,
   };
 }

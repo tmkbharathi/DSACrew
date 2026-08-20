@@ -12,7 +12,7 @@ import { ToastContainer } from './components/notifications/ToastContainer';
 import { LandingPage } from './components/landing/LandingPage';
 import { SpiderCrawler } from './components/fun/SpiderCrawler';
 import { SnakeGameModal } from './components/fun/SnakeGameModal';
-import { Flame, Trophy, Zap, Target, Users, TrendingUp } from 'lucide-react';
+import { Flame, Trophy, Zap, Target } from 'lucide-react';
 
 export const App = () => {
   const { activeRoom, currentUser, isLoggedIn, isLandingView, setIsLandingView, theme } = useApp();
@@ -42,8 +42,7 @@ export const App = () => {
   const todayStr = new Date().toISOString().split('T')[0];
   const activeProblem =
     activeRoom.dailyProblems.find((p) => p.id === activeRoom.activeProblemId) ||
-    activeRoom.dailyProblems.find((p) => p.date === todayStr) ||
-    activeRoom.dailyProblems[0];
+    activeRoom.dailyProblems.find((p) => p.date === todayStr);
 
   const isGoalComplete =
     activeProblem?.submissions?.some((s) => s.userId === currentUser.id && s.status === 'Accepted') ||
@@ -251,69 +250,10 @@ export const App = () => {
               <div className="space-y-6">
                 <DailyProblemHero problem={activeProblem} />
                 
-                {/* 2-Column Responsive Workspace Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                  <div className="lg:col-span-6">
-                    <LeaderboardTable />
-                  </div>
-                  <div className="lg:col-span-6">
-                    <ProblemDiscussion problem={activeProblem} />
-                  </div>
-                </div>
-
-                {/* Bottom Collaborative Highlights Banner */}
-                <div
-                  className={`rounded-2xl p-5 sm:p-6 border flex flex-col lg:flex-row items-center justify-between gap-6 shadow-sm transition-all ${
-                    isIllustrative
-                      ? 'bg-gradient-to-r from-[#fbf7ee] via-white to-[#f4fbf6] border-[#ede4d4]'
-                      : 'bg-[#161b22] border-[#30363d]'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-[#d8f3dc] border border-[#b7e4c7] flex items-center justify-center text-3xl shrink-0 shadow-inner">
-                      🙌
-                    </div>
-                    <div>
-                      <h4 className={`font-bold text-sm sm:text-base font-sans ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`}>
-                        Collaborate. Practice. Grow.
-                      </h4>
-                      <p className={`text-xs mt-0.5 leading-relaxed ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
-                        Solve problems together in real-time and become a better coder as a crew.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
-                    <div className={`p-3 rounded-xl border flex items-center gap-2.5 ${isIllustrative ? 'bg-white border-[#ede4d4] shadow-sm' : 'bg-[#0d1117] border-[#30363d]'}`}>
-                      <div className="w-8 h-8 rounded-lg bg-[#d8f3dc] text-[#2d6a4f] flex items-center justify-center shrink-0">
-                        <Users className="w-4 h-4" />
-                      </div>
-                      <div className="text-[11px] leading-tight">
-                        <strong className={`block ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>Real-time Collaboration</strong>
-                        <span className={isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}>Work together in room</span>
-                      </div>
-                    </div>
-
-                    <div className={`p-3 rounded-xl border flex items-center gap-2.5 ${isIllustrative ? 'bg-white border-[#ede4d4] shadow-sm' : 'bg-[#0d1117] border-[#30363d]'}`}>
-                      <div className="w-8 h-8 rounded-lg bg-[#e0f2fe] text-[#0284c7] flex items-center justify-center shrink-0">
-                        <TrendingUp className="w-4 h-4" />
-                      </div>
-                      <div className="text-[11px] leading-tight">
-                        <strong className={`block ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>Track Progress</strong>
-                        <span className={isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}>Monitor streaks &amp; solves</span>
-                      </div>
-                    </div>
-
-                    <div className={`p-3 rounded-xl border flex items-center gap-2.5 ${isIllustrative ? 'bg-white border-[#ede4d4] shadow-sm' : 'bg-[#0d1117] border-[#30363d]'}`}>
-                      <div className="w-8 h-8 rounded-lg bg-[#fef3c7] text-[#d97706] flex items-center justify-center shrink-0">
-                        <Trophy className="w-4 h-4" />
-                      </div>
-                      <div className="text-[11px] leading-tight">
-                        <strong className={`block ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>Compete &amp; Climb</strong>
-                        <span className={isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}>Climb room rankings</span>
-                      </div>
-                    </div>
-                  </div>
+                {/* Vertical Workspace Layout: Leaderboard on top, Discussion below */}
+                <div className="space-y-6">
+                  <LeaderboardTable />
+                  <ProblemDiscussion problem={activeProblem} />
                 </div>
               </div>
             )}

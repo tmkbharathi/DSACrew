@@ -35,6 +35,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
     unreadCount,
     soundEnabled,
     setSoundEnabled,
+    updateCurrentUser,
     resetToDefault,
     signOut,
     setIsLandingView,
@@ -339,7 +340,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
 
                     <button
                       onClick={() => {
-                        setTheme(isIllustrative ? 'dark' : 'illustrative');
+                        const newTheme = isIllustrative ? 'dark' : 'illustrative';
+                        setTheme(newTheme);
+                        updateCurrentUser({
+                          preferences: {
+                            ...currentUser.preferences,
+                            theme: newTheme,
+                          },
+                        });
                         setIsUserMenuOpen(false);
                       }}
                       className={`w-full flex items-center gap-2.5 p-2 rounded-lg text-left transition-colors ${
@@ -347,7 +355,30 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
                       }`}
                     >
                       <Palette className="w-4 h-4 text-amber-500" />
-                      <span>Theme: {isIllustrative ? 'Illustrative (Warm)' : 'Dark Mode'}</span>
+                      <span>Theme: {isIllustrative ? 'Warm Theme' : 'Dark Mode'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const newSound = !soundEnabled;
+                        setSoundEnabled(newSound);
+                        updateCurrentUser({
+                          preferences: {
+                            ...currentUser.preferences,
+                            soundEnabled: newSound,
+                          },
+                        });
+                      }}
+                      className={`w-full flex items-center gap-2.5 p-2 rounded-lg text-left transition-colors ${
+                        isIllustrative ? 'hover:bg-[#f4ede0]' : 'hover:bg-[#21262d]'
+                      }`}
+                    >
+                      {soundEnabled ? (
+                        <Volume2 className="w-4 h-4 text-emerald-500" />
+                      ) : (
+                        <VolumeX className="w-4 h-4 text-slate-400" />
+                      )}
+                      <span>Audio: {soundEnabled ? 'Enabled' : 'Muted'}</span>
                     </button>
 
                     <button

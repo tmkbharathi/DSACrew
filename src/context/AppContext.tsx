@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import confetti from 'canvas-confetti';
-import type { Room, User, Notification, Difficulty } from '../types';
+import type { Room, User, Notification, Difficulty, Comment, FileAttachment } from '../types';
 import { INITIAL_CURRENT_USER } from '../data/mockData';
 import {
   supabase,
@@ -85,7 +85,7 @@ interface AppContextType {
       verifiedLeetCode?: boolean;
     }
   ) => Promise<void>;
-  addComment: (problemId: string, content: string, codeSnippet?: string) => Promise<void>;
+  addComment: (problemId: string, content: string, codeSnippet?: string, attachments?: FileAttachment[]) => Promise<void>;
   deleteComment: (problemId: string, commentId: string) => Promise<void>;
   removeMember: (roomId: string, memberId: string) => Promise<void>;
   markNotificationRead: (id: string) => Promise<void>;
@@ -96,6 +96,8 @@ interface AppContextType {
   refreshRooms: () => Promise<void>;
   theme: 'dark' | 'illustrative';
   setTheme: (theme: 'dark' | 'illustrative') => void;
+  selectedDate: string;
+  setSelectedDate: (date: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -122,6 +124,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activeRoomId, setActiveRoomId] = useState<string>('');
   const [isLandingView, setIsLandingView] = useState<boolean>(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [theme, setThemeState] = useState<'dark' | 'illustrative'>(() => {
     try {
       const saved = localStorage.getItem('leettracker_theme') as 'dark' | 'illustrative' | null;
@@ -723,22 +726,45 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     playAudioNotification();
   };
 
-  const addComment = async (problemId: string, content: string, codeSnippet?: string) => {
-    if (!isSupabaseConfigured || !currentUser.id || currentUser.id === 'usr_main') return;
-
-    const { error } = await dbCreateComment({
-      problem_id: problemId,
-      user_id: currentUser.id,
+  const addComment = async (problemId: string, content: string, codeSnippet?: string, attachments?: FileAttachment[]) => {
+    const newComment: Comment = {
+      id: `cmt_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      userId: currentUser.id || 'usr_main',
+      userName: currentUser.name || 'Anonymous Coder',
+      userAvatar: currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop',
       content,
-      code_snippet: codeSnippet,
-    });
+      codeSnippet,
+      attachments,
+      createdAt: 'Just now',
+    };
 
-    if (error) {
-      setToast({ title: 'Error', message: error, type: 'error' });
-      return;
+    if (isSupabaseConfigured && currentUser.id && currentUser.id !== 'usr_main') {
+      const { error } = await dbCreateComment({
+        problem_id: problemId,
+        user_id: currentUser.id,
+        content,
+        code_snippet: codeSnippet,
+        attachments,
+      });
+
+      if (error) {
+        setToast({ title: 'Error', message: error, type: 'error' });
+        return;
+      }
+
+      await refreshRooms();
+    } else {
+      setRooms((prev) =>
+        prev.map((r) => ({
+          ...r,
+          dailyProblems: r.dailyProblems.map((p) =>
+            p.id === problemId
+              ? { ...p, comments: [newComment, ...(p.comments || [])] }
+              : p
+          ),
+        }))
+      );
     }
-
-    await refreshRooms();
   };
 
   const deleteComment = async (_problemId: string, commentId: string) => {
@@ -853,6 +879,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         refreshRooms,
         theme,
         setTheme,
+        selectedDate,
+        setSelectedDate,
       }}
     >
       {children}

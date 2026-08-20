@@ -68,22 +68,26 @@ const RANDOM_BANK = [
   },
 ];
 
-export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: initialProblem }) => {
-  const { currentUser, activeRoom, deleteProblem, postDailyProblem, setActiveProblemId, setToast, isHost, theme } = useApp();
+export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
+  const {
+    currentUser,
+    activeRoom,
+    deleteProblem,
+    postDailyProblem,
+    setActiveProblemId,
+    setToast,
+    isHost,
+    theme,
+    selectedDate,
+    setSelectedDate,
+  } = useApp();
   const isIllustrative = theme === 'illustrative';
 
   const getTodayStr = () => new Date().toISOString().split('T')[0];
-  const [selectedDate, setSelectedDate] = useState<string>(initialProblem?.date || getTodayStr());
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [isPostOpen, setIsPostOpen] = useState(false);
   const [loadingDailyFetch, setLoadingDailyFetch] = useState(false);
   const [selectedCodeSnippet, setSelectedCodeSnippet] = useState<{ name: string; code: string; lang: string } | null>(null);
-
-  React.useEffect(() => {
-    if (initialProblem?.date) {
-      setSelectedDate(initialProblem.date);
-    }
-  }, [initialProblem?.id, initialProblem?.date]);
 
   const [isCardHidden, setIsCardHidden] = useState<boolean>(() => {
     try {
@@ -109,34 +113,44 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
 
   const todayStr = getTodayStr();
 
-  // Find all problems in room and on selectedDate
+  // Find problems scheduled strictly for selectedDate
   const allProblems = activeRoom?.dailyProblems || [];
   const problemsOnDate = activeRoom?.dailyProblems.filter((p) => p.date === selectedDate) || [];
   const activeProblem =
     problemsOnDate.find((p) => p.id === activeRoom?.activeProblemId) ||
     problemsOnDate[0] ||
-    allProblems.find((p) => p.id === activeRoom?.activeProblemId) ||
-    allProblems[0] ||
-    (selectedDate === todayStr ? initialProblem : undefined);
+    undefined;
 
-  const currentProblemIndex = allProblems.findIndex((p) => p.id === activeProblem?.id);
+  // Sync activeProblemId when date changes
+  React.useEffect(() => {
+    const matching = activeRoom?.dailyProblems.filter((p) => p.date === selectedDate) || [];
+    if (matching.length > 0) {
+      if (!matching.some((p) => p.id === activeRoom?.activeProblemId)) {
+        setActiveProblemId(matching[0].id);
+      }
+    } else {
+      if (activeRoom?.activeProblemId) {
+        setActiveProblemId('');
+      }
+    }
+  }, [selectedDate, activeRoom?.dailyProblems]);
+
+  const currentProblemIndex = problemsOnDate.findIndex((p) => p.id === activeProblem?.id);
 
   const handlePrevProblem = () => {
-    if (allProblems.length <= 1) return;
-    const prevIdx = currentProblemIndex > 0 ? currentProblemIndex - 1 : allProblems.length - 1;
-    const prevProb = allProblems[prevIdx];
+    if (problemsOnDate.length <= 1) return;
+    const prevIdx = currentProblemIndex > 0 ? currentProblemIndex - 1 : problemsOnDate.length - 1;
+    const prevProb = problemsOnDate[prevIdx];
     if (prevProb) {
-      setSelectedDate(prevProb.date);
       setActiveProblemId(prevProb.id);
     }
   };
 
   const handleNextProblem = () => {
-    if (allProblems.length <= 1) return;
-    const nextIdx = currentProblemIndex >= 0 && currentProblemIndex < allProblems.length - 1 ? currentProblemIndex + 1 : 0;
-    const nextProb = allProblems[nextIdx];
+    if (problemsOnDate.length <= 1) return;
+    const nextIdx = currentProblemIndex >= 0 && currentProblemIndex < problemsOnDate.length - 1 ? currentProblemIndex + 1 : 0;
+    const nextProb = problemsOnDate[nextIdx];
     if (nextProb) {
-      setSelectedDate(nextProb.date);
       setActiveProblemId(nextProb.id);
     }
   };

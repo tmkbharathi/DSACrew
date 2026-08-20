@@ -1,5 +1,11 @@
 export type Difficulty = 'Easy' | 'Medium' | 'Hard';
 
+export interface UserPreferences {
+  theme?: 'dark' | 'illustrative';
+  soundEnabled?: boolean;
+  spiderVisible?: boolean;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -17,6 +23,7 @@ export interface User {
   joinedAt: string;
   joinedRoomIds?: string[];
   isLoggedIn?: boolean;
+  preferences?: UserPreferences;
 }
 
 export interface AuthCredential {
@@ -27,6 +34,14 @@ export interface AuthCredential {
   createdAt: string;
 }
 
+export interface FileAttachment {
+  id: string;
+  name: string;
+  size: number; // in bytes
+  type: string;
+  dataUrl?: string; // Data URL for download/preview
+}
+
 export interface Comment {
   id: string;
   userId: string;
@@ -34,6 +49,7 @@ export interface Comment {
   userAvatar: string;
   content: string;
   codeSnippet?: string;
+  attachments?: FileAttachment[];
   createdAt: string;
 }
 

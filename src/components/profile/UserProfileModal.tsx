@@ -2,7 +2,26 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { fetchLeetCodeProfile } from '../../services/leetcodeApi';
 import type { LeetCodeProfileStats } from '../../types';
-import { X, User, Code2, RefreshCw, CheckCircle2, Award, Zap, Flame, Trophy, AlertCircle, ShieldCheck } from 'lucide-react';
+import {
+  X,
+  User,
+  Code2,
+  RefreshCw,
+  CheckCircle2,
+  Award,
+  Zap,
+  Flame,
+  Trophy,
+  AlertCircle,
+  ShieldCheck,
+  Palette,
+  Volume2,
+  VolumeX,
+  Gamepad2,
+  Eye,
+  EyeOff,
+  Settings,
+} from 'lucide-react';
 import { Button } from '../ui/Button';
 
 interface UserProfileModalProps {
@@ -11,7 +30,7 @@ interface UserProfileModalProps {
 }
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) => {
-  const { currentUser, updateCurrentUser, setToast } = useApp();
+  const { currentUser, updateCurrentUser, theme, setTheme, soundEnabled, setSoundEnabled, setToast } = useApp();
 
   const [name, setName] = useState(currentUser.name);
   const [username, setUsername] = useState(currentUser.username);
@@ -20,6 +39,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   const [syncError, setSyncError] = useState('');
   const [lcStats, setLcStats] = useState<LeetCodeProfileStats | null>(null);
 
+  const [prefTheme, setPrefTheme] = useState<'dark' | 'illustrative'>(currentUser.preferences?.theme || theme);
+  const [prefSound, setPrefSound] = useState<boolean>(
+    typeof currentUser.preferences?.soundEnabled === 'boolean' ? currentUser.preferences.soundEnabled : soundEnabled
+  );
+  const [prefSpider, setPrefSpider] = useState<boolean>(
+    typeof currentUser.preferences?.spiderVisible === 'boolean' ? currentUser.preferences.spiderVisible : true
+  );
+
   React.useEffect(() => {
     if (isOpen) {
       setName(currentUser.name);
@@ -27,8 +54,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       setAvatar(currentUser.avatar);
       setSyncError('');
       setLcStats(null);
+      setPrefTheme(currentUser.preferences?.theme || theme);
+      setPrefSound(typeof currentUser.preferences?.soundEnabled === 'boolean' ? currentUser.preferences.soundEnabled : soundEnabled);
+      setPrefSpider(typeof currentUser.preferences?.spiderVisible === 'boolean' ? currentUser.preferences.spiderVisible : true);
     }
-  }, [isOpen, currentUser]);
+  }, [isOpen, currentUser, theme, soundEnabled]);
 
   if (!isOpen) return null;
 
@@ -68,8 +98,17 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       username: username.trim(),
       avatar,
       leetcodeTotalSolved: lcStats ? lcStats.totalSolved : currentUser.leetcodeTotalSolved,
+      preferences: {
+        theme: prefTheme,
+        soundEnabled: prefSound,
+        spiderVisible: prefSpider,
+      },
     });
-    setToast({ title: 'Profile Saved', message: 'Your settings have been saved.', type: 'success' });
+
+    if (prefTheme !== theme) setTheme(prefTheme);
+    if (prefSound !== soundEnabled) setSoundEnabled(prefSound);
+
+    setToast({ title: 'Profile & Settings Saved', message: 'Your preferences have been updated.', type: 'success' });
     onClose();
   };
 
@@ -202,6 +241,96 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
               </div>
             </div>
           )}
+
+          {/* Account Preferences (Theme, Sound, Spider Relaxer) */}
+          <div className="bg-[#0d1117] border border-[#30363d] rounded-xl p-3.5 space-y-3">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
+              <Settings className="w-3.5 h-3.5 text-purple-400" />
+              <span>Account Preferences</span>
+              <span className="text-[10px] text-slate-500 font-mono ml-auto">Saved to Account</span>
+            </div>
+
+            {/* Theme Toggle */}
+            <div className="flex items-center justify-between py-1 border-b border-[#30363d]/50">
+              <div className="flex items-center gap-2">
+                <Palette className="w-3.5 h-3.5 text-amber-400" />
+                <div>
+                  <div className="text-xs text-slate-200 font-medium font-sans">Workspace Theme</div>
+                  <div className="text-[10px] text-slate-400 font-sans">Illustrative (Warm) or Dark Mode</div>
+                </div>
+              </div>
+              <div className="flex items-center bg-[#161b22] border border-[#30363d] rounded-lg p-0.5 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setPrefTheme('illustrative')}
+                  className={`px-2 py-1 rounded font-medium transition-colors ${
+                    prefTheme === 'illustrative'
+                      ? 'bg-[#2d6a4f] text-white font-bold'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Warm
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrefTheme('dark')}
+                  className={`px-2 py-1 rounded font-medium transition-colors ${
+                    prefTheme === 'dark'
+                      ? 'bg-[#21262d] text-emerald-400 font-bold border border-emerald-500/30'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Dark
+                </button>
+              </div>
+            </div>
+
+            {/* Audio Effects Toggle */}
+            <div className="flex items-center justify-between py-1 border-b border-[#30363d]/50">
+              <div className="flex items-center gap-2">
+                {prefSound ? <Volume2 className="w-3.5 h-3.5 text-emerald-400" /> : <VolumeX className="w-3.5 h-3.5 text-slate-500" />}
+                <div>
+                  <div className="text-xs text-slate-200 font-medium font-sans">Sound Effects &amp; Audio</div>
+                  <div className="text-[10px] text-slate-400 font-sans">Snake game &amp; notification chimes</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPrefSound(!prefSound)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors flex items-center gap-1.5 ${
+                  prefSound
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                    : 'bg-[#161b22] text-slate-400 border-[#30363d] hover:text-white'
+                }`}
+              >
+                {prefSound ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
+                <span>{prefSound ? 'Enabled' : 'Muted'}</span>
+              </button>
+            </div>
+
+            {/* Spider Relaxer Toggle */}
+            <div className="flex items-center justify-between py-1">
+              <div className="flex items-center gap-2">
+                <Gamepad2 className="w-3.5 h-3.5 text-[#3fb950]" />
+                <div>
+                  <div className="text-xs text-slate-200 font-medium font-sans">Spider Relaxer</div>
+                  <div className="text-[10px] text-slate-400 font-sans">Interactive crawler in bottom corner</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPrefSpider(!prefSpider)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors flex items-center gap-1.5 ${
+                  prefSpider
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                    : 'bg-[#161b22] text-slate-400 border-[#30363d] hover:text-white'
+                }`}
+              >
+                {prefSpider ? <Eye className="w-3 h-3 text-emerald-400" /> : <EyeOff className="w-3 h-3 text-slate-500" />}
+                <span>{prefSpider ? 'Visible' : 'Hidden'}</span>
+              </button>
+            </div>
+          </div>
 
           <div className="pt-2 flex justify-end gap-2">
             <Button variant="secondary" size="md" onClick={onClose}>

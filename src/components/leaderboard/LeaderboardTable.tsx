@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useApp, isUserHostOfRoom } from '../../context/AppContext';
 import { InviteModal } from '../room/InviteModal';
-import { Trophy, Flame, Zap, ShieldCheck, UserPlus, Users, UserX, ExternalLink } from 'lucide-react';
+import { Trophy, Flame, Zap, ShieldCheck, UserPlus, Users, ExternalLink } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 export const LeaderboardTable: React.FC = () => {
-  const { activeRoom, currentUser, removeMember, isHost, theme } = useApp();
+  const { activeRoom, currentUser, theme } = useApp();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const isIllustrative = theme === 'illustrative';
 
@@ -134,7 +134,6 @@ export const LeaderboardTable: React.FC = () => {
                 <th className="py-3 px-3 text-center">STREAK</th>
                 <th className="py-3 px-3 text-center">ROOM SOLVES</th>
                 <th className="py-3 px-4 sm:px-5 text-right">POINTS</th>
-                {isHost && <th className="py-3 px-3 text-center w-12">ACTION</th>}
               </tr>
             </thead>
             <tbody className={`divide-y font-sans ${isIllustrative ? 'divide-[#ede4d4]' : 'divide-[#30363d]/60'}`}>
@@ -248,22 +247,6 @@ export const LeaderboardTable: React.FC = () => {
                         {member.points} pts
                       </span>
                     </td>
-
-                    {/* Action Column for Host */}
-                    {isHost && (
-                      <td className="py-3 px-3 text-center">
-                        {!isCurrent && (
-                          <button
-                            onClick={() => removeMember(activeRoom.id, member.id)}
-                            className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg hover:bg-rose-950/40 transition-colors"
-                            title={`Remove ${member.name} from room`}
-                            aria-label={`Remove ${member.name}`}
-                          >
-                            <UserX className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </td>
-                    )}
                   </tr>
                 );
               })}
