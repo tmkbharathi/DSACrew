@@ -190,10 +190,36 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
         isIllustrative
           ? 'bg-[#faf5ea] text-[#212d27] selection:bg-[#2d6a4f]/20 selection:text-[#1b4332]'
           : 'bg-[#0d1117] text-[#f0f6fc] selection:bg-[#2ea043]/20 selection:text-[#3fb950]'
+      } ${
+        !isLoggedIn
+          ? isIllustrative
+            ? 'bg-[url("/landing_bg_light.png")] bg-cover bg-center bg-no-repeat'
+            : 'bg-[url("/landing_bg_dark.png")] bg-cover bg-center bg-no-repeat'
+          : ''
       }`}
+      style={
+        !isLoggedIn
+          ? {
+              backgroundImage: `url(${isIllustrative ? '/landing_bg_light.png' : '/landing_bg_dark.png'})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center center',
+              backgroundRepeat: 'no-repeat',
+            }
+          : undefined
+      }
     >
-      {/* Ambient Background Gradient Glow */}
-      <div className={`absolute inset-0 pointer-events-none ${isIllustrative ? 'opacity-40' : 'hero-gradient'}`} />
+      {/* Ambient Background Gradient Glow / Overlay */}
+      <div
+        className={`absolute inset-0 pointer-events-none ${
+          !isLoggedIn
+            ? isIllustrative
+              ? 'bg-[#faf5ea]/30 backdrop-blur-[0.5px]'
+              : 'bg-[#0d1117]/40 backdrop-blur-[0.5px]'
+            : isIllustrative
+            ? 'opacity-40'
+            : 'hero-gradient'
+        }`}
+      />
 
       {/* Top Navigation Bar */}
       <header
@@ -470,8 +496,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                 </div>
               </div>
 
-              {/* Cozy Developer Illustration */}
-              <div className="pt-2">
+              {/* Cozy Developer Illustration (shown on mobile / smaller screens where background is cropped) */}
+              <div className="pt-2 lg:hidden">
                 <CozyCoderIllustration className="w-full max-w-sm sm:max-w-md" />
               </div>
             </div>
