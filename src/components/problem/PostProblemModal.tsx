@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { fetchLeetCodeDaily, fetchLeetCodeProblemDetails, extractSlugFromLeetCodeUrl } from '../../services/leetcodeApi';
 import type { Difficulty } from '../../types';
+import { getLocalTodayStr, addDaysToDateStr } from '../../utils/dateUtils';
 import { Button } from '../ui/Button';
 import { X, PlusCircle, ExternalLink, RefreshCw, Tag, Calendar, Dices, Search, Sparkles, Loader2 } from 'lucide-react';
 
@@ -27,12 +28,8 @@ const POPULAR_PROBLEMS = [
 export const PostProblemModal: React.FC<PostProblemModalProps> = ({ isOpen, onClose, initialDate }) => {
   const { postDailyProblem, setToast, theme } = useApp();
 
-  const getTodayStr = () => new Date().toISOString().split('T')[0];
-  const getTomorrowStr = () => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().split('T')[0];
-  };
+  const getTodayStr = () => getLocalTodayStr();
+  const getTomorrowStr = () => addDaysToDateStr(getLocalTodayStr(), 1);
 
   const [dateInput, setDateInput] = useState(initialDate || getTodayStr());
   const [title, setTitle] = useState('');

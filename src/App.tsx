@@ -12,6 +12,7 @@ import { ToastContainer } from './components/notifications/ToastContainer';
 import { LandingPage } from './components/landing/LandingPage';
 import { SpiderCrawler } from './components/fun/SpiderCrawler';
 import { SnakeGameModal } from './components/fun/SnakeGameModal';
+import { getLocalTodayStr } from './utils/dateUtils';
 import { Flame, Trophy, Zap, Target } from 'lucide-react';
 
 export const App = () => {
@@ -39,7 +40,7 @@ export const App = () => {
   }
 
   // Calculate dynamic data
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalTodayStr();
   const activeProblem =
     activeRoom.dailyProblems.find((p) => p.id === activeRoom.activeProblemId) ||
     activeRoom.dailyProblems.find((p) => p.date === todayStr);

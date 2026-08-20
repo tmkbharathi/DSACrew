@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 
+import { getLocalTodayStr } from '../../utils/dateUtils';
+
 interface ProblemDiscussionProps {
   problem?: Problem;
 }
@@ -36,7 +38,7 @@ export const ProblemDiscussion: React.FC<ProblemDiscussionProps> = ({ problem: p
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isIllustrative = theme === 'illustrative';
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalTodayStr();
   const currentDate = selectedDate || (propProblem?.date === selectedDate ? propProblem.date : todayStr);
 
   // Find all problems in room on this date strictly

@@ -100,6 +100,7 @@ export interface Room {
   members: User[];
   dailyProblems: Problem[];
   activeProblemId?: string;
+  logoUrl?: string;
 }
 
 export interface Notification {

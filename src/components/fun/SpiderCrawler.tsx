@@ -16,7 +16,8 @@ interface SpiderPos {
 }
 
 export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame }) => {
-  const { currentUser, soundEnabled } = useApp();
+  const { currentUser, soundEnabled, theme } = useApp();
+  const isIllustrative = theme === 'illustrative';
   const isVisible = currentUser?.preferences?.spiderVisible !== false;
 
   useEffect(() => {
@@ -100,71 +101,95 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
     setPos((prev) => ({
       ...prev,
       isDangling: false,
+      isMoving: true,
     }));
   }, []);
 
-  // Main animation / movement ticker
   useEffect(() => {
-    if (!isVisible) return;
+    const interval = setInterval(() => {
+      pickNewTarget();
+    }, 4500 + Math.random() * 2500);
 
-    let animFrameId: number;
-    let lastTime = performance.now();
-    let moveTimer = 0;
+    return () => clearInterval(interval);
+  }, [pickNewTarget]);
 
-    const tick = (now: number) => {
-      const delta = Math.min((now - lastTime) / 1000, 0.1);
-      lastTime = now;
-      moveTimer += delta;
+  // Frame-based smooth crawl animation
+  useEffect(() => {
+    let animId: number;
 
-      if (!isHoveredRef.current) {
-        const current = posRef.current;
+    const animate = () => {
+      setPos((prev) => {
+        if (isHoveredRef.current) return prev;
+
         const target = targetRef.current;
-        const dx = target.x - current.x;
-        const dy = target.y - current.y;
+        const dx = target.x - prev.x;
+        const dy = target.y - prev.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist > 8) {
-          // Calculate angle
-          const targetAngle = (Math.atan2(dy, dx) * 180) / Math.PI + 90; // +90 because spider faces up by default
-          
-          // Smoothly rotate
-          let diffAngle = (targetAngle - current.angle) % 360;
-          if (diffAngle > 180) diffAngle -= 360;
-          if (diffAngle < -180) diffAngle += 360;
-          const newAngle = current.angle + diffAngle * Math.min(delta * 6, 1);
-
-          // Move speed: around 70-130 px/sec
-          const speed = current.isDangling ? 110 : 85;
-          const step = Math.min(speed * delta, dist);
-          const nx = current.x + (dx / dist) * step;
-          const ny = current.y + (dy / dist) * step;
-
-          setPos({
-            x: nx,
-            y: ny,
-            angle: newAngle,
-            isMoving: true,
-            isDangling: current.isDangling,
-            silkStartY: current.silkStartY,
-          });
-        } else {
-          // Reached target -> pause and pick next target after slight delay
-          if (current.isMoving) {
-            setPos((prev) => ({ ...prev, isMoving: false }));
-          }
-          if (moveTimer > 2.5 + Math.random() * 3) {
-            moveTimer = 0;
-            pickNewTarget();
-          }
+        if (dist < 4) {
+          return { ...prev, isMoving: false };
         }
-      }
 
-      animFrameId = requestAnimationFrame(tick);
+        // Speed: faster when dangling or crawling
+        const speed = prev.isDangling ? 2.5 : 1.6;
+        const moveX = (dx / dist) * Math.min(speed, dist);
+        const moveY = (dy / dist) * Math.min(speed, dist);
+
+        // Compute angle facing movement direction
+        let targetAngle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+        if (prev.isDangling) targetAngle = 180; // Hang head-down while dangling
+
+        // Smooth rotation interpolation
+        let diff = (targetAngle - prev.angle) % 360;
+        if (diff > 180) diff -= 360;
+        if (diff < -180) diff += 360;
+        const newAngle = prev.angle + diff * 0.15;
+
+        return {
+          ...prev,
+          x: prev.x + moveX,
+          y: prev.y + moveY,
+          angle: newAngle,
+          isMoving: true,
+        };
+      });
+
+      animId = requestAnimationFrame(animate);
     };
 
-    animFrameId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animFrameId);
-  }, [isVisible, pickNewTarget]);
+    animId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
+  // Flee cursor when mouse gets too close
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isVisibleRef.current) return;
+      const cur = posRef.current;
+      const dx = cur.x - e.clientX;
+      const dy = cur.y - e.clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      // If mouse is within 70px, scurry away
+      if (dist < 70 && !isHoveredRef.current) {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const minX = 25;
+        const maxX = Math.min(230, w * 0.22);
+        const minY = Math.max(h - 230, h * 0.68);
+        const maxY = h - 45;
+
+        const fleeX = Math.max(minX, Math.min(maxX, cur.x + (dx / dist) * 100 + (Math.random() * 40 - 20)));
+        const fleeY = Math.max(minY, Math.min(maxY, cur.y + (dy / dist) * 100 + (Math.random() * 40 - 20)));
+
+        targetRef.current = { x: fleeX, y: fleeY };
+        sounds.playSpiderScurry();
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   const handleSpiderClick = () => {
     sounds.playSpiderScurry();
@@ -184,7 +209,7 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
                 y1={0}
                 x2={pos.x}
                 y2={pos.y}
-                stroke="rgba(255, 255, 255, 0.45)"
+                stroke={isIllustrative ? 'rgba(82, 109, 95, 0.4)' : 'rgba(255, 255, 255, 0.45)'}
                 strokeWidth="1.2"
                 strokeDasharray="3,2"
               />
@@ -193,25 +218,29 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
 
           {/* Interactive Spider Entity */}
           <div
-            className="absolute pointer-events-auto cursor-pointer transition-transform duration-75 group"
+            className="absolute pointer-events-auto cursor-pointer transition-transform duration-75 group outline-none focus:outline-none focus:ring-0 select-none border-none"
             style={{
               left: `${pos.x}px`,
               top: `${pos.y}px`,
               transform: `translate(-50%, -50%) rotate(${pos.angle}deg) scale(${isHovered ? 1.15 : 1})`,
               transformOrigin: 'center center',
+              outline: 'none',
+              boxShadow: 'none',
             }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             onClick={handleSpiderClick}
             role="button"
-            tabIndex={0}
+            tabIndex={-1}
             title="Click me to relax with Classic Snake Game!"
           >
             {/* Pulsing Aura on Hover */}
             <div
               className={`absolute -inset-3 rounded-full transition-opacity duration-300 ${
                 isHovered
-                  ? 'bg-emerald-500/25 blur-md opacity-100 animate-pulse'
+                  ? isIllustrative
+                    ? 'bg-emerald-500/20 blur-md opacity-100 animate-pulse'
+                    : 'bg-emerald-500/25 blur-md opacity-100 animate-pulse'
                   : 'opacity-0'
               }`}
             />
@@ -221,17 +250,17 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
               width="46"
               height="46"
               viewBox="0 0 100 100"
-              className="drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)] filter transition-all duration-200"
+              className={isIllustrative ? 'drop-shadow-[0_2px_6px_rgba(45,106,79,0.25)] filter transition-all duration-200' : 'drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)] filter transition-all duration-200'}
             >
               <defs>
                 <radialGradient id="spiderBodyGrad" cx="40%" cy="40%" r="60%">
-                  <stop offset="0%" stopColor="#30363d" />
-                  <stop offset="60%" stopColor="#161b22" />
-                  <stop offset="100%" stopColor="#090d13" />
+                  <stop offset="0%" stopColor={isIllustrative ? '#8da597' : '#30363d'} />
+                  <stop offset="60%" stopColor={isIllustrative ? '#5c7365' : '#161b22'} />
+                  <stop offset="100%" stopColor={isIllustrative ? '#3f5448' : '#090d13'} />
                 </radialGradient>
                 <radialGradient id="spiderHeadGrad" cx="35%" cy="35%" r="65%">
-                  <stop offset="0%" stopColor="#384252" />
-                  <stop offset="100%" stopColor="#0d1117" />
+                  <stop offset="0%" stopColor={isIllustrative ? '#9cb4a7' : '#384252'} />
+                  <stop offset="100%" stopColor={isIllustrative ? '#526d5f' : '#0d1117'} />
                 </radialGradient>
                 <radialGradient id="eyeGlow" cx="50%" cy="50%" r="50%">
                   <stop offset="0%" stopColor="#3fb950" />
@@ -243,7 +272,7 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
               {/* Left Legs */}
               <g
                 className={pos.isMoving ? 'animate-[spiderLegLeft_0.35s_ease-in-out_infinite_alternate]' : ''}
-                stroke="#21262d"
+                stroke={isIllustrative ? '#526d5f' : '#21262d'}
                 strokeWidth="4"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -262,7 +291,7 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
               {/* Right Legs */}
               <g
                 className={pos.isMoving ? 'animate-[spiderLegRight_0.35s_ease-in-out_infinite_alternate]' : ''}
-                stroke="#21262d"
+                stroke={isIllustrative ? '#526d5f' : '#21262d'}
                 strokeWidth="4"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -281,7 +310,7 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
               {/* Pedipalps / Front Fangs */}
               <path
                 d="M 45 30 Q 42 22, 40 24 M 55 30 Q 58 22, 60 24"
-                stroke="#30363d"
+                stroke={isIllustrative ? '#5c7365' : '#30363d'}
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 fill="none"
@@ -294,14 +323,14 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
                 rx="15"
                 ry="18"
                 fill="url(#spiderBodyGrad)"
-                stroke="#30363d"
+                stroke={isIllustrative ? '#3f5448' : '#30363d'}
                 strokeWidth="1.5"
               />
               
               {/* LeetCode/Coding symbol mark on Abdomen */}
               <path
                 d="M 46 58 L 43 62 L 46 66 M 54 58 L 57 62 L 54 66"
-                stroke="#3fb950"
+                stroke={isIllustrative ? '#d8f3dc' : '#3fb950'}
                 strokeWidth="1.8"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -315,7 +344,7 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
                 rx="11"
                 ry="11"
                 fill="url(#spiderHeadGrad)"
-                stroke="#30363d"
+                stroke={isIllustrative ? '#3f5448' : '#30363d'}
                 strokeWidth="1.5"
               />
 

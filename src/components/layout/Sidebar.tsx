@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp, isUserHostOfRoom } from '../../context/AppContext';
 import { InviteModal } from '../room/InviteModal';
+import { EditRoomLogoModal } from '../room/EditRoomLogoModal';
 import {
   LayoutDashboard,
   Flame,
@@ -15,6 +16,7 @@ import {
   X,
   Bookmark,
   Info,
+  Camera,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -33,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { activeRoom, currentUser, isHost, deleteRoom, removeMember, setToast, setIsLandingView, theme, onlineUserIds } = useApp();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isEditLogoOpen, setIsEditLogoOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDesktopMembersOpen, setIsDesktopMembersOpen] = useState(true);
 
@@ -65,6 +68,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   });
   const uniqueMembers = Array.from(memberMap.values());
 
+  const isImageLogo = activeRoom.logoUrl && (activeRoom.logoUrl.startsWith('http') || activeRoom.logoUrl.startsWith('data:image'));
+
   const sidebarContent = (
     <div
       className={`flex flex-col h-full p-3.5 space-y-3.5 font-sans text-xs transition-colors duration-200 ${
@@ -80,9 +85,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         <div className="flex gap-2.5 items-center">
-          {/* Room Camp/Study Graphic */}
-          <div className="w-12 h-12 rounded-xl bg-[#d8f3dc] border border-[#b7e4c7] flex items-center justify-center text-xl shrink-0 shadow-inner">
-            ⛺
+          {/* Room Camp/Study Graphic with Change Logo Trigger */}
+          <div
+            onClick={() => setIsEditLogoOpen(true)}
+            className="group relative w-12 h-12 rounded-xl bg-[#d8f3dc] border border-[#b7e4c7] flex items-center justify-center text-xl shrink-0 shadow-inner cursor-pointer overflow-hidden transition-transform hover:scale-105"
+            title="Click to change room logo"
+          >
+            {isImageLogo ? (
+              <img
+                src={activeRoom.logoUrl}
+                alt={activeRoom.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span>{activeRoom.logoUrl || '⛺'}</span>
+            )}
+
+            {/* Hover overlay with camera icon */}
+            <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+              <Camera className="w-4 h-4" />
+            </div>
           </div>
 
           <div className="min-w-0 flex-1">
@@ -97,11 +119,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 {activeRoom.name}
               </h2>
-              {isHost && (
-                <span className="bg-purple-100 text-purple-800 text-[9px] px-1 py-0.2 rounded font-bold border border-purple-200 font-mono shrink-0">
-                  HOST
-                </span>
-              )}
             </div>
             <div className={`text-[10px] flex items-center gap-2 mt-0.5 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
               <span>• {uniqueMembers.length} members</span>
@@ -254,7 +271,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           {isCurrent ? currentUser.name : member.name}
                         </span>
                         {memberIsHost && (
-                          <span className="text-[8px] bg-purple-100 text-purple-800 px-1 py-0.2 rounded font-bold border border-purple-200 font-mono shrink-0">
+                          <span
+                            className={`text-[8px] px-1.5 py-0.5 rounded font-bold border font-mono shrink-0 ${
+                              isIllustrative
+                                ? 'bg-purple-100 text-purple-800 border-purple-200'
+                                : 'bg-purple-900/30 text-purple-300 border-purple-500/30'
+                            }`}
+                          >
                             HOST
                           </span>
                         )}
@@ -339,11 +362,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Modals & Confirmations */}
       {activeRoom && (
-        <InviteModal
-          room={activeRoom}
-          isOpen={isInviteOpen}
-          onClose={() => setIsInviteOpen(false)}
-        />
+        <>
+          <InviteModal
+            room={activeRoom}
+            isOpen={isInviteOpen}
+            onClose={() => setIsInviteOpen(false)}
+          />
+          <EditRoomLogoModal
+            isOpen={isEditLogoOpen}
+            onClose={() => setIsEditLogoOpen(false)}
+            roomId={activeRoom.id}
+            roomName={activeRoom.name}
+            currentLogo={activeRoom.logoUrl || '⛺'}
+          />
+        </>
       )}
 
       {showDeleteConfirm && (

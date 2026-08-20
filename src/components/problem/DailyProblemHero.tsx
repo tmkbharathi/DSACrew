@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { fetchLeetCodeDaily } from '../../services/leetcodeApi';
 import type { Problem } from '../../types';
+import { getLocalTodayStr, parseLocalDate, addDaysToDateStr } from '../../utils/dateUtils';
 
 interface DailyProblemHeroProps {
   problem?: Problem;
@@ -83,7 +84,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
   } = useApp();
   const isIllustrative = theme === 'illustrative';
 
-  const getTodayStr = () => new Date().toISOString().split('T')[0];
+  const todayStr = getLocalTodayStr();
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [isPostOpen, setIsPostOpen] = useState(false);
   const [loadingDailyFetch, setLoadingDailyFetch] = useState(false);
@@ -110,8 +111,6 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
       return next;
     });
   };
-
-  const todayStr = getTodayStr();
 
   // Find problems scheduled strictly for selectedDate
   const allProblems = activeRoom?.dailyProblems || [];
@@ -159,28 +158,22 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
     activeProblem && (isHost || activeProblem.postedBy.id === currentUser.id)
   );
 
-  // Generate 7-day strip
+  // Generate 7-day strip centered on selected date
   const getDateStrip = () => {
     const dates = [];
-    const base = new Date(selectedDate || todayStr);
+    const base = selectedDate || todayStr;
     for (let i = -3; i <= 3; i++) {
-      const d = new Date(base);
-      d.setDate(base.getDate() + i);
-      dates.push(d.toISOString().split('T')[0]);
+      dates.push(addDaysToDateStr(base, i));
     }
     return dates;
   };
 
   const handlePrevDay = () => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() - 1);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(addDaysToDateStr(selectedDate || todayStr, -1));
   };
 
   const handleNextDay = () => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + 1);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(addDaysToDateStr(selectedDate || todayStr, 1));
   };
 
   const handleFetchOfficialDaily = async () => {
@@ -236,7 +229,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
 
   const formatDisplayDate = (dStr: string) => {
     if (dStr === todayStr) return 'Today';
-    const dateObj = new Date(dStr + 'T00:00:00');
+    const dateObj = parseLocalDate(dStr);
     return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
@@ -271,6 +264,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
             const isSelected = dStr === selectedDate;
             const dayProblems = activeRoom?.dailyProblems.filter((p) => p.date === dStr) || [];
             const userSolved = dayProblems.some((p) => p.submissions?.some((s) => s.userId === currentUser.id && s.status === 'Accepted'));
+            const dateObj = parseLocalDate(dStr);
 
             return (
               <button
@@ -287,10 +281,10 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
                 }`}
               >
                 <span className={`text-[10px] font-sans font-medium ${isSelected ? 'text-white' : isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
-                  {isToday ? 'Today' : new Date(dStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' })}
+                  {isToday ? 'Today' : dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
                 </span>
                 <span className={`text-xs font-mono font-bold flex items-center gap-1 ${isSelected ? 'text-white' : isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
-                  {new Date(dStr + 'T00:00:00').getDate()}
+                  {dateObj.getDate()}
                   {dayProblems.length > 1 && (
                     <span className={`text-[9px] font-normal font-mono ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>({dayProblems.length})</span>
                   )}
@@ -473,25 +467,41 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
 
               {/* Prev / Next Problem Navigation Arrows */}
               {allProblems.length > 1 && (
-                <div className="flex items-center gap-1 bg-[#0d1117] border border-[#30363d] rounded-lg px-1.5 py-0.5 shadow-sm">
+                <div className={`flex items-center gap-1 rounded-lg px-1.5 py-0.5 shadow-sm border ${
+                  isIllustrative
+                    ? 'bg-[#fbf7ee] border-[#ede4d4]'
+                    : 'bg-[#0d1117] border-[#30363d]'
+                }`}>
                   <button
                     type="button"
                     onClick={handlePrevProblem}
-                    className="p-1 text-slate-400 hover:text-white hover:bg-[#21262d] rounded transition-colors flex items-center gap-0.5"
+                    className={`p-1 rounded transition-colors flex items-center gap-0.5 ${
+                      isIllustrative
+                        ? 'text-[#5c6b63] hover:text-[#212d27] hover:bg-[#ede4d4]'
+                        : 'text-slate-400 hover:text-white hover:bg-[#21262d]'
+                    }`}
                     title="Previous Problem"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                     <span className="text-[10px] font-mono hidden sm:inline">Prev</span>
                   </button>
 
-                  <span className="text-[11px] font-mono text-emerald-400 font-bold px-1.5 border-x border-[#30363d]">
+                  <span className={`text-[11px] font-mono font-bold px-1.5 border-x ${
+                    isIllustrative
+                      ? 'text-[#2d6a4f] border-[#ede4d4]'
+                      : 'text-emerald-400 border-[#30363d]'
+                  }`}>
                     {(currentProblemIndex >= 0 ? currentProblemIndex + 1 : 1)} of {allProblems.length}
                   </span>
 
                   <button
                     type="button"
                     onClick={handleNextProblem}
-                    className="p-1 text-slate-400 hover:text-white hover:bg-[#21262d] rounded transition-colors flex items-center gap-0.5"
+                    className={`p-1 rounded transition-colors flex items-center gap-0.5 ${
+                      isIllustrative
+                        ? 'text-[#5c6b63] hover:text-[#212d27] hover:bg-[#ede4d4]'
+                        : 'text-slate-400 hover:text-white hover:bg-[#21262d]'
+                    }`}
                     title="Next Problem"
                   >
                     <span className="text-[10px] font-mono hidden sm:inline">Next</span>
@@ -504,7 +514,11 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
             <div className="flex items-center gap-2 ml-auto">
               <button
                 onClick={() => setIsPostOpen(true)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-[#3fb950] hover:text-[#4ade80] bg-[#2ea043]/10 hover:bg-[#2ea043]/20 border border-[#2ea043]/30 transition-all"
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                  isIllustrative
+                    ? 'bg-[#d8f3dc] hover:bg-[#b7e4c7] text-[#2d6a4f] border-[#b7e4c7]'
+                    : 'bg-[#2ea043]/10 hover:bg-[#2ea043]/20 text-[#3fb950] border-[#2ea043]/30'
+                }`}
                 title="Add another problem"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
@@ -513,10 +527,14 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
 
               <button
                 onClick={toggleHideCard}
-                className="px-2.5 py-1 text-slate-400 hover:text-white hover:bg-[#21262d] rounded-lg transition-colors flex items-center gap-1.5 text-xs border border-[#30363d]"
+                className={`px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5 text-xs border ${
+                  isIllustrative
+                    ? 'text-[#5c6b63] hover:text-[#212d27] hover:bg-[#fbf7ee] border-[#ede4d4]'
+                    : 'text-slate-400 hover:text-white hover:bg-[#21262d] border-[#30363d]'
+                }`}
                 title="Hide challenge card"
               >
-                <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                <EyeOff className="w-3.5 h-3.5" />
                 <span>Hide Card</span>
               </button>
             </div>
@@ -525,7 +543,9 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
           {/* Multi-Problem Pills for Selected Date (if multiple) */}
           {problemsOnDate.length > 1 && (
             <div className="flex items-center gap-1.5 flex-wrap pt-0.5 pb-1">
-              <span className="text-[11px] font-mono text-slate-400">Date Problems ({problemsOnDate.length}):</span>
+              <span className={`text-[11px] font-mono ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
+                Date Problems ({problemsOnDate.length}):
+              </span>
               {problemsOnDate.map((prob, idx) => {
                 const isSelected = prob.id === activeProblem?.id;
                 const probSolved = prob.submissions?.some((s) => s.userId === currentUser.id);
@@ -537,11 +557,15 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
                     onClick={() => setActiveProblemId(prob.id)}
                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
                       isSelected
-                        ? 'bg-[#2ea043]/25 border border-[#2ea043]/60 text-white font-bold shadow-sm'
+                        ? isIllustrative
+                          ? 'bg-[#d8f3dc] border border-[#2d6a4f] text-[#212d27] font-bold shadow-sm'
+                          : 'bg-[#2ea043]/25 border border-[#2ea043]/60 text-white font-bold shadow-sm'
+                        : isIllustrative
+                        ? 'bg-[#fbf7ee] border border-[#ede4d4] text-[#212d27] hover:bg-white hover:border-[#2d6a4f]/40'
                         : 'bg-[#0d1117] border border-[#30363d] text-slate-300 hover:text-white hover:border-slate-500'
                     }`}
                   >
-                    {probSolved && <CheckCircle2 className="w-3 h-3 text-[#3fb950]" />}
+                    {probSolved && <CheckCircle2 className={`w-3 h-3 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />}
                     <span className="truncate max-w-[120px] sm:max-w-[180px]">
                       #{idx + 1} {prob.title}
                     </span>
@@ -556,18 +580,22 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
 
           {/* Completion reward banner */}
           {isSolved && (
-            <div className="bg-[#2ea043]/10 border border-[#2ea043]/30 rounded-lg px-3.5 py-2 flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2 text-[#3fb950]">
+            <div className={`rounded-xl px-3.5 py-2 flex items-center justify-between flex-wrap gap-2 border ${
+              isIllustrative
+                ? 'bg-[#e8f5e9] border-[#c8e6c9] text-[#2e7d32]'
+                : 'bg-[#2ea043]/10 border-[#2ea043]/30 text-[#3fb950]'
+            }`}>
+              <div className={`flex items-center gap-2 ${isIllustrative ? 'text-[#2e7d32]' : 'text-[#3fb950]'}`}>
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span className="text-xs font-bold font-mono uppercase tracking-wider">DAILY GOAL COMPLETE</span>
-                <span className="text-xs text-slate-300 hidden sm:inline font-sans">• Completed today</span>
+                <span className={`text-xs hidden sm:inline font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-300'}`}>• Completed today</span>
               </div>
               <div className="flex items-center gap-3 text-xs font-mono">
-                <span className="text-amber-300 flex items-center gap-1 font-bold">
-                  <Award className="w-3.5 h-3.5 text-amber-400" /> +30 Points
+                <span className={`flex items-center gap-1 font-bold ${isIllustrative ? 'text-[#d97706]' : 'text-amber-300'}`}>
+                  <Award className="w-3.5 h-3.5" /> +30 Points
                 </span>
-                <span className="text-[#f0883e] flex items-center gap-1 font-bold">
-                  <Flame className="w-3.5 h-3.5 fill-[#f0883e]" /> {currentUser.streak}d Streak
+                <span className="text-[#ea580c] flex items-center gap-1 font-bold">
+                  <Flame className="w-3.5 h-3.5 fill-[#ea580c]" /> {currentUser.streak}d Streak
                 </span>
               </div>
             </div>
@@ -575,12 +603,16 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
 
           {/* Missed challenge banner */}
           {isMissed && (
-            <div className="bg-[#0d1117] border border-[#30363d] rounded-lg px-3.5 py-2 flex items-center justify-between text-xs text-slate-300">
+            <div className={`rounded-xl px-3.5 py-2 flex items-center justify-between text-xs border ${
+              isIllustrative
+                ? 'bg-[#faf5ea] border-[#ede4d4] text-[#5c6b63]'
+                : 'bg-[#0d1117] border-[#30363d] text-slate-300'
+            }`}>
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-slate-500 shrink-0" />
+                <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                 <span>Daily Goal Missed • You didn't complete this day's challenge.</span>
               </div>
-              <span className="text-slate-500 font-mono hidden sm:inline">Past Date</span>
+              <span className={`font-mono hidden sm:inline ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-500'}`}>Past Date</span>
             </div>
           )}
 
@@ -602,7 +634,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
                         : 'bg-[#21262d] text-slate-100 border-[#30363d]'
                     }`}
                   >
-                    <Tag className={`w-3 h-3 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`} /> {tag}
+                    <Tag className={`w-3 h-3 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-400'}`} /> {tag}
                   </span>
                 ))}
               </div>
@@ -621,10 +653,14 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
                 href={activeProblem.url}
                 target="_blank"
                 rel="noreferrer"
-                className="bg-[#21262d] hover:bg-[#30363d] text-white text-xs px-4 py-2 rounded-lg font-semibold border border-[#30363d] flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                className={`text-xs px-4 py-2 rounded-xl font-semibold border flex items-center justify-center gap-1.5 transition-all shadow-sm ${
+                  isIllustrative
+                    ? 'bg-[#f4ede0] hover:bg-[#ede4d4] text-[#212d27] border-[#ede4d4]'
+                    : 'bg-[#21262d] hover:bg-[#30363d] text-white border-[#30363d]'
+                }`}
               >
                 <span>Open LeetCode</span>
-                <ExternalLink className="w-3.5 h-3.5 text-slate-300" />
+                <ExternalLink className={`w-3.5 h-3.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-300'}`} />
               </a>
 
               {!isSolved ? (
@@ -640,7 +676,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
                 <Button
                   variant="secondary"
                   size="md"
-                  leftIcon={<Code2 className="w-4 h-4 text-[#3fb950]" />}
+                  leftIcon={<Code2 className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />}
                   onClick={() => setIsSubmitOpen(true)}
                 >
                   Update Solution
@@ -650,7 +686,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
               {canDeleteProblem && (
                 <button
                   onClick={() => deleteProblem(activeProblem.id)}
-                  className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg border border-transparent hover:border-rose-500/20 transition-all flex items-center justify-center"
+                  className="p-2 text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg border border-transparent hover:border-rose-500/20 transition-all flex items-center justify-center"
                   title="Delete Challenge Post"
                   aria-label="Delete Challenge"
                 >
@@ -661,20 +697,30 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
           </div>
 
           {/* Room Progress Metrics Bar */}
-          <div className="pt-3 border-t border-[#30363d] space-y-1.5">
+          <div className={`pt-3 border-t space-y-1.5 ${isIllustrative ? 'border-[#ede4d4]' : 'border-[#30363d]'}`}>
             <div className="flex justify-between items-center text-xs">
-              <div className="flex items-center gap-1.5 text-slate-200 font-semibold font-sans">
-                <Users className="w-3.5 h-3.5 text-[#3fb950]" />
+              <div className={`flex items-center gap-1.5 font-semibold font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-slate-200'}`}>
+                <Users className={`w-3.5 h-3.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
                 <span>Room Completion Rate</span>
               </div>
-              <span className="font-mono text-slate-200 font-bold bg-[#0d1117] px-2 py-0.5 rounded border border-[#30363d]">
+              <span className={`font-mono font-bold px-2 py-0.5 rounded border ${
+                isIllustrative
+                  ? 'bg-[#fbf7ee] text-[#212d27] border-[#ede4d4]'
+                  : 'bg-[#0d1117] text-slate-200 border-[#30363d]'
+              }`}>
                 {completedCount} / {totalMembers} Members ({completionPercentage}%)
               </span>
             </div>
 
-            <div className="w-full bg-[#0d1117] h-2 rounded-full overflow-hidden border border-[#30363d]">
+            <div className={`w-full h-2 rounded-full overflow-hidden border ${
+              isIllustrative
+                ? 'bg-[#ede4d4] border-[#d8cbba]'
+                : 'bg-[#0d1117] border-[#30363d]'
+            }`}>
               <div
-                className="bg-[#2ea043] h-full transition-all duration-500 rounded-full"
+                className={`h-full transition-all duration-500 rounded-full ${
+                  isIllustrative ? 'bg-[#2d6a4f]' : 'bg-[#2ea043]'
+                }`}
                 style={{ width: `${Math.max(completionPercentage, 4)}%` }}
               />
             </div>
@@ -683,7 +729,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
           {/* Teammates Solved Avatar Strip */}
           {activeProblem.submissions.length > 0 && (
             <div className="pt-1 flex items-center gap-2 flex-wrap text-xs">
-              <span className="text-slate-400 font-medium">Solved by:</span>
+              <span className={`font-medium ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>Solved by:</span>
               <div className="flex items-center -space-x-1.5">
                 {activeProblem.submissions.map((sub) => (
                   <button
@@ -709,7 +755,11 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
                     <img
                       src={sub.userAvatar}
                       alt={sub.userName}
-                      className="w-6 h-6 rounded-full object-cover border border-[#30363d] ring-1 ring-[#161b22] group-hover:scale-110 transition-transform"
+                      className={`w-6 h-6 rounded-full object-cover border ring-1 group-hover:scale-110 transition-transform ${
+                        isIllustrative
+                          ? 'border-[#ede4d4] ring-white'
+                          : 'border-[#30363d] ring-[#161b22]'
+                      }`}
                     />
                   </button>
                 ))}
@@ -722,22 +772,30 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
       {/* Code Snippet Review Modal */}
       {selectedCodeSnippet && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-5 max-w-2xl w-full space-y-3 shadow-2xl relative">
-            <div className="flex items-center justify-between pb-2 border-b border-[#30363d]">
+          <div className={`rounded-2xl p-5 max-w-2xl w-full space-y-3 shadow-2xl relative border ${
+            isIllustrative ? 'bg-white border-[#ede4d4] text-[#212d27]' : 'bg-[#161b22] border-[#30363d] text-white'
+          }`}>
+            <div className={`flex items-center justify-between pb-2 border-b ${isIllustrative ? 'border-[#ede4d4]' : 'border-[#30363d]'}`}>
               <div className="flex items-center gap-2">
-                <Code className="w-4 h-4 text-[#3fb950]" />
-                <h4 className="font-bold text-sm text-white font-sans">
+                <Code className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
+                <h4 className="font-bold text-sm font-sans">
                   {selectedCodeSnippet.name}'s Solution ({selectedCodeSnippet.lang})
                 </h4>
               </div>
               <button
                 onClick={() => setSelectedCodeSnippet(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className={`p-1 rounded-lg transition-colors ${
+                  isIllustrative ? 'text-slate-400 hover:text-black hover:bg-[#fbf7ee]' : 'text-slate-400 hover:text-white hover:bg-[#21262d]'
+                }`}
               >
                 ✕
               </button>
             </div>
-            <pre className="bg-[#0d1117] p-4 rounded-lg text-xs font-mono text-emerald-300 overflow-x-auto max-h-96 border border-[#30363d]">
+            <pre className={`p-4 rounded-xl text-xs font-mono overflow-x-auto max-h-96 border ${
+              isIllustrative
+                ? 'bg-[#fbf7ee] text-[#1b4332] border-[#ede4d4]'
+                : 'bg-[#0d1117] text-emerald-300 border-[#30363d]'
+            }`}>
               <code>{selectedCodeSnippet.code}</code>
             </pre>
           </div>

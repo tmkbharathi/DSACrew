@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useApp, isUserHostOfRoom, isUserInRoom } from '../../context/AppContext';
+import { useApp, isUserInRoom } from '../../context/AppContext';
+import { getLocalTodayStr } from '../../utils/dateUtils';
 import { AuthModal } from '../auth/AuthModal';
 import { CreateRoomModal } from '../room/CreateRoomModal';
 import { JoinRoomModal } from '../room/JoinRoomModal';
@@ -34,8 +35,6 @@ import {
   Layers,
   Calendar,
   TrendingUp,
-  Monitor,
-  FileCheck2,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -70,9 +69,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
   const [tourStep, setTourStep] = useState<number | null>(null);
   const [copiedRoomCode, setCopiedRoomCode] = useState<string | null>(null);
 
-  // Direct login state on landing page
-  const [loginHandleInput, setLoginHandleInput] = useState('');
-  const [loginPasswordInput, setLoginPasswordInput] = useState('');
+  // Direct login state on landing page with auto-remember
+  const [rememberMe, setRememberMe] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('leettracker_remember_me');
+      return saved !== 'false'; // default to true
+    } catch {
+      return true;
+    }
+  });
+
+  const [loginHandleInput, setLoginHandleInput] = useState(() => {
+    try {
+      return localStorage.getItem('leettracker_saved_username') || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const [loginPasswordInput, setLoginPasswordInput] = useState(() => {
+    try {
+      return localStorage.getItem('leettracker_saved_password') || '';
+    } catch {
+      return '';
+    }
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -137,8 +158,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
     setLoginLoading(false);
 
     if (res.success) {
-      setLoginHandleInput('');
-      setLoginPasswordInput('');
+      if (rememberMe) {
+        try {
+          localStorage.setItem('leettracker_remember_me', 'true');
+          localStorage.setItem('leettracker_saved_username', loginHandleInput.trim());
+          localStorage.setItem('leettracker_saved_password', loginPasswordInput);
+        } catch {}
+      } else {
+        try {
+          localStorage.setItem('leettracker_remember_me', 'false');
+          localStorage.removeItem('leettracker_saved_username');
+          localStorage.removeItem('leettracker_saved_password');
+        } catch {}
+      }
+      setLoginError('');
+      setIsLandingView(false);
     } else {
       setLoginError(res.message);
     }
@@ -224,7 +258,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
 
       {/* Top Navigation Bar */}
       <header
-        className={`relative z-20 px-4 sm:px-8 py-3.5 backdrop-blur-md shrink-0 transition-colors duration-300 ${
+        className={`relative z-20 px-4 sm:px-8 py-2.5 sm:py-3 backdrop-blur-md shrink-0 transition-colors duration-300 ${
           isIllustrative
             ? 'bg-[#faf5ea]/90 border-b border-[#ede4d4]'
             : 'bg-[#161b22]/90 border-b border-[#30363d]'
@@ -397,7 +431,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
       </header>
 
       {/* Main Center Content Canvas */}
-      <main className="flex-1 relative z-10 max-w-7xl xl:max-w-[1500px] 2xl:max-w-[1880px] mx-auto px-4 sm:px-8 flex flex-col justify-center w-full py-8 sm:py-12 2xl:py-16">
+      <main
+        className={`flex-1 relative z-10 max-w-7xl xl:max-w-[1500px] 2xl:max-w-[1880px] mx-auto px-4 sm:px-8 flex flex-col w-full ${
+          isLoggedIn ? 'py-5 sm:py-8 justify-start' : 'py-6 sm:py-10 justify-center'
+        }`}
+      >
         {!isLoggedIn ? (
           /* =========================================================================
              LOGGED-OUT HERO (Matching Reference Design with Cozy Illustration)
@@ -551,6 +589,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                       <input
                         id="username"
                         type="text"
+                        name="username"
+                        autoComplete="username"
                         required
                         value={loginHandleInput}
                         onChange={(e) => {
@@ -588,6 +628,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                       </span>
                       <input
                         id="password"
+                        name="password"
+                        autoComplete="current-password"
                         type={showPassword ? 'text' : 'password'}
                         value={loginPasswordInput}
                         onChange={(e) => {
@@ -609,6 +651,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                  </div>
+
+                  {/* Remember Me Checkbox */}
+                  <div className="flex items-center justify-between text-xs pt-0.5">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className={`rounded w-3.5 h-3.5 cursor-pointer ${
+                          isIllustrative
+                            ? 'accent-[#2d6a4f] border-[#ede4d4]'
+                            : 'accent-[#2ea043] border-[#30363d]'
+                        }`}
+                      />
+                      <span className={isIllustrative ? 'text-[#5c6b63] font-sans' : 'text-slate-300 font-sans'}>
+                        Remember credentials
+                      </span>
+                    </label>
                   </div>
 
                   {loginError && (
@@ -730,50 +791,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
           /* =========================================================================
              LOGGED-IN ROOM SELECTION GATEWAY (Exact Match to Design Mockup)
              ========================================================================= */
-          <div className="space-y-8 text-left">
+          <div className="space-y-6 text-left">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 2xl:gap-8 items-start">
               {/* Left Column (Hero & Action Hub) */}
-              <div className="lg:col-span-7 space-y-5">
-                <div className="space-y-2">
-                  <span className="text-xs font-bold text-[#2d6a4f] tracking-wide">
-                    Collaborate. Practice. Grow.
-                  </span>
-                  <h1
-                    className={`text-3xl sm:text-4xl 2xl:text-5xl font-black font-sans leading-tight ${
-                      isIllustrative ? 'text-[#212d27]' : 'text-white'
-                    }`}
-                  >
-                    Crack LeetCode Together with{' '}
-                    <span className="relative inline-block">
-                      Your <span className={isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}>Crew</span>.
-                      <svg
-                        className="absolute -bottom-1.5 left-0 w-full pointer-events-none"
-                        height="8"
-                        viewBox="0 0 100 8"
-                        fill="none"
-                        preserveAspectRatio="none"
-                      >
-                        <path
-                          d="M0 5 Q 25 1, 50 5 T 100 5"
-                          stroke={isIllustrative ? '#52b788' : '#2ea043'}
-                          strokeWidth="3.5"
-                          fill="none"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </span>
-                  </h1>
-                  <p
-                    className={`text-xs sm:text-sm font-sans max-w-xl leading-relaxed ${
-                      isIllustrative ? 'text-[#5c6b63]' : 'text-slate-300'
-                    }`}
-                  >
-                    Create practice rooms, solve problems together in real-time, track progress, and build the ultimate coding streak!
-                  </p>
-                </div>
-
+              <div className="lg:col-span-7 space-y-4">
                 {/* 4 Quick Stats Badges — Matching Mockup */}
-                <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                <div className="flex flex-wrap items-center gap-2.5">
                   {/* 1. Day Streak */}
                   <div
                     className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border shadow-sm ${
@@ -1073,12 +1096,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                   {myRooms.length > 0 ? (
                     <div className="space-y-3">
                       {myRooms.map((room) => {
-                        const isHost = isUserHostOfRoom(room, currentUser);
                         const isActive = room.id === activeRoomId;
-                        const todayProblem =
-                          room.dailyProblems.find(
-                            (p) => p.date === new Date().toISOString().split('T')[0]
-                          ) || room.dailyProblems[0];
+                        const todayProblem = room.dailyProblems.find(
+                          (p) => p.date === getLocalTodayStr()
+                        );
 
                         return (
                           <div
@@ -1095,11 +1116,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                           >
                             <div className="flex gap-3.5 items-start">
                               {/* Room Visual Thumbnail */}
-                              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 border border-[#ede4d4] shadow-inner bg-slate-900 flex items-center justify-center text-slate-500">
-                                <div className="text-center font-mono text-[10px] text-cyan-400 p-1">
-                                  &lt;Crew /&gt;
-                                  <div className="text-[8px] text-slate-400 mt-0.5">ROOM</div>
-                                </div>
+                              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 border border-[#ede4d4] shadow-inner bg-[#d8f3dc] flex items-center justify-center text-2xl sm:text-3xl">
+                                {room.logoUrl && (room.logoUrl.startsWith('http') || room.logoUrl.startsWith('data:image')) ? (
+                                  <img src={room.logoUrl} alt={room.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span>{room.logoUrl || '⛺'}</span>
+                                )}
                               </div>
 
                               <div className="min-w-0 flex-1">
@@ -1112,11 +1134,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                                     >
                                       {room.name}
                                     </h4>
-                                    {isHost && (
-                                      <span className="bg-purple-100 text-purple-800 text-[10px] px-1.5 py-0.5 rounded font-bold border border-purple-200 font-mono shrink-0">
-                                        HOST
-                                      </span>
-                                    )}
                                   </div>
                                   <button
                                     onClick={(e) => handleCopyCode(room.code, e)}
@@ -1135,7 +1152,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                                 </p>
 
                                 {/* Challenge Pill */}
-                                {todayProblem && (
+                                {todayProblem ? (
                                   <div
                                     className={`mt-2 px-2.5 py-1 rounded-lg border text-[11px] flex items-center justify-between ${
                                       isIllustrative
@@ -1158,6 +1175,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                                       {todayProblem.difficulty}
                                     </span>
                                   </div>
+                                ) : (
+                                  <div
+                                    className={`mt-2 px-2.5 py-1 rounded-lg border text-[11px] flex items-center justify-between ${
+                                      isIllustrative
+                                        ? 'bg-[#fbf7ee]/60 border-[#ede4d4] text-[#8d9a93]'
+                                        : 'bg-[#0d1117]/60 border-[#30363d] text-slate-500'
+                                    }`}
+                                  >
+                                    <span className="font-sans italic flex items-center gap-1.5">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 opacity-60 inline-block" />
+                                      No live challenge today
+                                    </span>
+                                    <span className="text-[10px] font-mono opacity-70">
+                                      {room.dailyProblems.length} past {room.dailyProblems.length === 1 ? 'problem' : 'problems'}
+                                    </span>
+                                  </div>
                                 )}
                               </div>
                             </div>
@@ -1178,18 +1211,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                                   <strong className={isIllustrative ? 'text-[#212d27]' : 'text-white'}>{room.targetDailyGoal || 1}</strong>/day
                                 </span>
 
-                                {/* Member Avatars Stack */}
-                                <div className="flex -space-x-1.5 overflow-hidden ml-1">
+                                {/* Member Avatars Stack - Perfect Circle */}
+                                <div className="flex items-center -space-x-2 shrink-0">
                                   {room.members.slice(0, 3).map((m, i) => (
                                     <img
                                       key={i}
                                       src={m.avatar}
                                       alt={m.name}
-                                      className="inline-block w-5 h-5 rounded-full ring-1 ring-white object-cover"
+                                      className={`w-6 h-6 rounded-full object-cover shrink-0 border ${
+                                        isIllustrative
+                                          ? 'border-white bg-[#ede4d4]'
+                                          : 'border-[#161b22] bg-[#30363d]'
+                                      }`}
                                     />
                                   ))}
                                   {room.members.length > 3 && (
-                                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#f4ede0] text-[9px] font-bold text-[#5c6b63] ring-1 ring-white">
+                                    <span
+                                      className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[9px] font-bold shrink-0 border ${
+                                        isIllustrative
+                                          ? 'bg-[#f4ede0] text-[#5c6b63] border-white'
+                                          : 'bg-[#21262d] text-slate-300 border-[#161b22]'
+                                      }`}
+                                    >
                                       +{room.members.length - 3}
                                     </span>
                                   )}
@@ -1282,93 +1325,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-
-            {/* Bottom 4 Feature Cards (Matching Design Mockup) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-              {/* Card 1: Real-time Collaboration */}
-              <div
-                className={`rounded-2xl p-4.5 border transition-all cozy-card space-y-2 ${
-                  isIllustrative
-                    ? 'bg-white border-[#ede4d4] shadow-sm'
-                    : 'bg-[#161b22] border-[#30363d]'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#d8f3dc] text-[#2d6a4f] flex items-center justify-center shrink-0">
-                    <Users className="w-4 h-4" />
-                  </div>
-                  <h4 className={`font-bold text-xs sm:text-sm font-sans ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`}>
-                    Real-time Collaboration
-                  </h4>
-                </div>
-                <p className={`text-xs leading-relaxed ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
-                  Solve problems together in real-time with your crew.
-                </p>
-              </div>
-
-              {/* Card 2: Track Progress */}
-              <div
-                className={`rounded-2xl p-4.5 border transition-all cozy-card space-y-2 ${
-                  isIllustrative
-                    ? 'bg-white border-[#ede4d4] shadow-sm'
-                    : 'bg-[#161b22] border-[#30363d]'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#e0f2fe] text-[#0284c7] flex items-center justify-center shrink-0">
-                    <Monitor className="w-4 h-4" />
-                  </div>
-                  <h4 className={`font-bold text-xs sm:text-sm font-sans ${isIllustrative ? 'text-[#0284c7]' : 'text-cyan-400'}`}>
-                    Track Progress
-                  </h4>
-                </div>
-                <p className={`text-xs leading-relaxed ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
-                  Monitor your streaks, solved problems &amp; growth over time.
-                </p>
-              </div>
-
-              {/* Card 3: Compete & Climb */}
-              <div
-                className={`rounded-2xl p-4.5 border transition-all cozy-card space-y-2 ${
-                  isIllustrative
-                    ? 'bg-white border-[#ede4d4] shadow-sm'
-                    : 'bg-[#161b22] border-[#30363d]'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#fef3c7] text-[#d97706] flex items-center justify-center shrink-0">
-                    <Trophy className="w-4 h-4" />
-                  </div>
-                  <h4 className={`font-bold text-xs sm:text-sm font-sans ${isIllustrative ? 'text-[#d97706]' : 'text-amber-400'}`}>
-                    Compete &amp; Climb
-                  </h4>
-                </div>
-                <p className={`text-xs leading-relaxed ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
-                  Climb leaderboards and earn bragging rights.
-                </p>
-              </div>
-
-              {/* Card 4: Daily Challenges */}
-              <div
-                className={`rounded-2xl p-4.5 border transition-all cozy-card space-y-2 ${
-                  isIllustrative
-                    ? 'bg-white border-[#ede4d4] shadow-sm'
-                    : 'bg-[#161b22] border-[#30363d]'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#f3e8ff] text-[#9333ea] flex items-center justify-center shrink-0">
-                    <FileCheck2 className="w-4 h-4" />
-                  </div>
-                  <h4 className={`font-bold text-xs sm:text-sm font-sans ${isIllustrative ? 'text-[#9333ea]' : 'text-purple-400'}`}>
-                    Daily Challenges
-                  </h4>
-                </div>
-                <p className={`text-xs leading-relaxed ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
-                  Stay consistent with daily hand-picked problems.
-                </p>
               </div>
             </div>
           </div>

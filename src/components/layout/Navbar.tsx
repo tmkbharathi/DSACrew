@@ -24,7 +24,6 @@ import { InviteModal } from '../room/InviteModal';
 import { NotificationDrawer } from '../notifications/NotificationDrawer';
 import { UserProfileModal } from '../profile/UserProfileModal';
 import { SnakeGameModal } from '../fun/SnakeGameModal';
-import { Tooltip } from '../ui/Tooltip';
 import { Button } from '../ui/Button';
 
 interface NavbarProps {
@@ -111,192 +110,141 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
                 Leet<span className={isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}>Tracker</span>
               </span>
             </div>
-
-            {/* Active Room Indicator — Member Avatars + Room Name + HOST badge (Matching Mockup) */}
-            {activeRoom && (
-              <div
-                onClick={() => setIsLandingView(true)}
-                className={`flex items-center gap-2 rounded-lg px-2 sm:px-2.5 py-1.5 transition-colors cursor-pointer border ${
-                  isIllustrative
-                    ? 'bg-[#fbf7ee] hover:bg-[#f4ede0] border-[#ede4d4]'
-                    : 'bg-[#0d1117] hover:bg-[#21262d] border-[#30363d]'
-                }`}
-                title="Active Room • Click to switch in Rooms Hub"
-              >
-                {/* Member Avatar Stack */}
-                <div className="flex -space-x-1.5 overflow-hidden shrink-0">
-                  {activeRoom.members.slice(0, 3).map((m, i) => (
-                    <img
-                      key={i}
-                      src={m.avatar}
-                      alt={m.name}
-                      className="inline-block w-5 h-5 rounded-full ring-1 ring-white object-cover"
-                    />
-                  ))}
-                </div>
-
-                {/* Room Name */}
-                <span
-                  className={`font-semibold text-xs sm:text-sm truncate max-w-[100px] sm:max-w-[160px] font-sans ${
-                    isIllustrative ? 'text-[#212d27]' : 'text-white'
-                  }`}
-                >
-                  {activeRoom.name}
-                </span>
-
-                {/* HOST badge */}
-                {isRoomHost && (
-                  <span className="bg-purple-100 text-purple-800 text-[9px] px-1.5 py-0.5 rounded font-bold border border-purple-200 font-mono shrink-0">
-                    HOST
-                  </span>
-                )}
-              </div>
-            )}
           </div>
 
-          {/* Actions & Profile Group */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-            {/* Streak Counter */}
-            <Tooltip content={`${currentUser.streak}-day streak! Keep solving to level up.`}>
-              <div
-                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border text-xs font-mono font-bold shadow-sm ${
-                  isIllustrative
-                    ? 'bg-[#ffedd5] text-[#ea580c] border-[#fed7aa]'
-                    : 'bg-[#0d1117] text-[#f0883e] border-[#30363d]'
-                }`}
-              >
-                <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#ea580c] animate-bounce" />
-                <span>{currentUser.streak}d</span>
-                {currentUser.solvedToday && (
-                  <span className="hidden sm:inline text-[10px] text-emerald-600 font-sans ml-0.5">
-                    ✓
-                  </span>
-                )}
-              </div>
-            </Tooltip>
+          {/* Actions & Profile Group - 7 Compact Uniform Elements */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* 1. Streak Counter */}
+            <div
+              className={`h-8 flex items-center gap-1.5 px-2.5 rounded-lg border text-xs font-mono font-bold shadow-sm select-none ${
+                isIllustrative
+                  ? 'bg-[#ffedd5] text-[#ea580c] border-[#fed7aa]'
+                  : 'bg-[#0d1117] text-[#f0883e] border-[#30363d]'
+              }`}
+            >
+              <Flame className="w-3.5 h-3.5 text-[#ea580c] animate-bounce shrink-0" />
+              <span>{currentUser.streak}d</span>
+              {currentUser.solvedToday && (
+                <span className="hidden sm:inline text-[10px] text-emerald-600 font-sans ml-0.5">
+                  ✓
+                </span>
+              )}
+            </div>
 
-            {/* Post Problem Action Button */}
+            {/* 2. Post Problem Action Button */}
             <button
               onClick={() => setIsPostOpen(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold text-xs sm:text-sm shadow-sm transition-all active:scale-95 ${
+              className={`h-8 flex items-center gap-1 px-2.5 sm:px-3 rounded-lg font-semibold text-xs shadow-sm transition-all active:scale-95 ${
                 isIllustrative
                   ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white'
                   : 'bg-[#2ea043] hover:bg-[#3fb950] text-white'
               }`}
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5 shrink-0" />
               <span>Post</span>
             </button>
 
-            {/* Invite Button */}
+            {/* 3. Invite Button */}
             {activeRoom && (
-              <Tooltip content="Share Room Invite Code">
-                <button
-                  onClick={() => setIsInviteOpen(true)}
-                  className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold text-xs sm:text-sm border transition-colors ${
-                    isIllustrative
-                      ? 'bg-[#f4ede0] hover:bg-[#ede4d4] text-[#212d27] border-[#ede4d4]'
-                      : 'bg-[#21262d] hover:bg-[#30363d] text-slate-200 border-[#30363d]'
-                  }`}
-                >
-                  <Share2 className={`w-3.5 h-3.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
-                  <span>Invite</span>
-                </button>
-              </Tooltip>
+              <button
+                onClick={() => setIsInviteOpen(true)}
+                className={`h-8 hidden sm:flex items-center gap-1 px-2.5 sm:px-3 rounded-lg font-semibold text-xs border transition-colors ${
+                  isIllustrative
+                    ? 'bg-[#f4ede0] hover:bg-[#ede4d4] text-[#212d27] border-[#ede4d4]'
+                    : 'bg-[#21262d] hover:bg-[#30363d] text-slate-200 border-[#30363d]'
+                }`}
+              >
+                <Share2 className={`w-3 h-3 shrink-0 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
+                <span>Invite</span>
+              </button>
             )}
 
-            {/* Dual Sun / Moon Toggle Switch Pill */}
-            <Tooltip content={isIllustrative ? 'Switch to Dark Theme' : 'Switch to Warm Illustrative Theme'}>
-              <button
-                onClick={() => setTheme(isIllustrative ? 'dark' : 'illustrative')}
-                className={`relative flex items-center p-0.5 rounded-full border transition-all duration-300 shadow-inner select-none ${
+            {/* 4. Dual Sun / Moon Toggle Switch Pill */}
+            <button
+              onClick={() => setTheme(isIllustrative ? 'dark' : 'illustrative')}
+              className={`h-8 w-12 relative flex items-center p-0.5 rounded-lg border transition-all duration-300 shadow-inner select-none shrink-0 ${
+                isIllustrative
+                  ? 'bg-[#ede4d4]/70 border-[#d8cbba]'
+                  : 'bg-[#0d1117] border-[#30363d]'
+              }`}
+              aria-label="Toggle Theme"
+            >
+              {/* Sliding Pill Indicator */}
+              <div
+                className={`absolute top-0.5 bottom-0.5 w-[20px] rounded-md transition-transform duration-300 shadow-sm flex items-center justify-center ${
                   isIllustrative
-                    ? 'bg-[#ede4d4]/70 border-[#d8cbba]'
-                    : 'bg-[#0d1117] border-[#30363d]'
+                    ? 'left-0.5 translate-x-0 bg-white text-[#2d6a4f]'
+                    : 'left-0.5 translate-x-5 bg-[#238636] text-white'
                 }`}
-                aria-label="Toggle Theme"
-              >
-                {/* Sliding Pill Indicator */}
-                <div
-                  className={`absolute top-0.5 bottom-0.5 w-6 rounded-full transition-transform duration-300 shadow-sm flex items-center justify-center ${
-                    isIllustrative
-                      ? 'left-0.5 translate-x-0 bg-white text-[#2d6a4f]'
-                      : 'left-0.5 translate-x-6 bg-[#238636] text-white'
-                  }`}
-                />
+              />
 
-                {/* Sun Icon (Illustrative / Light) */}
-                <div
-                  className={`relative z-10 w-6 h-6 flex items-center justify-center transition-colors duration-200 ${
-                    isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-500 hover:text-slate-300'
-                  }`}
-                >
-                  <Sun className="w-3.5 h-3.5" />
-                </div>
-
-                {/* Moon Icon (Dark Mode) */}
-                <div
-                  className={`relative z-10 w-6 h-6 flex items-center justify-center transition-colors duration-200 ${
-                    !isIllustrative ? 'text-white' : 'text-[#8d9a93] hover:text-[#212d27]'
-                  }`}
-                >
-                  <Moon className="w-3.5 h-3.5" />
-                </div>
-              </button>
-            </Tooltip>
-
-            {/* Notifications Bell */}
-            <Tooltip content="Room Notifications">
-              <button
-                onClick={() => setIsNotifOpen(true)}
-                className={`relative p-2 rounded-lg transition-colors border ${
-                  isIllustrative
-                    ? 'bg-[#fbf7ee] hover:bg-[#f4ede0] border-[#ede4d4] text-slate-600'
-                    : 'bg-[#0d1117] hover:bg-[#21262d] border-[#30363d] text-slate-400'
+              {/* Sun Icon (Illustrative / Light) */}
+              <div
+                className={`relative z-10 w-5 h-full flex items-center justify-center transition-colors duration-200 ${
+                  isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-500 hover:text-slate-300'
                 }`}
-                aria-label="Notifications"
               >
-                <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#f0883e] ring-2 ring-white" />
-                )}
-              </button>
-            </Tooltip>
+                <Sun className="w-3 h-3" />
+              </div>
 
-            {/* Sound Toggle */}
-            <Tooltip content={soundEnabled ? 'Disable Notification Sounds' : 'Enable Notification Sounds'}>
-              <button
-                onClick={() => setSoundEnabled(!soundEnabled)}
-                className={`p-2 rounded-lg transition-colors hidden sm:block border ${
-                  isIllustrative
-                    ? 'bg-[#fbf7ee] hover:bg-[#f4ede0] border-[#ede4d4] text-slate-600'
-                    : 'bg-[#0d1117] hover:bg-[#21262d] border-[#30363d] text-slate-400'
+              {/* Moon Icon (Dark Mode) */}
+              <div
+                className={`relative z-10 w-5 h-full flex items-center justify-center transition-colors duration-200 ${
+                  !isIllustrative ? 'text-white' : 'text-[#8d9a93] hover:text-[#212d27]'
                 }`}
-                aria-label="Toggle Sound"
               >
-                {soundEnabled ? (
-                  <Volume2 className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
-                ) : (
-                  <VolumeX className="w-4 h-4 text-slate-400" />
-                )}
-              </button>
-            </Tooltip>
+                <Moon className="w-3 h-3" />
+              </div>
+            </button>
 
-            {/* User Profile Avatar / Menu */}
-            <div className="relative" ref={userMenuRef}>
+            {/* 5. Notifications Bell */}
+            <button
+              onClick={() => setIsNotifOpen(true)}
+              className={`h-8 w-8 flex items-center justify-center relative rounded-lg transition-colors border shrink-0 ${
+                isIllustrative
+                  ? 'bg-[#fbf7ee] hover:bg-[#f4ede0] border-[#ede4d4] text-slate-600'
+                  : 'bg-[#0d1117] hover:bg-[#21262d] border-[#30363d] text-slate-400'
+              }`}
+              aria-label="Notifications"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#f0883e] ring-1 ring-white" />
+              )}
+            </button>
+
+            {/* 6. Sound Toggle */}
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={`h-8 w-8 hidden sm:flex items-center justify-center rounded-lg transition-colors border shrink-0 ${
+                isIllustrative
+                  ? 'bg-[#fbf7ee] hover:bg-[#f4ede0] border-[#ede4d4] text-slate-600'
+                  : 'bg-[#0d1117] hover:bg-[#21262d] border-[#30363d] text-slate-400'
+              }`}
+              aria-label="Toggle Sound"
+            >
+              {soundEnabled ? (
+                <Volume2 className={`w-3.5 h-3.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
+              ) : (
+                <VolumeX className="w-3.5 h-3.5 text-slate-400" />
+              )}
+            </button>
+
+            {/* 7. User Profile Avatar / Menu */}
+            <div className="relative shrink-0" ref={userMenuRef}>
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className={`flex items-center gap-1 p-0.5 rounded-full ring-2 transition-all ${
+                className={`h-8 w-8 flex items-center justify-center rounded-lg border transition-all overflow-hidden p-0.5 ${
                   isIllustrative
-                    ? 'ring-[#ede4d4] hover:ring-[#2d6a4f]'
-                    : 'ring-[#30363d] hover:ring-[#3fb950]'
+                    ? 'bg-white border-[#ede4d4] hover:border-[#2d6a4f]'
+                    : 'bg-[#0d1117] border-[#30363d] hover:border-[#3fb950]'
                 }`}
                 aria-label="User Profile Menu"
               >
                 <img
                   src={currentUser.avatar}
                   alt={currentUser.name}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover"
+                  className="w-full h-full rounded-[5px] object-cover"
                 />
               </button>
 

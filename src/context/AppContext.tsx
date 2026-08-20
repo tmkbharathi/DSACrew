@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import confetti from 'canvas-confetti';
 import type { Room, User, Notification, Difficulty, Comment, FileAttachment } from '../types';
 import { INITIAL_CURRENT_USER } from '../data/mockData';
+import { getLocalTodayStr } from '../utils/dateUtils';
 import {
   supabase,
   isSupabaseConfigured,
@@ -60,7 +61,8 @@ interface AppContextType {
 
   // Actions
   switchActiveRoom: (roomId: string) => void;
-  createRoom: (name: string, description: string, targetDailyGoal?: number) => Promise<Room | null>;
+  createRoom: (name: string, description: string, targetDailyGoal?: number, logoUrl?: string) => Promise<Room | null>;
+  updateRoomLogo: (roomId: string, logoUrl: string) => Promise<{ success: boolean; message: string }>;
   deleteRoom: (roomId: string) => Promise<{ success: boolean; message: string }>;
   joinRoomByCode: (code: string) => Promise<{ success: boolean; message: string }>;
   postDailyProblem: (problem: {
@@ -125,7 +127,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activeRoomId, setActiveRoomId] = useState<string>('');
   const [isLandingView, setIsLandingView] = useState<boolean>(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(() => getLocalTodayStr());
   const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
   const [theme, setThemeState] = useState<'dark' | 'illustrative'>(() => {
     try {
@@ -591,7 +593,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       roomSolvedCount: 0,
       leetcodeTotalSolved: lcStats.totalSolved,
       solvedToday: false,
-      joinedAt: new Date().toISOString().split('T')[0],
+      joinedAt: getLocalTodayStr(),
       isLoggedIn: true,
     };
 
@@ -613,7 +615,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const createRoom = async (name: string, description: string, targetDailyGoal = 1): Promise<Room | null> => {
+  const createRoom = async (name: string, description: string, targetDailyGoal = 1, logoUrl = '⛺'): Promise<Room | null> => {
     if (!isSupabaseConfigured || !currentUser.id || currentUser.id === 'usr_main') {
       setToast({ title: 'Error', message: 'Please sign in to create a room.', type: 'error' });
       return null;
@@ -631,15 +633,58 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return null;
     }
 
-    setRooms((prev) => [room, ...prev.filter((r) => r.id !== room.id)]);
-    setCommunityRooms((prev) => [room, ...prev.filter((r) => r.id !== room.id)]);
+    const finalLogo = logoUrl || '⛺';
+    const roomWithLogo: Room = { ...room, logoUrl: finalLogo };
+
+    try {
+      localStorage.setItem(`leettracker_room_logo_${room.id}`, finalLogo);
+    } catch {}
+
+    setRooms((prev) => [roomWithLogo, ...prev.filter((r) => r.id !== room.id)]);
+    setCommunityRooms((prev) => [roomWithLogo, ...prev.filter((r) => r.id !== room.id)]);
     setActiveRoomId(room.id);
     setIsLandingView(false);
 
     setToast({ title: 'Room Created!', message: `Invite code: ${room.code}`, type: 'success' });
     playAudioNotification();
 
-    return room;
+    return roomWithLogo;
+  };
+
+  const updateRoomLogo = async (roomId: string, logoUrl: string): Promise<{ success: boolean; message: string }> => {
+    if (!roomId) return { success: false, message: 'Invalid room.' };
+
+    // 1. Update in-memory state immediately
+    setRooms((prev) =>
+      prev.map((r) => (r.id === roomId ? { ...r, logoUrl } : r))
+    );
+    setCommunityRooms((prev) =>
+      prev.map((r) => (r.id === roomId ? { ...r, logoUrl } : r))
+    );
+
+    // 2. Persist in local storage
+    try {
+      const savedMap = JSON.parse(localStorage.getItem('leettracker_room_logos') || '{}');
+      savedMap[roomId] = logoUrl;
+      localStorage.setItem('leettracker_room_logos', JSON.stringify(savedMap));
+    } catch {}
+
+    // 3. Persist in Supabase if connected
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('rooms').update({ logo_url: logoUrl }).eq('id', roomId);
+      } catch (err) {
+        console.warn('Supabase logo update notice:', err);
+      }
+    }
+
+    setToast({
+      title: 'Room Logo Updated',
+      message: 'Room icon updated successfully.',
+      type: 'success',
+    });
+
+    return { success: true, message: 'Room logo updated.' };
   };
 
   const deleteRoom = async (roomId: string): Promise<{ success: boolean; message: string }> => {
@@ -792,7 +837,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     if (isFirstSubmission) {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = getLocalTodayStr();
       const newStreak = currentUser.solvedToday ? currentUser.streak : currentUser.streak + 1;
       
       await updateCurrentUser({
@@ -953,6 +998,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         registerAccount,
         switchActiveRoom,
         createRoom,
+        updateRoomLogo,
         deleteRoom,
         joinRoomByCode,
         postDailyProblem,

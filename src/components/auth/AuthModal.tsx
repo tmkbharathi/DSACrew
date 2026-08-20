@@ -18,9 +18,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const { login, registerAccount, setIsLandingView, theme } = useApp();
   const [isRegisterMode, setIsRegisterMode] = useState(defaultRegisterMode);
-  const [usernameInput, setUsernameInput] = useState('');
+  const [rememberMe, setRememberMe] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('leettracker_remember_me');
+      return saved !== 'false';
+    } catch {
+      return true;
+    }
+  });
+  const [usernameInput, setUsernameInput] = useState(() => {
+    try {
+      return localStorage.getItem('leettracker_saved_username') || '';
+    } catch {
+      return '';
+    }
+  });
   const [nameInput, setNameInput] = useState('');
-  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState(() => {
+    try {
+      return localStorage.getItem('leettracker_saved_password') || '';
+    } catch {
+      return '';
+    }
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,7 +48,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   React.useEffect(() => {
     setIsRegisterMode(defaultRegisterMode);
-  }, [defaultRegisterMode, isOpen]);
+    if (isOpen && !isRegisterMode) {
+      try {
+        const savedUser = localStorage.getItem('leettracker_saved_username') || '';
+        const savedPass = localStorage.getItem('leettracker_saved_password') || '';
+        if (savedUser) setUsernameInput(savedUser);
+        if (savedPass) setPasswordInput(savedPass);
+      } catch {}
+    }
+  }, [defaultRegisterMode, isOpen, isRegisterMode]);
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -51,8 +79,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoading(false);
 
     if (res.success) {
-      setUsernameInput('');
-      setPasswordInput('');
+      if (rememberMe) {
+        try {
+          localStorage.setItem('leettracker_remember_me', 'true');
+          localStorage.setItem('leettracker_saved_username', usernameInput.trim());
+          localStorage.setItem('leettracker_saved_password', passwordInput);
+        } catch {}
+      } else {
+        try {
+          localStorage.setItem('leettracker_remember_me', 'false');
+          localStorage.removeItem('leettracker_saved_username');
+          localStorage.removeItem('leettracker_saved_password');
+        } catch {}
+      }
       setError('');
       onClose();
       if (onSuccess) onSuccess();
@@ -208,6 +247,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+              </div>
+
+              {/* Remember Me Checkbox */}
+              <div className="flex items-center justify-between text-xs pt-0.5">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className={`rounded w-3.5 h-3.5 cursor-pointer ${
+                      isIllustrative
+                        ? 'accent-[#2d6a4f] border-[#ede4d4]'
+                        : 'accent-[#2ea043] border-[#30363d]'
+                    }`}
+                  />
+                  <span className={isIllustrative ? 'text-[#5c6b63] font-sans' : 'text-slate-300 font-sans'}>
+                    Remember credentials
+                  </span>
+                </label>
               </div>
 
               {error && (
