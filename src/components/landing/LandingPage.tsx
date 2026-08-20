@@ -4,6 +4,7 @@ import { AuthModal } from '../auth/AuthModal';
 import { CreateRoomModal } from '../room/CreateRoomModal';
 import { JoinRoomModal } from '../room/JoinRoomModal';
 import { CozyCoderIllustration } from '../illustrations/CozyCoderIllustration';
+import { CrewIllustration } from '../illustrations/CrewIllustration';
 import { fetchLeetCodeDaily, type LeetCodeDailyChallenge } from '../../services/leetcodeApi';
 import {
   Users,
@@ -33,6 +34,10 @@ import {
   Sun,
   Moon,
   Layers,
+  Calendar,
+  TrendingUp,
+  Monitor,
+  FileCheck2,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -653,121 +658,266 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
           </div>
         ) : (
           /* =========================================================================
-             LOGGED-IN ROOM SELECTION GATEWAY (2-Column Widescreen for 1080p & 1440p)
+             LOGGED-IN ROOM SELECTION GATEWAY (Exact Match to Design Mockup)
              ========================================================================= */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 2xl:gap-8 items-start text-left">
-            {/* Left Control Column (Profile + Join by Code + Create Room) */}
-            <div className="lg:col-span-5 space-y-5">
-              {/* User Profile Card */}
-              <div
-                className={`rounded-2xl p-5 sm:p-6 shadow-xl space-y-4 border transition-all ${
-                  isIllustrative
-                    ? 'bg-white border-[#ede4d4] text-[#212d27]'
-                    : 'bg-[#161b22] border-[#30363d] text-white'
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <img
-                      src={currentUser.avatar}
-                      alt={currentUser.name}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-[#2d6a4f]/60 shadow-md"
-                    />
-                    <div
-                      className={`absolute -bottom-1 -right-1 rounded-full p-0.5 border ${
-                        isIllustrative ? 'bg-white border-[#ede4d4]' : 'bg-[#161b22] border-[#30363d]'
-                      }`}
-                    >
-                      <ShieldCheck className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
+          <div className="space-y-8 text-left">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 2xl:gap-8 items-start">
+              {/* Left Column (Hero & Action Hub) */}
+              <div className="lg:col-span-7 space-y-5">
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-[#2d6a4f] tracking-wide">
+                    Collaborate. Practice. Grow.
+                  </span>
+                  <h1
+                    className={`text-3xl sm:text-4xl 2xl:text-5xl font-black font-sans leading-tight ${
+                      isIllustrative ? 'text-[#212d27]' : 'text-white'
+                    }`}
+                  >
+                    Crack LeetCode Together with{' '}
+                    <span className="relative inline-block">
+                      Your <span className={isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}>Crew</span>.
+                      <svg
+                        className="absolute -bottom-1.5 left-0 w-full pointer-events-none"
+                        height="8"
+                        viewBox="0 0 100 8"
+                        fill="none"
+                        preserveAspectRatio="none"
+                      >
+                        <path
+                          d="M0 5 Q 25 1, 50 5 T 100 5"
+                          stroke={isIllustrative ? '#52b788' : '#2ea043'}
+                          strokeWidth="3.5"
+                          fill="none"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </span>
+                  </h1>
+                  <p
+                    className={`text-xs sm:text-sm font-sans max-w-xl leading-relaxed ${
+                      isIllustrative ? 'text-[#5c6b63]' : 'text-slate-300'
+                    }`}
+                  >
+                    Create practice rooms, solve problems together in real-time, track progress, and build the ultimate coding streak!
+                  </p>
+                </div>
+
+                {/* 3 Quick Stats Badges */}
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  {/* Streak Stat */}
+                  <div
+                    className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border shadow-sm ${
+                      isIllustrative
+                        ? 'bg-white border-[#ede4d4]'
+                        : 'bg-[#161b22] border-[#30363d]'
+                    }`}
+                  >
+                    <Flame className="w-4 h-4 text-[#ea580c] fill-[#ea580c]" />
+                    <div className="text-left">
+                      <div className="text-xs font-bold font-mono text-[#ea580c] leading-none">
+                        {currentUser.streak}
+                      </div>
+                      <div className={`text-[10px] font-sans ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
+                        Day Streak
+                      </div>
                     </div>
                   </div>
-                  <div className="min-w-0 flex-1">
+
+                  {/* Solved Stat */}
+                  <div
+                    className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border shadow-sm ${
+                      isIllustrative
+                        ? 'bg-white border-[#ede4d4]'
+                        : 'bg-[#161b22] border-[#30363d]'
+                    }`}
+                  >
+                    <Target className={`w-4 h-4 ${isIllustrative ? 'text-[#0284c7]' : 'text-cyan-400'}`} />
+                    <div className="text-left">
+                      <div className={`text-xs font-bold font-mono leading-none ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
+                        {currentUser.leetcodeTotalSolved || currentUser.roomSolvedCount || 207}
+                      </div>
+                      <div className={`text-[10px] font-sans ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
+                        Problems Solved
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Global Rank Stat */}
+                  <div
+                    className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border shadow-sm ${
+                      isIllustrative
+                        ? 'bg-white border-[#ede4d4]'
+                        : 'bg-[#161b22] border-[#30363d]'
+                    }`}
+                  >
+                    <TrendingUp className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
+                    <div className="text-left">
+                      <div className={`text-xs font-bold font-mono leading-none ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`}>
+                        Top 45%
+                      </div>
+                      <div className={`text-[10px] font-sans ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
+                        Global Rank
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Primary Button */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateOpen(true)}
+                    className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-xs sm:text-sm shadow-md transition-all active:scale-95 ${
+                      isIllustrative
+                        ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white'
+                        : 'bg-[#2ea043] hover:bg-[#3fb950] text-white'
+                    }`}
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Create New Practice Room</span>
+                  </button>
+                </div>
+
+                {/* 3 Crew Illustration */}
+                <div className="pt-2">
+                  <CrewIllustration className="w-full max-w-lg" />
+                </div>
+
+                {/* Today's Official Daily Challenge Banner Card */}
+                <div
+                  className={`rounded-2xl p-4 sm:p-5 border flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-md ${
+                    isIllustrative
+                      ? 'bg-gradient-to-r from-[#f7f0fc] to-[#f4f7fe] border-[#ede4d4]'
+                      : 'bg-[#161b22] border-[#30363d]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 border border-purple-200 shadow-sm">
+                      <Calendar className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className={`text-xs sm:text-sm font-bold font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
+                        Today's Official Daily Challenge
+                      </h4>
+                      <p className={`text-xs mt-0.5 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                        {quickDaily?.title
+                          ? `"${quickDaily.title}" (${quickDaily.difficulty})`
+                          : 'Solve today’s hand-picked problem and keep your streak going!'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (myRooms[0]) {
+                        handleSelectRoom(myRooms[0].id);
+                      } else {
+                        handleFetchDailyPreview();
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all shadow-sm ${
+                      isIllustrative
+                        ? 'bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-200'
+                        : 'bg-purple-900/40 hover:bg-purple-800/50 text-purple-200 border border-purple-500/30'
+                    }`}
+                  >
+                    <span>Start Challenge</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column (Controls & Room Cards) */}
+              <div className="lg:col-span-5 space-y-4">
+                {/* 1. Greeting & Mascot Streak Card */}
+                <div
+                  className={`rounded-2xl p-5 border shadow-md space-y-4 ${
+                    isIllustrative
+                      ? 'bg-white border-[#ede4d4]'
+                      : 'bg-[#161b22] border-[#30363d]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className={`text-base font-bold font-sans flex items-center gap-1.5 ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
+                        <span>👋</span>
+                        <span>Hey, {currentUser.name.split(' ')[0]}!</span>
+                      </h3>
+                      <p className={`text-xs mt-0.5 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                        Keep the streak alive. Consistency is the key!
+                      </p>
+                    </div>
+
+                    {/* Cute Mascot Badge with Heart */}
+                    <div className="relative">
+                      <div className="w-9 h-9 rounded-full bg-[#d8f3dc] border border-[#b7e4c7] flex items-center justify-center text-sm shadow-sm">
+                        🐲
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center text-[9px]">
+                        ❤️
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Connected Streak Node Indicator */}
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between text-xs font-medium">
+                      <span className="flex items-center gap-1 text-[#ea580c]">
+                        <Flame className="w-3.5 h-3.5 fill-[#ea580c]" />
+                        <span>Current Daily Streak</span>
+                      </span>
+                      <span className="font-bold text-[#ea580c] font-mono">
+                        {currentUser.streak} consecutive day{currentUser.streak === 1 ? '' : 's'}
+                      </span>
+                    </div>
+
+                    {/* Dotted / Solid Progress Milestone Line */}
+                    <div className="relative flex items-center justify-between py-1">
+                      <div className="absolute left-1.5 right-1.5 h-0.5 bg-[#ede4d4] -z-0" />
+                      {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((_day, idx) => {
+                        const isDone = idx < Math.min(currentUser.streak, 7);
+                        return (
+                          <div key={idx} className="relative z-10 flex flex-col items-center">
+                            <div
+                              className={`w-3 h-3 rounded-full border transition-all ${
+                                isDone
+                                  ? 'bg-[#2d6a4f] border-[#2d6a4f] ring-2 ring-[#d8f3dc]'
+                                  : 'bg-[#ede4d4] border-[#d6cbba]'
+                              }`}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Join Room by Code */}
+                <div
+                  className={`rounded-2xl p-5 border shadow-md space-y-3 ${
+                    isIllustrative
+                      ? 'bg-white border-[#ede4d4]'
+                      : 'bg-[#161b22] border-[#30363d]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <h2
-                        className={`text-lg sm:text-xl font-bold font-sans truncate ${
+                      <KeyRound className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
+                      <h3
+                        className={`text-sm font-bold font-sans ${
                           isIllustrative ? 'text-[#212d27]' : 'text-white'
                         }`}
                       >
-                        {currentUser.name}
-                      </h2>
-                      <span
-                        className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold border ${
-                          isIllustrative
-                            ? 'bg-[#d8f3dc] text-[#2d6a4f] border-[#b7e4c7]'
-                            : 'bg-[#2ea043]/20 text-[#3fb950] border-[#2ea043]/30'
-                        }`}
-                      >
-                        ONLINE
-                      </span>
+                        Join Room by Code
+                      </h3>
                     </div>
-                    <div
-                      className={`text-xs font-mono mt-1 flex items-center gap-1.5 flex-wrap ${
-                        isIllustrative ? 'text-[#2d6a4f]' : 'text-cyan-400'
-                      }`}
-                    >
-                      <span>@{currentUser.username}</span>
-                      <span>•</span>
-                      <span>{currentUser.leetcodeTotalSolved ? `${currentUser.leetcodeTotalSolved} Solves` : 'Verified Handle'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {currentUser.streak > 0 && (
-                  <div
-                    className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
-                      isIllustrative
-                        ? 'bg-[#fbf7ee] border-[#ede4d4]'
-                        : 'bg-[#0d1117] border-[#30363d]'
-                    }`}
-                  >
-                    <span className={`font-sans flex items-center gap-1.5 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-300'}`}>
-                      <Flame className="w-4 h-4 text-[#ea580c] fill-[#ea580c]" />
-                      <span>Current Daily Streak</span>
+                    <span className={`text-[10px] font-mono ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
+                      6-8 CHAR CODE
                     </span>
-                    <span className="font-bold text-[#ea580c] font-mono">{currentUser.streak} consecutive days</span>
                   </div>
-                )}
 
-                <button
-                  type="button"
-                  onClick={() => setIsCreateOpen(true)}
-                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-xs sm:text-sm shadow-md transition-all active:scale-95 ${
-                    isIllustrative
-                      ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white'
-                      : 'bg-[#2ea043] hover:bg-[#3fb950] text-white'
-                  }`}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Create New Practice Room</span>
-                </button>
-              </div>
-
-              {/* Join by Code Interactive Box */}
-              <div
-                className={`rounded-2xl p-5 sm:p-6 shadow-xl space-y-3.5 border transition-all ${
-                  isIllustrative
-                    ? 'bg-white border-[#ede4d4]'
-                    : 'bg-[#161b22] border-[#30363d]'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <KeyRound className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
-                    <h3
-                      className={`text-sm sm:text-base font-bold font-sans ${
-                        isIllustrative ? 'text-[#212d27]' : 'text-white'
-                      }`}
-                    >
-                      Join Room by Code
-                    </h3>
-                  </div>
-                  <span className={`text-xs font-mono ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
-                    6-8 CHAR CODE
-                  </span>
-                </div>
-
-                <form onSubmit={handleQuickJoin} className="space-y-3">
-                  <div className="relative">
+                  <form onSubmit={handleQuickJoin} className="space-y-2.5">
                     <input
                       type="text"
                       value={roomCode}
@@ -776,364 +926,387 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                         setJoinError('');
                         setJoinSuccess('');
                       }}
-                      placeholder="ENTER ROOM CODE (e.g. 7X9K2P)"
+                      placeholder="Enter room code (e.g. 7X9K2P)"
                       maxLength={8}
-                      className={`w-full rounded-xl px-4 py-3 text-sm sm:text-base font-mono uppercase tracking-wider focus:outline-none transition-colors ${
+                      className={`w-full rounded-xl px-3.5 py-2.5 text-xs font-mono uppercase tracking-wider focus:outline-none transition-colors ${
                         isIllustrative
                           ? 'bg-[#f7f3eb] border border-[#ede4d4] text-[#212d27] placeholder:text-[#8d9a93] focus:border-[#2d6a4f] focus:bg-white'
                           : 'bg-[#0d1117] border border-[#30363d] text-white placeholder-slate-500 focus:border-[#3fb950]'
                       }`}
                     />
-                  </div>
-                  <button
-                    type="submit"
-                    className={`w-full py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 ${
-                      isIllustrative
-                        ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white'
-                        : 'bg-[#2ea043] hover:bg-[#3fb950] text-white'
-                    }`}
-                  >
-                    <span>Join &amp; Enter Room</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </form>
-
-                {joinError && (
-                  <div className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200 flex items-center gap-2 font-sans">
-                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                    <span>{joinError}</span>
-                  </div>
-                )}
-
-                {joinSuccess && (
-                  <div className="text-xs text-[#2d6a4f] bg-[#d8f3dc] p-2.5 rounded-lg border border-[#b7e4c7] flex items-center gap-2 font-sans">
-                    <CheckCircle2 className="w-4 h-4 shrink-0 text-[#2d6a4f]" />
-                    <span>{joinSuccess}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Official Daily Challenge Live Preview */}
-              <div
-                className={`rounded-2xl p-4 sm:p-5 shadow-xl space-y-3 border transition-all ${
-                  isIllustrative
-                    ? 'bg-white border-[#ede4d4]'
-                    : 'bg-[#161b22] border-[#30363d]'
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <button
-                    type="button"
-                    onClick={handleFetchDailyPreview}
-                    disabled={loadingDaily}
-                    className={`text-xs transition-colors flex items-center gap-1.5 font-mono font-medium ${
-                      isIllustrative
-                        ? 'text-[#2d6a4f] hover:text-[#1b4332]'
-                        : 'text-cyan-400 hover:text-cyan-300'
-                    }`}
-                  >
-                    {loadingDaily ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                    <span>Preview Today's Official Daily Challenge</span>
-                  </button>
-                </div>
-
-                {quickDaily && (
-                  <div
-                    className={`p-3.5 rounded-xl border text-xs space-y-1.5 ${
-                      isIllustrative
-                        ? 'bg-[#fbf7ee] border-[#ede4d4]'
-                        : 'bg-[#0d1117] border-[#30363d]'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className={`font-semibold truncate max-w-[260px] font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
-                        {quickDaily.title}
-                      </span>
-                      <span
-                        className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-                          quickDaily.difficulty === 'Hard'
-                            ? 'text-rose-600 bg-rose-50 border-rose-200'
-                            : quickDaily.difficulty === 'Medium'
-                            ? 'text-amber-700 bg-amber-50 border-amber-200'
-                            : 'text-[#2d6a4f] bg-emerald-50 border-emerald-200'
-                        }`}
-                      >
-                        {quickDaily.difficulty}
-                      </span>
-                    </div>
-                    <div className={`text-[10px] font-mono ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
-                      Scheduled: {quickDaily.date}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Right Rooms Display Column */}
-            <div className="lg:col-span-7 space-y-5">
-              <div className="flex items-center justify-between pb-1">
-                <div className="flex items-center gap-2">
-                  <Users className={`w-5 h-5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
-                  <h3
-                    className={`text-lg sm:text-xl font-bold font-sans ${
-                      isIllustrative ? 'text-[#212d27]' : 'text-white'
-                    }`}
-                  >
-                    Your Active Practice Rooms ({myRooms.length})
-                  </h3>
-                </div>
-                <span className={`text-xs font-sans hidden sm:inline ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
-                  Select a room to enter workspace
-                </span>
-              </div>
-
-              {myRooms.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {myRooms.map((room) => {
-                    const isHost = isUserHostOfRoom(room, currentUser);
-                    const isActive = room.id === activeRoomId;
-                    const todayProblem =
-                      room.dailyProblems.find(
-                        (p) => p.date === new Date().toISOString().split('T')[0]
-                      ) || room.dailyProblems[0];
-
-                    return (
-                      <div
-                        key={room.id}
-                        onClick={() => handleSelectRoom(room.id)}
-                        className={`rounded-2xl p-5 cursor-pointer transition-all space-y-3.5 group shadow-md cozy-card border ${
-                          isIllustrative
-                            ? isActive
-                              ? 'bg-white border-[#2d6a4f] ring-2 ring-[#2d6a4f]/20'
-                              : 'bg-white hover:bg-[#fffdfa] border-[#ede4d4] hover:border-[#d6cbba]'
-                            : isActive
-                              ? 'bg-[#161b22] border-[#2ea043]/50 ring-1 ring-[#2ea043]/30'
-                              : 'bg-[#161b22] hover:bg-[#1c222b] border-[#30363d] hover:border-slate-500'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <h4
-                                className={`font-bold text-base font-sans truncate transition-colors ${
-                                  isIllustrative
-                                    ? 'text-[#212d27] group-hover:text-[#2d6a4f]'
-                                    : 'text-white group-hover:text-[#3fb950]'
-                                }`}
-                              >
-                                {room.name}
-                              </h4>
-                              {isHost ? (
-                                <span className="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded font-bold border border-purple-200 font-mono shrink-0">
-                                  HOST
-                                </span>
-                              ) : (
-                                <span className="bg-slate-100 text-slate-700 text-[10px] px-2 py-0.5 rounded font-mono shrink-0 border border-slate-200">
-                                  MEMBER
-                                </span>
-                              )}
-                            </div>
-                            <p className={`text-xs line-clamp-1 mt-1 font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
-                              {room.description || 'Collaborative daily practice room.'}
-                            </p>
-                          </div>
-
-                          <button
-                            onClick={(e) => handleCopyCode(room.code, e)}
-                            className={`font-mono text-[11px] px-2.5 py-1 rounded-lg border flex items-center gap-1.5 shrink-0 transition-colors ${
-                              isIllustrative
-                                ? 'bg-[#f7f3eb] hover:bg-[#ede4d4] text-[#212d27] border-[#ede4d4]'
-                                : 'bg-[#21262d] hover:bg-[#30363d] text-slate-200 border-[#30363d]'
-                            }`}
-                            title="Copy Room Invite Code"
-                            aria-label="Copy Room Code"
-                          >
-                            <span>{room.code}</span>
-                            {copiedRoomCode === room.code ? (
-                              <Check className="w-3 h-3 text-[#2d6a4f]" />
-                            ) : (
-                              <Copy className="w-3 h-3 text-slate-400" />
-                            )}
-                          </button>
-                        </div>
-
-                        {todayProblem ? (
-                          <div
-                            className={`px-3 py-2 rounded-xl border text-xs flex items-center justify-between ${
-                              isIllustrative
-                                ? 'bg-[#fbf7ee] border-[#ede4d4]'
-                                : 'bg-[#0d1117] border-[#30363d]'
-                            }`}
-                          >
-                            <span className={`truncate max-w-[200px] font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-300'}`}>
-                              Challenge: <strong className={isIllustrative ? 'text-[#212d27]' : 'text-white'}>{todayProblem.title}</strong>
-                            </span>
-                            <span
-                              className={`font-mono font-semibold text-[11px] ${
-                                todayProblem.difficulty === 'Hard'
-                                  ? 'text-rose-600'
-                                  : todayProblem.difficulty === 'Medium'
-                                  ? 'text-amber-700'
-                                  : isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'
-                              }`}
-                            >
-                              {todayProblem.difficulty}
-                            </span>
-                          </div>
-                        ) : (
-                          <div
-                            className={`px-3 py-2 rounded-xl border text-xs font-sans flex items-center gap-1.5 ${
-                              isIllustrative
-                                ? 'bg-[#fbf7ee] border-[#ede4d4] text-[#8d9a93]'
-                                : 'bg-[#0d1117] border-[#30363d] text-slate-400'
-                            }`}
-                          >
-                            <Sparkles className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
-                            <span>Auto-fetch daily challenge on entry</span>
-                          </div>
-                        )}
-
-                        <div
-                          className={`flex items-center justify-between text-xs border-t pt-3 ${
-                            isIllustrative ? 'border-[#ede4d4] text-[#5c6b63]' : 'border-[#30363d]/60 text-slate-400'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="flex items-center gap-1">
-                              <Users className="w-3.5 h-3.5" />
-                              <strong className={isIllustrative ? 'text-[#212d27]' : 'text-slate-200'}>{room.members.length}</strong>{' '}
-                              {room.members.length === 1 ? 'member' : 'members'}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Target className={`w-3.5 h-3.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
-                              <strong className={isIllustrative ? 'text-[#212d27]' : 'text-slate-200'}>{room.targetDailyGoal || 1}</strong>/day
-                            </span>
-                          </div>
-
-                          <span
-                            className={`font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform text-xs font-sans ${
-                              isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'
-                            }`}
-                          >
-                            Enter Workspace <ArrowRight className="w-3.5 h-3.5" />
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                /* Empty state when no joined rooms */
-                <div
-                  className={`rounded-2xl p-8 sm:p-12 text-center space-y-4 shadow-xl border ${
-                    isIllustrative
-                      ? 'bg-white border-[#ede4d4]'
-                      : 'bg-[#161b22] border-[#30363d]'
-                  }`}
-                >
-                  <div
-                    className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto border ${
-                      isIllustrative
-                        ? 'bg-[#d8f3dc] text-[#2d6a4f] border-[#b7e4c7]'
-                        : 'bg-[#2ea043]/15 text-[#3fb950] border-[#2ea043]/30'
-                    }`}
-                  >
-                    <Users className="w-7 h-7" />
-                  </div>
-                  <div className="space-y-1.5 max-w-md mx-auto">
-                    <h4 className={`font-bold text-lg font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
-                      No Active Practice Rooms Yet
-                    </h4>
-                    <p className={`text-xs sm:text-sm font-sans leading-relaxed ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
-                      You haven't joined or created any practice rooms. Enter an invite code from your squad on the left, or create your first room!
-                    </p>
-                  </div>
-                  <div className="pt-2 flex justify-center">
                     <button
-                      onClick={() => setIsCreateOpen(true)}
-                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm shadow-md transition-all active:scale-95 ${
+                      type="submit"
+                      className={`w-full py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 ${
                         isIllustrative
                           ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white'
                           : 'bg-[#2ea043] hover:bg-[#3fb950] text-white'
                       }`}
                     >
-                      <Plus className="w-4 h-4" />
-                      <span>Create Your First Room</span>
+                      <span>Join &amp; Enter Room</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
-                  </div>
+                  </form>
+
+                  {joinError && (
+                    <div className="text-xs text-rose-600 bg-rose-50 p-2 rounded-lg border border-rose-200 flex items-center gap-2 font-sans">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-600" />
+                      <span>{joinError}</span>
+                    </div>
+                  )}
+
+                  {joinSuccess && (
+                    <div className="text-xs text-[#2d6a4f] bg-[#d8f3dc] p-2 rounded-lg border border-[#b7e4c7] flex items-center gap-2 font-sans">
+                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-[#2d6a4f]" />
+                      <span>{joinSuccess}</span>
+                    </div>
+                  )}
                 </div>
-              )}
 
-              {/* Explore Other Community Rooms (if any) */}
-              {otherRooms.length > 0 && (
-                <div className="space-y-3.5 pt-3">
-                  <div className="flex items-center gap-2">
-                    <Compass className="w-4 h-4 text-cyan-400" />
-                    <h3 className="text-base font-bold text-white font-sans">
-                      Explore Other Community Rooms ({otherRooms.length})
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {otherRooms.map((room) => (
-                      <div
-                        key={room.id}
-                        className="bg-[#161b22] border border-[#30363d] rounded-2xl p-4.5 space-y-3 text-left shadow-md"
+                {/* 3. Your Active Practice Rooms */}
+                <div className="space-y-3 pt-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
+                      <h3
+                        className={`text-sm sm:text-base font-bold font-sans ${
+                          isIllustrative ? 'text-[#212d27]' : 'text-white'
+                        }`}
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-bold text-sm sm:text-base text-white font-sans truncate">
-                              {room.name}
-                            </h4>
-                            <p className="text-xs text-slate-400 line-clamp-1 mt-0.5 font-sans">
-                              {room.description || 'Collaborative daily practice room.'}
-                            </p>
-                          </div>
-                          <span className="font-mono text-xs text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded-lg border border-cyan-500/30">
-                            {room.code}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-2 border-t border-[#30363d]/60">
-                          <span className="text-xs text-slate-400 font-sans">
-                            {room.members.length} members • {room.targetDailyGoal || 1} prob/day
-                          </span>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => {
-                              joinRoomByCode(room.code);
-                              handleSelectRoom(room.id);
-                            }}
-                            leftIcon={<LogIn className="w-3 h-3" />}
-                          >
-                            Join &amp; Enter
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                        Your Active Practice Rooms ({myRooms.length})
+                      </h3>
+                    </div>
+                    {myRooms.length > 1 && (
+                      <span className={`text-xs hover:underline cursor-pointer font-sans ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`}>
+                        See all rooms →
+                      </span>
+                    )}
                   </div>
+
+                  {myRooms.length > 0 ? (
+                    <div className="space-y-3">
+                      {myRooms.map((room) => {
+                        const isHost = isUserHostOfRoom(room, currentUser);
+                        const isActive = room.id === activeRoomId;
+                        const todayProblem =
+                          room.dailyProblems.find(
+                            (p) => p.date === new Date().toISOString().split('T')[0]
+                          ) || room.dailyProblems[0];
+
+                        return (
+                          <div
+                            key={room.id}
+                            className={`rounded-2xl p-4 sm:p-5 border shadow-md space-y-3.5 transition-all cozy-card ${
+                              isActive
+                                ? isIllustrative
+                                  ? 'bg-white border-[#2d6a4f] ring-2 ring-[#2d6a4f]/20'
+                                  : 'bg-[#161b22] border-[#2ea043]/60 ring-1 ring-[#2ea043]/30'
+                                : isIllustrative
+                                ? 'bg-white border-[#ede4d4]'
+                                : 'bg-[#161b22] border-[#30363d]'
+                            }`}
+                          >
+                            <div className="flex gap-3.5 items-start">
+                              {/* Room Visual Thumbnail */}
+                              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 border border-[#ede4d4] shadow-inner bg-slate-900 flex items-center justify-center text-slate-500">
+                                <div className="text-center font-mono text-[10px] text-cyan-400 p-1">
+                                  &lt;Crew /&gt;
+                                  <div className="text-[8px] text-slate-400 mt-0.5">ROOM</div>
+                                </div>
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 truncate">
+                                    <h4
+                                      className={`font-bold text-sm sm:text-base font-sans truncate ${
+                                        isIllustrative ? 'text-[#212d27]' : 'text-white'
+                                      }`}
+                                    >
+                                      {room.name}
+                                    </h4>
+                                    {isHost && (
+                                      <span className="bg-purple-100 text-purple-800 text-[10px] px-1.5 py-0.5 rounded font-bold border border-purple-200 font-mono shrink-0">
+                                        HOST
+                                      </span>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={(e) => handleCopyCode(room.code, e)}
+                                    className="text-slate-400 hover:text-slate-600 p-1"
+                                    title="Copy Code"
+                                  >
+                                    {copiedRoomCode === room.code ? (
+                                      <Check className="w-3.5 h-3.5 text-[#2d6a4f]" />
+                                    ) : (
+                                      <Copy className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+                                <p className={`text-xs line-clamp-1 mt-0.5 font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                                  {room.description || 'Collaborative daily practice room.'}
+                                </p>
+
+                                {/* Challenge Pill */}
+                                {todayProblem && (
+                                  <div
+                                    className={`mt-2 px-2.5 py-1 rounded-lg border text-[11px] flex items-center justify-between ${
+                                      isIllustrative
+                                        ? 'bg-[#fbf7ee] border-[#ede4d4]'
+                                        : 'bg-[#0d1117] border-[#30363d]'
+                                    }`}
+                                  >
+                                    <span className={`truncate max-w-[150px] sm:max-w-[200px] font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-300'}`}>
+                                      Challenge: <strong className={isIllustrative ? 'text-[#212d27]' : 'text-white'}>{todayProblem.title}</strong>
+                                    </span>
+                                    <span
+                                      className={`font-mono font-semibold text-[10px] ${
+                                        todayProblem.difficulty === 'Hard'
+                                          ? 'text-rose-600'
+                                          : todayProblem.difficulty === 'Medium'
+                                          ? 'text-amber-700'
+                                          : 'text-[#2d6a4f]'
+                                      }`}
+                                    >
+                                      {todayProblem.difficulty}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Card Footer: Members, Goal, Avatar Stack & Enter */}
+                            <div
+                              className={`flex items-center justify-between text-xs pt-3 border-t ${
+                                isIllustrative ? 'border-[#ede4d4]' : 'border-[#30363d]'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className={`flex items-center gap-1 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                                  <Users className="w-3.5 h-3.5" />
+                                  <strong className={isIllustrative ? 'text-[#212d27]' : 'text-white'}>{room.members.length}</strong>
+                                </span>
+                                <span className={`flex items-center gap-1 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                                  <Target className={`w-3.5 h-3.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
+                                  <strong className={isIllustrative ? 'text-[#212d27]' : 'text-white'}>{room.targetDailyGoal || 1}</strong>/day
+                                </span>
+
+                                {/* Member Avatars Stack */}
+                                <div className="flex -space-x-1.5 overflow-hidden ml-1">
+                                  {room.members.slice(0, 3).map((m, i) => (
+                                    <img
+                                      key={i}
+                                      src={m.avatar}
+                                      alt={m.name}
+                                      className="inline-block w-5 h-5 rounded-full ring-1 ring-white object-cover"
+                                    />
+                                  ))}
+                                  {room.members.length > 3 && (
+                                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#f4ede0] text-[9px] font-bold text-[#5c6b63] ring-1 ring-white">
+                                      +{room.members.length - 3}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={() => handleSelectRoom(room.id)}
+                                className={`px-3 py-1.5 rounded-lg font-semibold text-xs flex items-center gap-1 transition-all ${
+                                  isIllustrative
+                                    ? 'bg-[#d8f3dc] hover:bg-[#b7e4c7] text-[#2d6a4f]'
+                                    : 'bg-[#2ea043]/20 hover:bg-[#2ea043]/30 text-[#3fb950]'
+                                }`}
+                              >
+                                <span>Enter Workspace</span>
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div
+                      className={`rounded-2xl p-6 text-center space-y-3 border ${
+                        isIllustrative ? 'bg-white border-[#ede4d4]' : 'bg-[#161b22] border-[#30363d]'
+                      }`}
+                    >
+                      <Users className="w-8 h-8 text-[#2d6a4f] mx-auto opacity-70" />
+                      <h4 className={`font-bold text-sm font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
+                        No Active Practice Rooms
+                      </h4>
+                      <button
+                        onClick={() => setIsCreateOpen(true)}
+                        className={`px-4 py-2 rounded-xl text-xs font-semibold text-white shadow-sm ${
+                          isIllustrative ? 'bg-[#2d6a4f]' : 'bg-[#2ea043]'
+                        }`}
+                      >
+                        Create Your First Room
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Explore Other Community Rooms */}
+                  {otherRooms.length > 0 && (
+                    <div className="space-y-3 pt-3">
+                      <div className="flex items-center gap-2">
+                        <Compass className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-cyan-400'}`} />
+                        <h4
+                          className={`text-sm font-bold font-sans ${
+                            isIllustrative ? 'text-[#212d27]' : 'text-white'
+                          }`}
+                        >
+                          Explore Community Rooms ({otherRooms.length})
+                        </h4>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {otherRooms.map((room) => (
+                          <div
+                            key={room.id}
+                            className={`rounded-xl p-3.5 border shadow-sm flex items-center justify-between gap-3 ${
+                              isIllustrative
+                                ? 'bg-white border-[#ede4d4]'
+                                : 'bg-[#161b22] border-[#30363d]'
+                            }`}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <h5 className={`font-bold text-xs font-sans truncate ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
+                                {room.name}
+                              </h5>
+                              <span className={`text-[11px] line-clamp-1 font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                                {room.members.length} members • {room.targetDailyGoal || 1}/day
+                              </span>
+                            </div>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => {
+                                joinRoomByCode(room.code);
+                                handleSelectRoom(room.id);
+                              }}
+                              leftIcon={<LogIn className="w-3 h-3" />}
+                            >
+                              Join
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+            </div>
+
+            {/* Bottom 4 Feature Cards (Matching Design Mockup) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+              {/* Card 1: Real-time Collaboration */}
+              <div
+                className={`rounded-2xl p-4.5 border transition-all cozy-card space-y-2 ${
+                  isIllustrative
+                    ? 'bg-white border-[#ede4d4] shadow-sm'
+                    : 'bg-[#161b22] border-[#30363d]'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#d8f3dc] text-[#2d6a4f] flex items-center justify-center shrink-0">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <h4 className={`font-bold text-xs sm:text-sm font-sans ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`}>
+                    Real-time Collaboration
+                  </h4>
+                </div>
+                <p className={`text-xs leading-relaxed ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                  Solve problems together in real-time with your crew.
+                </p>
+              </div>
+
+              {/* Card 2: Track Progress */}
+              <div
+                className={`rounded-2xl p-4.5 border transition-all cozy-card space-y-2 ${
+                  isIllustrative
+                    ? 'bg-white border-[#ede4d4] shadow-sm'
+                    : 'bg-[#161b22] border-[#30363d]'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#e0f2fe] text-[#0284c7] flex items-center justify-center shrink-0">
+                    <Monitor className="w-4 h-4" />
+                  </div>
+                  <h4 className={`font-bold text-xs sm:text-sm font-sans ${isIllustrative ? 'text-[#0284c7]' : 'text-cyan-400'}`}>
+                    Track Progress
+                  </h4>
+                </div>
+                <p className={`text-xs leading-relaxed ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                  Monitor your streaks, solved problems &amp; growth over time.
+                </p>
+              </div>
+
+              {/* Card 3: Compete & Climb */}
+              <div
+                className={`rounded-2xl p-4.5 border transition-all cozy-card space-y-2 ${
+                  isIllustrative
+                    ? 'bg-white border-[#ede4d4] shadow-sm'
+                    : 'bg-[#161b22] border-[#30363d]'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#fef3c7] text-[#d97706] flex items-center justify-center shrink-0">
+                    <Trophy className="w-4 h-4" />
+                  </div>
+                  <h4 className={`font-bold text-xs sm:text-sm font-sans ${isIllustrative ? 'text-[#d97706]' : 'text-amber-400'}`}>
+                    Compete &amp; Climb
+                  </h4>
+                </div>
+                <p className={`text-xs leading-relaxed ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                  Climb leaderboards and earn bragging rights.
+                </p>
+              </div>
+
+              {/* Card 4: Daily Challenges */}
+              <div
+                className={`rounded-2xl p-4.5 border transition-all cozy-card space-y-2 ${
+                  isIllustrative
+                    ? 'bg-white border-[#ede4d4] shadow-sm'
+                    : 'bg-[#161b22] border-[#30363d]'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#f3e8ff] text-[#9333ea] flex items-center justify-center shrink-0">
+                    <FileCheck2 className="w-4 h-4" />
+                  </div>
+                  <h4 className={`font-bold text-xs sm:text-sm font-sans ${isIllustrative ? 'text-[#9333ea]' : 'text-purple-400'}`}>
+                    Daily Challenges
+                  </h4>
+                </div>
+                <p className={`text-xs leading-relaxed ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                  Stay consistent with daily hand-picked problems.
+                </p>
+              </div>
             </div>
           </div>
         )}
       </main>
 
       {/* Feature Highlights Footer Bar */}
-      <footer className="relative z-10 border-t border-[#30363d] py-3.5 px-4 sm:px-8 bg-[#161b22]/90 backdrop-blur-md">
-        <div className="max-w-7xl xl:max-w-[1500px] 2xl:max-w-[1880px] mx-auto flex flex-wrap items-center justify-around gap-4 text-xs text-slate-300">
+      <footer
+        className={`relative z-10 border-t py-3.5 px-4 sm:px-8 transition-colors ${
+          isIllustrative
+            ? 'bg-[#faf5ea]/90 border-[#ede4d4] text-[#5c6b63]'
+            : 'bg-[#161b22]/90 border-[#30363d] text-slate-300'
+        }`}
+      >
+        <div className="max-w-7xl xl:max-w-[1500px] 2xl:max-w-[1880px] mx-auto flex flex-wrap items-center justify-around gap-4 text-xs font-sans">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#3fb950]" />
-            <span className="font-medium font-sans">Official LeetCode API Verification</span>
+            <CheckCircle2 className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
+            <span className="font-medium">Official LeetCode API Verification</span>
           </div>
           <div className="flex items-center gap-2">
-            <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
-            <span className="font-medium font-sans">Real-time Inter-Tab Broadcast</span>
+            <Radio className={`w-4 h-4 animate-pulse ${isIllustrative ? 'text-[#0284c7]' : 'text-cyan-400'}`} />
+            <span className="font-medium">Real-time Inter-Tab Broadcast</span>
           </div>
           <div className="flex items-center gap-2">
-            <Flame className="w-4 h-4 text-[#f0883e]" />
-            <span className="font-medium font-sans">Live Rankings &amp; Fire Streaks</span>
+            <Flame className="w-4 h-4 text-[#ea580c]" />
+            <span className="font-medium">Live Rankings &amp; Fire Streaks</span>
           </div>
         </div>
       </footer>
