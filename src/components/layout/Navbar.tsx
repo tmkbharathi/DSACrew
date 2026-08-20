@@ -214,18 +214,43 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
               </Tooltip>
             )}
 
-            {/* Theme Toggle Button */}
-            <Tooltip content={isIllustrative ? 'Switch to Dark Theme' : 'Switch to Illustrative & Friendly Theme'}>
+            {/* Dual Sun / Moon Toggle Switch Pill */}
+            <Tooltip content={isIllustrative ? 'Switch to Dark Theme' : 'Switch to Warm Illustrative Theme'}>
               <button
                 onClick={() => setTheme(isIllustrative ? 'dark' : 'illustrative')}
-                className={`p-2 rounded-lg transition-colors border ${
+                className={`relative flex items-center p-0.5 rounded-full border transition-all duration-300 shadow-inner select-none ${
                   isIllustrative
-                    ? 'bg-[#f4ede0] hover:bg-[#ede4d4] text-[#2d6a4f] border-[#ede4d4]'
-                    : 'bg-[#0d1117] hover:bg-[#21262d] text-amber-400 border-[#30363d]'
+                    ? 'bg-[#ede4d4]/70 border-[#d8cbba]'
+                    : 'bg-[#0d1117] border-[#30363d]'
                 }`}
                 aria-label="Toggle Theme"
               >
-                {isIllustrative ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                {/* Sliding Pill Indicator */}
+                <div
+                  className={`absolute top-0.5 bottom-0.5 w-6 rounded-full transition-transform duration-300 shadow-sm flex items-center justify-center ${
+                    isIllustrative
+                      ? 'left-0.5 translate-x-0 bg-white text-[#2d6a4f]'
+                      : 'left-0.5 translate-x-6 bg-[#238636] text-white'
+                  }`}
+                />
+
+                {/* Sun Icon (Illustrative / Light) */}
+                <div
+                  className={`relative z-10 w-6 h-6 flex items-center justify-center transition-colors duration-200 ${
+                    isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  <Sun className="w-3.5 h-3.5" />
+                </div>
+
+                {/* Moon Icon (Dark Mode) */}
+                <div
+                  className={`relative z-10 w-6 h-6 flex items-center justify-center transition-colors duration-200 ${
+                    !isIllustrative ? 'text-white' : 'text-[#8d9a93] hover:text-[#212d27]'
+                  }`}
+                >
+                  <Moon className="w-3.5 h-3.5" />
+                </div>
               </button>
             </Tooltip>
 

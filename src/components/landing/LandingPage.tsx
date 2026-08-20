@@ -3,7 +3,6 @@ import { useApp, isUserHostOfRoom, isUserInRoom } from '../../context/AppContext
 import { AuthModal } from '../auth/AuthModal';
 import { CreateRoomModal } from '../room/CreateRoomModal';
 import { JoinRoomModal } from '../room/JoinRoomModal';
-import { CozyCoderIllustration } from '../illustrations/CozyCoderIllustration';
 import { CrewIllustration } from '../illustrations/CrewIllustration';
 import { fetchLeetCodeDaily, type LeetCodeDailyChallenge } from '../../services/leetcodeApi';
 import {
@@ -317,18 +316,43 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
 
           {/* Right Action Group (Theme toggle + Sign In) */}
           <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Theme Toggle Button */}
+            {/* Dual Sun / Moon Toggle Switch Pill */}
             <button
               onClick={() => setTheme(isIllustrative ? 'dark' : 'illustrative')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-sm ${
+              className={`relative flex items-center p-0.5 rounded-full border transition-all duration-300 shadow-inner select-none ${
                 isIllustrative
-                  ? 'bg-white hover:bg-[#f4ede0] text-[#2d6a4f] border-[#ede4d4]'
-                  : 'bg-[#161b22] hover:bg-[#21262d] text-amber-400 border-[#30363d]'
+                  ? 'bg-[#ede4d4]/70 border-[#d8cbba]'
+                  : 'bg-[#0d1117] border-[#30363d]'
               }`}
-              title={`Switch to ${isIllustrative ? 'Dark Mode' : 'Illustrative Theme'}`}
+              title={`Switch to ${isIllustrative ? 'Dark Mode' : 'Warm Illustrative Mode'}`}
+              aria-label="Toggle Theme"
             >
-              {isIllustrative ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">{isIllustrative ? 'Dark Mode' : 'Illustrative'}</span>
+              {/* Sliding Pill Indicator */}
+              <div
+                className={`absolute top-0.5 bottom-0.5 w-6 rounded-full transition-transform duration-300 shadow-sm flex items-center justify-center ${
+                  isIllustrative
+                    ? 'left-0.5 translate-x-0 bg-white text-[#2d6a4f]'
+                    : 'left-0.5 translate-x-6 bg-[#238636] text-white'
+                }`}
+              />
+
+              {/* Sun Icon (Illustrative / Light) */}
+              <div
+                className={`relative z-10 w-6 h-6 flex items-center justify-center transition-colors duration-200 ${
+                  isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                <Sun className="w-3.5 h-3.5" />
+              </div>
+
+              {/* Moon Icon (Dark Mode) */}
+              <div
+                className={`relative z-10 w-6 h-6 flex items-center justify-center transition-colors duration-200 ${
+                  !isIllustrative ? 'text-white' : 'text-[#8d9a93] hover:text-[#212d27]'
+                }`}
+              >
+                <Moon className="w-3.5 h-3.5" />
+              </div>
             </button>
 
             <button
@@ -412,8 +436,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                 Create collaborative practice rooms, schedule daily algorithm challenges, sync live solutions with verified LeetCode runtime metrics, and compete on room leaderboards.
               </p>
 
-              {/* Quick Feature Highlights in Hero (Matching Reference 3-Card Design) */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
+              {/* Quick Feature Highlights in Hero (Desktop only inside left column) */}
+              <div className="hidden lg:grid grid-cols-3 gap-3.5 pt-2">
                 <div
                   className={`rounded-2xl p-4 space-y-1.5 border transition-all cozy-card ${
                     isIllustrative
@@ -479,11 +503,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                     Room streak rankings &amp; review
                   </p>
                 </div>
-              </div>
-
-              {/* Cozy Developer Illustration (shown on mobile / smaller screens where background is cropped) */}
-              <div className="pt-2 lg:hidden">
-                <CozyCoderIllustration className="w-full max-w-sm sm:max-w-md" />
               </div>
             </div>
 
@@ -640,6 +659,75 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                   >
                     Create Profile →
                   </button>
+                </div>
+              </div>
+
+              {/* Mobile / Tablet Feature Cards (Rendered below Sign In card on mobile) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-3 lg:hidden w-full">
+                <div
+                  className={`rounded-2xl p-4 space-y-1.5 border transition-all cozy-card ${
+                    isIllustrative
+                      ? 'bg-white/80 border-[#ede4d4] shadow-sm'
+                      : 'bg-[#161b22]/80 border-[#30363d]'
+                  }`}
+                >
+                  <div
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                      isIllustrative ? 'bg-[#d8f3dc] text-[#2d6a4f]' : 'bg-[#2ea043]/20 text-[#3fb950]'
+                    }`}
+                  >
+                    <Zap className="w-4 h-4" />
+                  </div>
+                  <div className={`font-bold text-xs font-mono ${isIllustrative ? 'text-[#212d27]' : 'text-[#3fb950]'}`}>
+                    Daily Challenges
+                  </div>
+                  <p className={`text-xs leading-snug ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                    Official daily sync &amp; difficulty points
+                  </p>
+                </div>
+
+                <div
+                  className={`rounded-2xl p-4 space-y-1.5 border transition-all cozy-card ${
+                    isIllustrative
+                      ? 'bg-white/80 border-[#ede4d4] shadow-sm'
+                      : 'bg-[#161b22]/80 border-[#30363d]'
+                  }`}
+                >
+                  <div
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                      isIllustrative ? 'bg-[#e0f2fe] text-[#0284c7]' : 'bg-cyan-950/40 text-cyan-400'
+                    }`}
+                  >
+                    <Radio className="w-4 h-4" />
+                  </div>
+                  <div className={`font-bold text-xs font-mono ${isIllustrative ? 'text-[#212d27]' : 'text-cyan-400'}`}>
+                    Real-time Sync
+                  </div>
+                  <p className={`text-xs leading-snug ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                    Inter-tab broadcasts &amp; cloud updates
+                  </p>
+                </div>
+
+                <div
+                  className={`rounded-2xl p-4 space-y-1.5 border transition-all cozy-card ${
+                    isIllustrative
+                      ? 'bg-white/80 border-[#ede4d4] shadow-sm'
+                      : 'bg-[#161b22]/80 border-[#30363d]'
+                  }`}
+                >
+                  <div
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                      isIllustrative ? 'bg-[#ffedd5] text-[#ea580c]' : 'bg-amber-950/40 text-amber-400'
+                    }`}
+                  >
+                    <Trophy className="w-4 h-4" />
+                  </div>
+                  <div className={`font-bold text-xs font-mono ${isIllustrative ? 'text-[#212d27]' : 'text-amber-400'}`}>
+                    Leaderboards
+                  </div>
+                  <p className={`text-xs leading-snug ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                    Room streak rankings &amp; review
+                  </p>
                 </div>
               </div>
             </div>
@@ -1329,42 +1417,90 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
 
       {/* Tour / Walkthrough Modal */}
       {tourStep !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-6 max-w-lg w-full space-y-4 shadow-2xl relative text-left">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div
+            className={`rounded-2xl p-6 max-w-lg w-full space-y-4 shadow-2xl relative text-left border transition-all ${
+              isIllustrative
+                ? 'bg-white border-[#ede4d4] text-[#212d27]'
+                : 'bg-[#161b22] border-[#30363d] text-white'
+            }`}
+          >
             <button
               onClick={() => setTourStep(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#21262d]"
+              className={`absolute top-4 right-4 p-1 rounded-lg transition-colors ${
+                isIllustrative
+                  ? 'text-[#8d9a93] hover:text-[#212d27] hover:bg-[#fbf7ee]'
+                  : 'text-slate-400 hover:text-white hover:bg-[#21262d]'
+              }`}
+              title="Close Tour"
+              aria-label="Close Tour"
             >
               <X className="w-4 h-4" />
             </button>
 
-            <div className="flex items-center gap-2 pb-2 border-b border-[#30363d]">
-              <Sparkles className="w-4 h-4 text-[#3fb950]" />
-              <h3 className="font-bold text-base text-white font-sans">How LeetTracker Works</h3>
+            <div
+              className={`flex items-center gap-2 pb-2 border-b ${
+                isIllustrative ? 'border-[#ede4d4]' : 'border-[#30363d]'
+              }`}
+            >
+              <Sparkles className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
+              <h3 className={`font-bold text-base font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
+                How LeetTracker Works
+              </h3>
             </div>
 
-            <div className="space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
+            <div className="space-y-3 text-xs sm:text-sm leading-relaxed font-sans">
               <div className="flex gap-3">
-                <span className="w-6 h-6 rounded-full bg-[#2ea043]/20 text-[#3fb950] flex items-center justify-center font-bold font-mono text-xs shrink-0">1</span>
+                <span
+                  className={`w-6 h-6 rounded-full flex items-center justify-center font-bold font-mono text-xs shrink-0 ${
+                    isIllustrative ? 'bg-[#d8f3dc] text-[#2d6a4f]' : 'bg-[#2ea043]/20 text-[#3fb950]'
+                  }`}
+                >
+                  1
+                </span>
                 <div>
-                  <strong className="text-white">Create or Join a Practice Room:</strong>
-                  <p className="text-xs text-slate-400 mt-0.5">Start a private group with friends or your study circle using an invite code.</p>
+                  <strong className={isIllustrative ? 'text-[#212d27]' : 'text-white'}>
+                    Create or Join a Practice Room:
+                  </strong>
+                  <p className={`text-xs mt-0.5 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                    Start a private group with friends or your study circle using an invite code.
+                  </p>
                 </div>
               </div>
 
               <div className="flex gap-3">
-                <span className="w-6 h-6 rounded-full bg-[#2ea043]/20 text-[#3fb950] flex items-center justify-center font-bold font-mono text-xs shrink-0">2</span>
+                <span
+                  className={`w-6 h-6 rounded-full flex items-center justify-center font-bold font-mono text-xs shrink-0 ${
+                    isIllustrative ? 'bg-[#d8f3dc] text-[#2d6a4f]' : 'bg-[#2ea043]/20 text-[#3fb950]'
+                  }`}
+                >
+                  2
+                </span>
                 <div>
-                  <strong className="text-white">Schedule Daily DSA Challenges:</strong>
-                  <p className="text-xs text-slate-400 mt-0.5">Auto-fetch today's official LeetCode challenge or post custom practice problems.</p>
+                  <strong className={isIllustrative ? 'text-[#212d27]' : 'text-white'}>
+                    Schedule Daily DSA Challenges:
+                  </strong>
+                  <p className={`text-xs mt-0.5 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                    Auto-fetch today's official LeetCode challenge or post custom practice problems.
+                  </p>
                 </div>
               </div>
 
               <div className="flex gap-3">
-                <span className="w-6 h-6 rounded-full bg-[#2ea043]/20 text-[#3fb950] flex items-center justify-center font-bold font-mono text-xs shrink-0">3</span>
+                <span
+                  className={`w-6 h-6 rounded-full flex items-center justify-center font-bold font-mono text-xs shrink-0 ${
+                    isIllustrative ? 'bg-[#d8f3dc] text-[#2d6a4f]' : 'bg-[#2ea043]/20 text-[#3fb950]'
+                  }`}
+                >
+                  3
+                </span>
                 <div>
-                  <strong className="text-white">Solve, Verify &amp; Review Solutions:</strong>
-                  <p className="text-xs text-slate-400 mt-0.5">Submit your solution, earn points, track streaks, and review teammates' code.</p>
+                  <strong className={isIllustrative ? 'text-[#212d27]' : 'text-white'}>
+                    Solve, Verify &amp; Review Solutions:
+                  </strong>
+                  <p className={`text-xs mt-0.5 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                    Submit your solution, earn points, track streaks, and review teammates' code.
+                  </p>
                 </div>
               </div>
             </div>
