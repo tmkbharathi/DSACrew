@@ -172,7 +172,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
         } catch {}
       }
       setLoginError('');
-      setIsLandingView(false);
+      setIsLandingView(true);
     } else {
       setLoginError(res.message);
     }

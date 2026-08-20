@@ -89,9 +89,9 @@ export const LeaderboardTable: React.FC = () => {
           </h3>
         </div>
         <span
-          className={`text-xs font-sans font-medium px-2.5 py-1 rounded-xl border ${
+          className={`text-xs font-mono font-medium px-2.5 py-1 rounded-xl border ${
             isIllustrative
-              ? 'bg-white text-[#5c6b63] border-[#ede4d4]'
+              ? 'bg-[#fbf7ee] text-[#2d6a4f] border-[#ede4d4]'
               : 'bg-[#161b22] text-slate-300 border-[#30363d]'
           }`}
         >

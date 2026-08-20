@@ -95,7 +95,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setError('');
       onClose();
       if (onSuccess) onSuccess();
-      setIsLandingView(false);
+      setIsLandingView(true);
     } else {
       setError(res.message);
     }
@@ -121,7 +121,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setError('');
       onClose();
       if (onSuccess) onSuccess();
-      setIsLandingView(false);
+      setIsLandingView(true);
     } else {
       setError(res.message);
     }
