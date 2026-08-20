@@ -77,6 +77,13 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
   const [isPostOpen, setIsPostOpen] = useState(false);
   const [loadingDailyFetch, setLoadingDailyFetch] = useState(false);
   const [selectedCodeSnippet, setSelectedCodeSnippet] = useState<{ name: string; code: string; lang: string } | null>(null);
+
+  React.useEffect(() => {
+    if (initialProblem?.date) {
+      setSelectedDate(initialProblem.date);
+    }
+  }, [initialProblem?.id, initialProblem?.date]);
+
   const [isCardHidden, setIsCardHidden] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem('leettracker_hide_daily_hero');
@@ -202,7 +209,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
     });
   };
 
-  const isSolved = Boolean(activeProblem?.submissions?.some((s) => s.userId === currentUser.id));
+  const isSolved = Boolean(activeProblem?.submissions?.some((s) => s.userId === currentUser.id && s.status === 'Accepted'));
   const isMissed = selectedDate < todayStr && !isSolved;
 
   const difficultyVariant =
@@ -219,7 +226,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
   };
 
   const totalMembers = activeRoom?.members?.length || 1;
-  const completedCount = activeProblem?.submissions?.length || 0;
+  const completedCount = activeProblem?.submissions?.filter((s) => s.status === 'Accepted').length || 0;
   const completionPercentage = Math.round((completedCount / totalMembers) * 100);
 
   return (
@@ -240,7 +247,7 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
             const isToday = dStr === todayStr;
             const isSelected = dStr === selectedDate;
             const dayProblems = activeRoom?.dailyProblems.filter((p) => p.date === dStr) || [];
-            const userSolved = dayProblems.some((p) => p.submissions?.some((s) => s.userId === currentUser.id));
+            const userSolved = dayProblems.some((p) => p.submissions?.some((s) => s.userId === currentUser.id && s.status === 'Accepted'));
 
             return (
               <button

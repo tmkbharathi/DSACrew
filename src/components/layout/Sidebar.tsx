@@ -74,7 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     );
 
     if (todayProblem) {
-      const isSolved = todayProblem.submissions.some((s) => s.userId === memberId);
+      const isSolved = todayProblem.submissions.some((s) => s.userId === memberId && s.status === 'Accepted');
       if (isSolved) {
         return { label: 'Solved Today', color: 'text-[#3fb950] bg-[#2ea043]/15 border-[#2ea043]/30' };
       }

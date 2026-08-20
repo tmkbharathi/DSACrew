@@ -45,7 +45,7 @@ export const CompletionMatrix: React.FC = () => {
                 </td>
 
                 {problems.map((prob) => {
-                  const isSolved = prob.submissions.some((s) => s.userId === member.id);
+                  const isSolved = prob.submissions.some((s) => s.userId === member.id && s.status === 'Accepted');
                   return (
                     <td key={prob.id} className="py-3 px-3 sm:px-4 text-center">
                       {isSolved ? (

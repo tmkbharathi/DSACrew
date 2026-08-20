@@ -49,7 +49,7 @@ export const App = () => {
 
   const pointsThisWeek = activeRoom.dailyProblems.reduce((sum, p) => {
     const pDate = new Date(p.date + 'T00:00:00');
-    const userSub = p.submissions.find((s) => s.userId === currentUser.id);
+    const userSub = p.submissions.find((s) => s.userId === currentUser.id && s.status === 'Accepted');
     if (pDate >= weekStart && userSub) {
       return sum + (p.difficulty === 'Hard' ? 100 : p.difficulty === 'Medium' ? 60 : 30);
     }
