@@ -103,17 +103,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
               onClick={() => setIsLandingView(true)}
               title="Return to Landing Page Overview"
             >
-              <div
-                className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono font-bold text-sm shadow-sm transition-colors ${
-                  isIllustrative
-                    ? 'bg-[#f4ede0] border border-[#ede4d4] text-[#2d6a4f]'
-                    : 'bg-[#0d1117] border border-[#30363d] text-[#3fb950]'
-                }`}
-              >
-                &lt;/&gt;
-              </div>
               <span
-                className={`font-bold text-base sm:text-lg tracking-tight hidden md:inline font-sans ${
+                className={`font-bold text-base sm:text-lg tracking-tight font-sans ${
                   isIllustrative ? 'text-[#212d27]' : 'text-white'
                 }`}
               >

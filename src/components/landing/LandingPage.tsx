@@ -233,15 +233,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
         <div className="max-w-7xl xl:max-w-[1500px] 2xl:max-w-[1880px] mx-auto flex items-center justify-between gap-4">
           {/* Logo */}
           <div className="flex items-center gap-2.5 select-none">
-            <div
-              className={`w-9 h-9 rounded-xl flex items-center justify-center font-mono font-bold text-sm shadow-sm transition-colors ${
-                isIllustrative
-                  ? 'bg-white border border-[#ede4d4] text-[#2d6a4f]'
-                  : 'bg-[#0d1117] border border-[#30363d] text-[#3fb950]'
-              }`}
-            >
-              &lt;/&gt;
-            </div>
             <span
               className={`font-extrabold text-xl tracking-tight font-sans transition-colors ${
                 isIllustrative ? 'text-[#212d27]' : 'text-white'
