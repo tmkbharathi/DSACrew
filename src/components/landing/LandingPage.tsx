@@ -378,22 +378,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
-            ) : (
-              <button
-                onClick={() => {
-                  setAuthDefaultRegister(false);
-                  setIsAuthOpen(true);
-                }}
-                className={`flex items-center gap-1.5 px-5 py-2 rounded-xl font-semibold text-xs sm:text-sm transition-all shadow-sm ${
-                  isIllustrative
-                    ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white active:scale-95'
-                    : 'bg-[#2ea043] hover:bg-[#3fb950] text-white active:scale-95'
-                }`}
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Sign In</span>
-              </button>
-            )}
+            ) : null}
           </div>
         </div>
       </header>
@@ -526,15 +511,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                       Sign In with LeetCode
                     </h2>
                   </div>
-                  <span
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-md border ${
-                      isIllustrative
-                        ? 'bg-[#f7f3eb] text-[#5c6b63] border-[#ede4d4]'
-                        : 'bg-[#0d1117] text-slate-300 border-[#30363d]'
-                    }`}
-                  >
-                    Step 1 to Access
-                  </span>
                 </div>
 
                 <form onSubmit={handleHeroLogin} className="space-y-4">
@@ -628,11 +604,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                     </div>
                   )}
 
-                  <div className="flex gap-2.5 pt-1">
+                  <div className="pt-1 flex justify-center">
                     <button
                       type="submit"
                       disabled={loginLoading}
-                      className={`flex-1 py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-50 ${
+                      className={`w-3/4 max-w-[280px] py-2.5 px-6 rounded-xl font-semibold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-50 ${
                         isIllustrative
                           ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white'
                           : 'bg-[#2ea043] hover:bg-[#3fb950] text-white'
@@ -640,20 +616,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                     >
                       {loginLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
                       <span>{loginLoading ? 'Verifying...' : 'Sign In & Enter'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAuthDefaultRegister(false);
-                        setIsAuthOpen(true);
-                      }}
-                      className={`py-3 px-4 rounded-xl font-medium text-xs sm:text-sm border transition-colors ${
-                        isIllustrative
-                          ? 'bg-[#f7f3eb] hover:bg-[#ede4d4] text-[#212d27] border-[#ede4d4]'
-                          : 'bg-[#21262d] hover:bg-[#30363d] text-white border-[#30363d]'
-                      }`}
-                    >
-                      Options
                     </button>
                   </div>
                 </form>
@@ -1332,29 +1294,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
         )}
       </main>
 
-      {/* Feature Highlights Footer Bar */}
+      {/* Minimal Grounding Footer Bar (Half Height) */}
       <footer
-        className={`relative z-10 border-t py-3.5 px-4 sm:px-8 transition-colors ${
+        className={`relative z-10 border-t py-1.5 px-4 sm:px-8 transition-colors ${
           isIllustrative
-            ? 'bg-[#faf5ea]/90 border-[#ede4d4] text-[#5c6b63]'
-            : 'bg-[#161b22]/90 border-[#30363d] text-slate-300'
+            ? 'bg-[#faf5ea]/90 border-[#ede4d4]'
+            : 'bg-[#161b22]/90 border-[#30363d]'
         }`}
-      >
-        <div className="max-w-7xl xl:max-w-[1500px] 2xl:max-w-[1880px] mx-auto flex flex-wrap items-center justify-around gap-4 text-xs font-sans">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
-            <span className="font-medium">Official LeetCode API Verification</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Radio className={`w-4 h-4 animate-pulse ${isIllustrative ? 'text-[#0284c7]' : 'text-cyan-400'}`} />
-            <span className="font-medium">Real-time Inter-Tab Broadcast</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Flame className="w-4 h-4 text-[#ea580c]" />
-            <span className="font-medium">Live Rankings &amp; Fire Streaks</span>
-          </div>
-        </div>
-      </footer>
+      />
 
       {/* Modals */}
       <AuthModal
