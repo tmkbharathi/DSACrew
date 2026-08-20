@@ -4,7 +4,6 @@ import { AuthModal } from '../auth/AuthModal';
 import { CreateRoomModal } from '../room/CreateRoomModal';
 import { JoinRoomModal } from '../room/JoinRoomModal';
 import { CrewIllustration } from '../illustrations/CrewIllustration';
-import { fetchLeetCodeDaily, type LeetCodeDailyChallenge } from '../../services/leetcodeApi';
 import {
   Users,
   Trophy,
@@ -78,9 +77,35 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
 
-  // Quick Daily Preview
-  const [quickDaily, setQuickDaily] = useState<LeetCodeDailyChallenge | null>(null);
-  const [loadingDaily, setLoadingDaily] = useState(false);
+  const [shakeAuthCard, setShakeAuthCard] = useState(false);
+
+  const triggerAuthCardShake = () => {
+    setShakeAuthCard(true);
+    const usernameInput = document.getElementById('username');
+    if (usernameInput) {
+      usernameInput.focus();
+    }
+    const authCard = document.getElementById('hero-auth-card');
+    if (authCard) {
+      authCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    setTimeout(() => {
+      setShakeAuthCard(false);
+    }, 800);
+  };
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (tourStep !== null) setTourStep(null);
+        if (isAuthOpen) setIsAuthOpen(false);
+        if (isCreateOpen) setIsCreateOpen(false);
+        if (isJoinOpen) setIsJoinOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [tourStep, isAuthOpen, isCreateOpen, isJoinOpen]);
 
   const isLoggedIn = Boolean(
     currentUser.isLoggedIn && currentUser.username && currentUser.username.trim().length > 0
@@ -158,29 +183,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
     } catch (err) {}
   };
 
-  const handleFetchDailyPreview = async () => {
-    setLoadingDaily(true);
-    try {
-      const daily = await fetchLeetCodeDaily();
-      if (daily && daily.title) {
-        setQuickDaily(daily);
-        setToast({
-          title: "Today's Official Daily Challenge",
-          message: `"${daily.title}" (${daily.difficulty || 'Medium'})`,
-          type: 'info',
-        });
-      }
-    } catch {
-      setToast({
-        title: 'LeetCode Daily Challenge',
-        message: 'Could not fetch latest challenge. Please try again.',
-        type: 'warning',
-      });
-    } finally {
-      setLoadingDaily(false);
-    }
-  };
-
   const isIllustrative = theme === 'illustrative';
 
   return (
@@ -254,10 +256,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
             <button
               onClick={() => {
                 if (isLoggedIn) setIsLandingView(false);
-                else {
-                  setAuthDefaultRegister(false);
-                  setIsAuthOpen(true);
-                }
+                else triggerAuthCardShake();
               }}
               className={`flex items-center gap-1.5 transition-colors ${
                 isIllustrative
@@ -270,14 +269,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
             </button>
 
             <button
-              onClick={handleFetchDailyPreview}
-              disabled={loadingDaily}
+              onClick={() => {
+                if (isLoggedIn) setIsLandingView(false);
+                else triggerAuthCardShake();
+              }}
               className={`flex items-center gap-1.5 transition-colors ${
                 isIllustrative
                   ? 'text-[#5c6b63] hover:text-[#2d6a4f]'
                   : 'text-slate-300 hover:text-white'
               }`}
-              title="Preview today's official LeetCode Challenge"
+              title="Preview today's challenges (Sign in to access)"
             >
               <Zap className="w-4 h-4 opacity-70 text-amber-500" />
               <span>Challenges</span>
@@ -286,10 +287,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
             <button
               onClick={() => {
                 if (isLoggedIn) setIsLandingView(false);
-                else {
-                  setAuthDefaultRegister(false);
-                  setIsAuthOpen(true);
-                }
+                else triggerAuthCardShake();
               }}
               className={`flex items-center gap-1.5 transition-colors ${
                 isIllustrative
@@ -509,7 +507,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
             {/* Right Auth Card Column (Matching Reference Design) */}
             <div className="lg:col-span-5 w-full">
               <div
+                id="hero-auth-card"
                 className={`rounded-3xl p-6 sm:p-8 text-left space-y-5 transition-all shadow-xl ${
+                  shakeAuthCard
+                    ? 'animate-shake-auth ring-4 ring-[#2ea043]/50 scale-[1.02]'
+                    : ''
+                } ${
                   isIllustrative
                     ? 'bg-white border border-[#ede4d4]'
                     : 'bg-[#161b22] border border-[#30363d]'
@@ -895,9 +898,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                         Today's Official Daily Challenge
                       </h4>
                       <p className={`text-xs mt-0.5 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
-                        {quickDaily?.title
-                          ? `"${quickDaily.title}" (${quickDaily.difficulty})`
-                          : 'Solve today’s hand-picked problem and keep your streak going!'}
+                        Solve today's hand-picked algorithm problem with your crew and keep your streak going!
                       </p>
                     </div>
                   </div>
@@ -905,10 +906,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                   <button
                     type="button"
                     onClick={() => {
-                      if (myRooms[0]) {
-                        handleSelectRoom(myRooms[0].id);
+                      const target = myRooms[0] || rooms[0] || communityRooms[0];
+                      if (target) {
+                        handleSelectRoom(target.id);
                       } else {
-                        handleFetchDailyPreview();
+                        setIsLandingView(false);
                       }
                     }}
                     className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all shadow-sm ${
@@ -1517,6 +1519,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
           </div>
         </div>
       )}
+
+      {/* Shake Keyframe Styles */}
+      <style>{`
+        @keyframes shakeAuth {
+          0%, 100% { transform: translateX(0); }
+          15%, 45%, 75% { transform: translateX(-8px); }
+          30%, 60%, 90% { transform: translateX(8px); }
+        }
+        .animate-shake-auth {
+          animation: shakeAuth 0.65s cubic-bezier(.36,.07,.19,.97) both;
+        }
+      `}</style>
     </div>
   );
 };

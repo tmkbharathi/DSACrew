@@ -16,6 +16,15 @@ export const InviteModal: React.FC<InviteModalProps> = ({ room, isOpen, onClose 
   const [copiedLink, setCopiedLink] = useState(false);
   const isIllustrative = theme === 'illustrative';
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const joinLink = `${window.location.origin}?code=${room.code}`;

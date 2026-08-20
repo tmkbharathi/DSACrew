@@ -20,6 +20,14 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
   const [verifiedStatus, setVerifiedStatus] = useState<boolean | null>(null);
   const [verifyMessage, setVerifyMessage] = useState('');
   const isIllustrative = theme === 'illustrative';
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
