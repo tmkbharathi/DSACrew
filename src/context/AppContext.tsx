@@ -94,6 +94,8 @@ interface AppContextType {
   resetToDefault: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshRooms: () => Promise<void>;
+  theme: 'dark' | 'illustrative';
+  setTheme: (theme: 'dark' | 'illustrative') => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -120,6 +122,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activeRoomId, setActiveRoomId] = useState<string>('');
   const [isLandingView, setIsLandingView] = useState<boolean>(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [theme, setThemeState] = useState<'dark' | 'illustrative'>(() => {
+    try {
+      const saved = localStorage.getItem('leettracker_theme') as 'dark' | 'illustrative' | null;
+      if (saved === 'dark' || saved === 'illustrative') {
+        return saved;
+      }
+      return 'illustrative'; // Default to illustrative on this branch
+    } catch {
+      return 'illustrative';
+    }
+  });
+
+  const setTheme = useCallback((newTheme: 'dark' | 'illustrative') => {
+    setThemeState(newTheme);
+    try {
+      localStorage.setItem('leettracker_theme', newTheme);
+      document.documentElement.setAttribute('data-theme', newTheme);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch {}
+  }, [theme]);
+
   const [soundEnabled, setSoundEnabledState] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem('leettracker_sound_enabled');
@@ -823,6 +851,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         resetToDefault: resetDemoData,
         signOut: logout,
         refreshRooms,
+        theme,
+        setTheme,
       }}
     >
       {children}

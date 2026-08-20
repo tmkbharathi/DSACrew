@@ -16,7 +16,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onSuccess,
   defaultRegisterMode = false,
 }) => {
-  const { login, registerAccount, setIsLandingView } = useApp();
+  const { login, registerAccount, setIsLandingView, theme } = useApp();
   const [isRegisterMode, setIsRegisterMode] = useState(defaultRegisterMode);
   const [usernameInput, setUsernameInput] = useState('');
   const [nameInput, setNameInput] = useState('');
@@ -24,6 +24,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const isIllustrative = theme === 'illustrative';
 
   React.useEffect(() => {
     setIsRegisterMode(defaultRegisterMode);
@@ -80,18 +81,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
-      <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md" onClick={onClose} />
+      <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full max-w-md bg-[#1c2024] border border-[#3d4a3e] rounded-2xl shadow-2xl p-6 z-10 my-auto max-h-[85vh] flex flex-col mx-3">
+      <div
+        className={`relative w-full max-w-md rounded-2xl shadow-2xl p-6 z-10 my-auto max-h-[85vh] flex flex-col mx-3 border transition-all ${
+          isIllustrative
+            ? 'bg-white border-[#ede4d4] text-[#212d27]'
+            : 'bg-[#1c2024] border-[#3d4a3e] text-white'
+        }`}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#3d4a3e] pb-3 mb-4 shrink-0">
+        <div className={`flex items-center justify-between border-b pb-3 mb-4 shrink-0 ${isIllustrative ? 'border-[#ede4d4]' : 'border-[#3d4a3e]'}`}>
           <div className="flex items-center gap-2">
-            <LogIn className="w-5 h-5 text-[#4ade80]" />
-            <h3 className="font-bold text-base sm:text-lg text-white font-sans">
-              {isRegisterMode ? 'Register LeetCode Account' : 'Sign In to LeetTracker'}
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isIllustrative ? 'bg-[#d8f3dc] text-[#2d6a4f]' : 'bg-[#2ea043]/20 text-[#4ade80]'}`}>
+              <LogIn className="w-4 h-4" />
+            </div>
+            <h3 className={`font-bold text-base sm:text-lg font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
+              {isRegisterMode ? 'Register Account' : 'Sign In to LeetTracker'}
             </h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#262a2f]">
+          <button
+            onClick={onClose}
+            className={`p-1 rounded-lg transition-colors ${
+              isIllustrative ? 'text-[#8d9a93] hover:text-[#212d27] hover:bg-[#fbf7ee]' : 'text-slate-400 hover:text-white hover:bg-[#262a2f]'
+            }`}
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -99,14 +113,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto pr-1 space-y-4">
           {/* Toggle Tab */}
-          <div className="grid grid-cols-2 p-1 bg-[#101418] rounded-xl border border-[#3d4a3e] text-xs font-semibold font-mono">
+          <div className={`grid grid-cols-2 p-1 rounded-xl border text-xs font-semibold font-mono ${
+            isIllustrative
+              ? 'bg-[#fbf7ee] border-[#ede4d4]'
+              : 'bg-[#101418] border-[#3d4a3e]'
+          }`}>
             <button
               onClick={() => {
                 setIsRegisterMode(false);
                 setError('');
               }}
               className={`py-2 rounded-lg transition-colors ${
-                !isRegisterMode ? 'bg-[#4ade80] text-[#005e2d] font-bold shadow-sm' : 'text-slate-400 hover:text-white'
+                !isRegisterMode
+                  ? isIllustrative
+                    ? 'bg-[#2d6a4f] text-white font-bold shadow-sm'
+                    : 'bg-[#4ade80] text-[#005e2d] font-bold shadow-sm'
+                  : isIllustrative
+                  ? 'text-[#5c6b63] hover:text-[#212d27]'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               Sign In
@@ -117,7 +141,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 setError('');
               }}
               className={`py-2 rounded-lg transition-colors ${
-                isRegisterMode ? 'bg-[#4ade80] text-[#005e2d] font-bold shadow-sm' : 'text-slate-400 hover:text-white'
+                isRegisterMode
+                  ? isIllustrative
+                    ? 'bg-[#2d6a4f] text-white font-bold shadow-sm'
+                    : 'bg-[#4ade80] text-[#005e2d] font-bold shadow-sm'
+                  : isIllustrative
+                  ? 'text-[#5c6b63] hover:text-[#212d27]'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               New Account
@@ -128,35 +158,43 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             /* Sign In Mode */
             <form onSubmit={handleLoginSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">LeetCode Handle / Username</label>
+                <label className={`block text-xs font-mono mb-1 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>LeetCode Handle / Username</label>
                 <div className="relative">
-                  <ShieldCheck className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                  <ShieldCheck className={`w-4 h-4 absolute left-3 top-2.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-500'}`} />
                   <input
                     type="text"
                     required
                     value={usernameInput}
                     onChange={(e) => setUsernameInput(e.target.value)}
                     placeholder="e.g. tourist, neal_wu"
-                    className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#4ade80] font-mono"
+                    className={`w-full rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm focus:outline-none font-mono transition-colors ${
+                      isIllustrative
+                        ? 'bg-[#fbf7ee] border border-[#ede4d4] text-[#212d27] placeholder:text-[#8d9a93] focus:border-[#2d6a4f] focus:bg-white'
+                        : 'bg-[#101418] border border-[#3d4a3e] text-white focus:border-[#4ade80]'
+                    }`}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">Password</label>
+                <label className={`block text-xs font-mono mb-1 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>Password</label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                  <Lock className={`w-4 h-4 absolute left-3 top-2.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-500'}`} />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
                     placeholder="Enter your account password"
-                    className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg pl-9 pr-10 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#4ade80]"
+                    className={`w-full rounded-xl pl-9 pr-10 py-2 text-xs sm:text-sm focus:outline-none transition-colors ${
+                      isIllustrative
+                        ? 'bg-[#fbf7ee] border border-[#ede4d4] text-[#212d27] placeholder:text-[#8d9a93] focus:border-[#2d6a4f] focus:bg-white'
+                        : 'bg-[#101418] border border-[#3d4a3e] text-white focus:border-[#4ade80]'
+                    }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300"
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -164,7 +202,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               {error && (
-                <div className="text-rose-400 text-xs bg-rose-950/40 p-2.5 rounded-lg border border-rose-500/30 font-sans">
+                <div className={`text-xs p-2.5 rounded-xl border font-sans ${
+                  isIllustrative
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                    : 'text-rose-400 bg-rose-950/40 border-rose-500/30'
+                }`}>
                   {error}
                 </div>
               )}
@@ -184,54 +226,65 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             /* Register Mode */
             <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">Full Name</label>
+                <label className={`block text-xs font-mono mb-1 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>Full Name</label>
                 <div className="relative">
-                  <UserIcon className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                  <UserIcon className={`w-4 h-4 absolute left-3 top-2.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-500'}`} />
                   <input
                     type="text"
                     required
                     value={nameInput}
                     onChange={(e) => setNameInput(e.target.value)}
                     placeholder="e.g. Manikanda Bharathi"
-                    className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#4ade80]"
+                    className={`w-full rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm focus:outline-none transition-colors ${
+                      isIllustrative
+                        ? 'bg-[#fbf7ee] border border-[#ede4d4] text-[#212d27] placeholder:text-[#8d9a93] focus:border-[#2d6a4f] focus:bg-white'
+                        : 'bg-[#101418] border border-[#3d4a3e] text-white focus:border-[#4ade80]'
+                    }`}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">LeetCode Username / Handle</label>
+                <label className={`block text-xs font-mono mb-1 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>LeetCode Username / Handle</label>
                 <div className="relative">
-                  <ShieldCheck className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                  <ShieldCheck className={`w-4 h-4 absolute left-3 top-2.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-500'}`} />
                   <input
                     type="text"
                     required
                     value={usernameInput}
                     onChange={(e) => setUsernameInput(e.target.value.toLowerCase().trim())}
                     placeholder="e.g. tourist, neal_wu"
-                    className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#4ade80] font-mono"
+                    className={`w-full rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm focus:outline-none font-mono transition-colors ${
+                      isIllustrative
+                        ? 'bg-[#fbf7ee] border border-[#ede4d4] text-[#212d27] placeholder:text-[#8d9a93] focus:border-[#2d6a4f] focus:bg-white'
+                        : 'bg-[#101418] border border-[#3d4a3e] text-white focus:border-[#4ade80]'
+                    }`}
                   />
                 </div>
-                <p className="text-[10px] text-slate-400 font-mono mt-1">
+                <p className={`text-[10px] font-mono mt-1 ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
                   Must be an existing public LeetCode handle to sync your stats.
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">Create Password</label>
+                <label className={`block text-xs font-mono mb-1 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>Create Password</label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                  <Lock className={`w-4 h-4 absolute left-3 top-2.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-500'}`} />
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    required
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
-                    placeholder="Minimum 6 characters"
-                    className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg pl-9 pr-10 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#4ade80]"
+                    placeholder="Choose an account password"
+                    className={`w-full rounded-xl pl-9 pr-10 py-2 text-xs sm:text-sm focus:outline-none transition-colors ${
+                      isIllustrative
+                        ? 'bg-[#fbf7ee] border border-[#ede4d4] text-[#212d27] placeholder:text-[#8d9a93] focus:border-[#2d6a4f] focus:bg-white'
+                        : 'bg-[#101418] border border-[#3d4a3e] text-white focus:border-[#4ade80]'
+                    }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300"
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -239,7 +292,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               {error && (
-                <div className="text-rose-400 text-xs bg-rose-950/40 p-2.5 rounded-lg border border-rose-500/30 font-sans">
+                <div className={`text-xs p-2.5 rounded-xl border font-sans ${
+                  isIllustrative
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                    : 'text-rose-400 bg-rose-950/40 border-rose-500/30'
+                }`}>
                   {error}
                 </div>
               )}
@@ -252,7 +309,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 className="w-full"
                 leftIcon={loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
               >
-                {loading ? 'Verifying LeetCode Account...' : 'Create & Verify Account'}
+                {loading ? 'Validating LeetCode Handle...' : 'Create Account & Enter'}
               </Button>
             </form>
           )}

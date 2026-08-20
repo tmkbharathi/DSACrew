@@ -12,13 +12,14 @@ interface SubmitSolutionModalProps {
 }
 
 export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ problem, isOpen, onClose }) => {
-  const { currentUser, submitSolution, setToast } = useApp();
+  const { currentUser, submitSolution, setToast, theme } = useApp();
 
   const [submissionUrl, setSubmissionUrl] = useState('');
   const [notes, setNotes] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [verifiedStatus, setVerifiedStatus] = useState<boolean | null>(null);
   const [verifyMessage, setVerifyMessage] = useState('');
+  const isIllustrative = theme === 'illustrative';
 
   if (!isOpen) return null;
 
@@ -78,21 +79,36 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
-      <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md" onClick={onClose} />
+      <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full max-w-lg bg-[#1c2024] border border-[#3d4a3e] rounded-2xl shadow-2xl p-5 sm:p-6 z-10 my-auto flex flex-col mx-3">
+      <div
+        className={`relative w-full max-w-lg rounded-2xl shadow-2xl p-5 sm:p-6 z-10 my-auto flex flex-col mx-3 border transition-all ${
+          isIllustrative
+            ? 'bg-white border-[#ede4d4] text-[#212d27]'
+            : 'bg-[#1c2024] border-[#3d4a3e] text-white'
+        }`}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#3d4a3e] pb-3 mb-4 shrink-0">
+        <div className={`flex items-center justify-between border-b pb-3 mb-4 shrink-0 ${isIllustrative ? 'border-[#ede4d4]' : 'border-[#3d4a3e]'}`}>
           <div>
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-[#4ade80]" />
-              <h3 className="font-bold text-base sm:text-lg text-white font-sans">Mark Problem as Solved</h3>
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isIllustrative ? 'bg-[#d8f3dc] text-[#2d6a4f]' : 'bg-[#2ea043]/20 text-[#4ade80]'}`}>
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+              <h3 className={`font-bold text-base sm:text-lg font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
+                Mark Problem as Solved
+              </h3>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5 font-mono">
-              Solution for <span className="text-[#4ade80] font-semibold">{problem.title}</span>
+            <p className={`text-xs mt-1 font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+              Solution for <strong className={isIllustrative ? 'text-[#2d6a4f]' : 'text-[#4ade80]'}>{problem.title}</strong>
             </p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#262a2f]">
+          <button
+            onClick={onClose}
+            className={`p-1 rounded-lg transition-colors ${
+              isIllustrative ? 'text-[#8d9a93] hover:text-[#212d27] hover:bg-[#fbf7ee]' : 'text-slate-400 hover:text-white hover:bg-[#262a2f]'
+            }`}
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -100,13 +116,19 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
         {/* Form Body */}
         <div className="space-y-4">
           {/* Verification Banner */}
-          <div className="bg-[#101418] border border-[#3d4a3e] rounded-xl p-3 flex items-center justify-between gap-3 shrink-0">
+          <div
+            className={`rounded-xl p-3.5 flex items-center justify-between gap-3 shrink-0 border ${
+              isIllustrative
+                ? 'bg-[#fbf7ee] border-[#ede4d4]'
+                : 'bg-[#101418] border-[#3d4a3e]'
+            }`}
+          >
             <div className="flex items-center gap-2.5">
-              <ShieldCheck className="w-5 h-5 text-cyan-400 shrink-0" />
+              <ShieldCheck className={`w-5 h-5 shrink-0 ${isIllustrative ? 'text-[#0284c7]' : 'text-cyan-400'}`} />
               <div>
-                <div className="text-xs font-semibold text-white">LeetCode Live Verification</div>
-                <p className="text-[11px] text-slate-400 font-mono">
-                  Linked handle: <span className="text-cyan-400">@{currentUser.username || 'Not set'}</span>
+                <div className={`text-xs font-semibold font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>LeetCode Live Verification</div>
+                <p className={`text-[11px] font-mono ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                  Linked handle: <span className={isIllustrative ? 'text-[#0284c7] font-bold' : 'text-cyan-400'}>@{currentUser.username || 'Not set'}</span>
                 </p>
               </div>
             </div>
@@ -114,7 +136,11 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
               type="button"
               onClick={handleVerifyLeetCode}
               disabled={verifying}
-              className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-colors shrink-0 font-mono"
+              className={`text-xs px-3 py-1.5 rounded-xl font-semibold flex items-center gap-1.5 transition-colors shrink-0 font-mono shadow-sm ${
+                isIllustrative
+                  ? 'bg-[#e0f2fe] hover:bg-[#bae6fd] text-[#0284c7] border border-[#bae6fd]'
+                  : 'bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+              }`}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${verifying ? 'animate-spin' : ''}`} />
               <span>{verifying ? 'Checking...' : 'Verify LC'}</span>
@@ -125,7 +151,11 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
             <div
               className={`border text-xs p-3 rounded-xl flex items-center gap-2 ${
                 verifiedStatus
-                  ? 'bg-[#4ade80]/10 border-[#4ade80]/40 text-[#4ade80]'
+                  ? isIllustrative
+                    ? 'bg-[#d8f3dc] border-[#b7e4c7] text-[#2d6a4f]'
+                    : 'bg-[#4ade80]/10 border-[#4ade80]/40 text-[#4ade80]'
+                  : isIllustrative
+                  ? 'bg-[#fef3c7] border-[#fde68a] text-[#d97706]'
                   : 'bg-amber-500/10 border-amber-500/40 text-amber-300'
               }`}
             >
@@ -138,33 +168,41 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
             {/* LeetCode Submission / Solution Link Input */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-mono text-slate-400">LeetCode Link / Submission (Optional)</label>
-                <span className="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
-                  <ExternalLink className="w-3 h-3" /> Paste URL to auto-fill & verify
+                <label className={`block text-xs font-mono ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>LeetCode Link / Submission (Optional)</label>
+                <span className={`text-[10px] font-mono flex items-center gap-1 ${isIllustrative ? 'text-[#0284c7]' : 'text-cyan-400'}`}>
+                  <ExternalLink className="w-3 h-3" /> Paste URL to auto-fill &amp; verify
                 </span>
               </div>
               <div className="relative">
-                <ExternalLink className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <ExternalLink className={`w-4 h-4 absolute left-3 top-2.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-500'}`} />
                 <input
                   type="url"
                   value={submissionUrl}
                   onChange={(e) => handleSubmissionUrlChange(e.target.value)}
                   placeholder="https://leetcode.com/problems/... or submission URL"
-                  className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#4ade80] font-mono"
+                  className={`w-full rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm font-mono focus:outline-none transition-colors ${
+                    isIllustrative
+                      ? 'bg-[#fbf7ee] border border-[#ede4d4] text-[#212d27] placeholder:text-[#8d9a93] focus:border-[#2d6a4f] focus:bg-white'
+                      : 'bg-[#101418] border border-[#3d4a3e] text-white focus:border-[#4ade80]'
+                  }`}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">Approach & Key Notes (Optional)</label>
+              <label className={`block text-xs font-mono mb-1 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>Approach &amp; Key Notes (Optional)</label>
               <div className="relative">
-                <FileText className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <FileText className={`w-4 h-4 absolute left-3 top-2.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-500'}`} />
                 <input
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="e.g. Two-pointer approach with O(n) time, O(1) space."
-                  className="w-full bg-[#101418] border border-[#3d4a3e] rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#4ade80]"
+                  className={`w-full rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm focus:outline-none transition-colors ${
+                    isIllustrative
+                      ? 'bg-[#fbf7ee] border border-[#ede4d4] text-[#212d27] placeholder:text-[#8d9a93] focus:border-[#2d6a4f] focus:bg-white'
+                      : 'bg-[#101418] border border-[#3d4a3e] text-white focus:border-[#4ade80]'
+                  }`}
                 />
               </div>
             </div>
