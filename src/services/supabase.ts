@@ -279,6 +279,25 @@ export async function getUserRooms(userId: string): Promise<Room[]> {
   return rooms;
 }
 
+export async function getAllRooms(): Promise<Room[]> {
+  if (!supabase) return [];
+
+  const { data: roomsData, error } = await supabase
+    .from('lt_rooms')
+    .select('id')
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error || !roomsData) return [];
+
+  const rooms: Room[] = [];
+  for (const r of roomsData) {
+    const room = await getRoomById(r.id);
+    if (room) rooms.push(room);
+  }
+  return rooms;
+}
+
 export async function joinRoom(
   roomId: string,
   userId: string

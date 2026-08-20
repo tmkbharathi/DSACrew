@@ -15,26 +15,22 @@ import { SnakeGameModal } from './components/fun/SnakeGameModal';
 import { Flame, Trophy, Zap, Target } from 'lucide-react';
 
 export const App = () => {
-  const { activeRoom, currentUser, isLoggedIn } = useApp();
+  const { activeRoom, currentUser, isLoggedIn, isLandingView, setIsLandingView } = useApp();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [showLanding, setShowLanding] = useState(true);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isSnakeOpen, setIsSnakeOpen] = useState(false);
 
-  // Allow global switching back to landing page overview
-  (window as any).__setLandingView = setShowLanding;
-
-  if (!isLoggedIn || showLanding || !activeRoom) {
+  if (!isLoggedIn || isLandingView || !activeRoom) {
     return (
       <LandingPage
         onEnterRoom={(roomId) => {
           if (roomId) {
             // Room already selected via switchActiveRoom
           }
-          if (isLoggedIn) setShowLanding(false);
+          if (isLoggedIn) setIsLandingView(false);
         }}
         onEnterWorkspace={() => {
-          if (isLoggedIn) setShowLanding(false);
+          if (isLoggedIn) setIsLandingView(false);
         }}
       />
     );

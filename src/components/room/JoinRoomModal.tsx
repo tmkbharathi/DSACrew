@@ -10,7 +10,7 @@ interface JoinRoomModalProps {
 }
 
 export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const { joinRoomByCode } = useApp();
+  const { joinRoomByCode, setIsLandingView } = useApp();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
 
@@ -26,9 +26,7 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({ isOpen, onClose, o
       setCode('');
       onClose();
       if (onSuccess) onSuccess();
-      if (typeof (window as any).__setLandingView === 'function') {
-        (window as any).__setLandingView(false);
-      }
+      setIsLandingView(false);
     } else {
       setError(res.message);
     }

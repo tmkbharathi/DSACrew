@@ -39,7 +39,18 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWorkspace }) => {
-  const { currentUser, rooms, activeRoomId, switchActiveRoom, joinRoomByCode, login, logout, setToast } = useApp();
+  const {
+    currentUser,
+    rooms,
+    communityRooms,
+    activeRoomId,
+    switchActiveRoom,
+    joinRoomByCode,
+    login,
+    logout,
+    setToast,
+    setIsLandingView,
+  } = useApp();
 
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authDefaultRegister, setAuthDefaultRegister] = useState(false);
@@ -69,10 +80,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
   // Filter rooms that the user has joined or created
   const myRooms = rooms.filter((r) => isUserInRoom(r, currentUser));
   // Other rooms in the system not yet joined by this user
-  const otherRooms = rooms.filter((r) => !myRooms.some((mr) => mr.id === r.id));
+  const otherRooms = (communityRooms || []).filter((r) => !myRooms.some((mr) => mr.id === r.id));
 
   const handleSelectRoom = (roomId: string) => {
     switchActiveRoom(roomId);
+    setIsLandingView(false);
     if (onEnterRoom) {
       onEnterRoom(roomId);
     } else if (onEnterWorkspace) {

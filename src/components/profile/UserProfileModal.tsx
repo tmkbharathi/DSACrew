@@ -20,6 +20,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   const [syncError, setSyncError] = useState('');
   const [lcStats, setLcStats] = useState<LeetCodeProfileStats | null>(null);
 
+  React.useEffect(() => {
+    if (isOpen) {
+      setName(currentUser.name);
+      setUsername(currentUser.username);
+      setAvatar(currentUser.avatar);
+      setSyncError('');
+      setLcStats(null);
+    }
+  }, [isOpen, currentUser]);
+
   if (!isOpen) return null;
 
   const handleSyncLeetCode = async () => {

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import confetti from 'canvas-confetti';
 import type { Room, User, Notification, Difficulty } from '../types';
@@ -16,6 +16,7 @@ import {
   createRoom as dbCreateRoom,
   getRoomByCode,
   getUserRooms,
+  getAllRooms,
   joinRoom as dbJoinRoom,
   leaveRoom as dbLeaveRoom,
   deleteRoom as dbDeleteRoom,
@@ -35,12 +36,15 @@ import { fetchLeetCodeProfile, fetchLeetCodeProfileWithStatus } from '../service
 interface AppContextType {
   currentUser: User;
   isLoggedIn: boolean;
-  logout: () => void;
-  updateCurrentUser: (updates: Partial<User>) => void;
+  logout: () => Promise<void>;
+  updateCurrentUser: (updates: Partial<User>) => Promise<void>;
   syncUserProfileFromLeetCode: (username?: string) => Promise<boolean>;
   rooms: Room[];
+  communityRooms: Room[];
   activeRoomId: string;
   activeRoom: Room | undefined;
+  isLandingView: boolean;
+  setIsLandingView: (val: boolean) => void;
   notifications: Notification[];
   unreadCount: number;
   soundEnabled: boolean;
@@ -84,11 +88,11 @@ interface AppContextType {
   addComment: (problemId: string, content: string, codeSnippet?: string) => Promise<void>;
   deleteComment: (problemId: string, commentId: string) => Promise<void>;
   removeMember: (roomId: string, memberId: string) => Promise<void>;
-  markNotificationRead: (id: string) => void;
-  markAllNotificationsRead: () => void;
-  resetDemoData: () => void;
-  resetToDefault: () => void;
-  signOut: () => void;
+  markNotificationRead: (id: string) => Promise<void>;
+  markAllNotificationsRead: () => Promise<void>;
+  resetDemoData: () => Promise<void>;
+  resetToDefault: () => Promise<void>;
+  signOut: () => Promise<void>;
   refreshRooms: () => Promise<void>;
 }
 
@@ -109,21 +113,70 @@ export const isUserInRoom = (room?: Room, user?: User): boolean => {
   return (room.members || []).some((m) => m.id === user.id);
 };
 
-
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User>(INITIAL_CURRENT_USER);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [communityRooms, setCommunityRooms] = useState<Room[]>([]);
   const [activeRoomId, setActiveRoomId] = useState<string>('');
+  const [isLandingView, setIsLandingView] = useState<boolean>(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [toast, setToast] = useState<{ title: string; message: string; type?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Keep track of current loading user to prevent race conditions
+  const loadingUserIdRef = useRef<string | null>(null);
 
   const isLoggedIn = Boolean(currentUser.isLoggedIn && currentUser.username?.trim());
   const activeRoom = rooms.find((r) => r.id === activeRoomId) || rooms[0];
   const unreadCount = notifications.filter((n) => !n.read && n.roomId === activeRoomId).length;
   const isHost = isUserHostOfRoom(activeRoom, currentUser);
   const isAdmin = isHost;
+
+  // Centralized user data loader
+  const loadUserData = useCallback(async (userId: string, isRegistration = false) => {
+    loadingUserIdRef.current = userId;
+    try {
+      let profile = await getUserProfile(userId);
+      
+      // If during registration, retry briefly if profile row was just written
+      if (!profile && isRegistration) {
+        await new Promise((res) => setTimeout(res, 400));
+        profile = await getUserProfile(userId);
+      }
+
+      if (profile) {
+        setCurrentUser({ ...profile, isLoggedIn: true });
+      }
+
+      const [userRooms, allCommunity, userNotifs] = await Promise.all([
+        getUserRooms(userId),
+        getAllRooms(),
+        getUserNotifications(userId),
+      ]);
+
+      // Verify we haven't switched users during async fetches
+      if (loadingUserIdRef.current === userId) {
+        setRooms(userRooms);
+        setCommunityRooms(allCommunity);
+        setNotifications(userNotifs);
+
+        if (userRooms.length > 0) {
+          setActiveRoomId((prev) => {
+            if (prev && userRooms.some((r) => r.id === prev)) return prev;
+            return userRooms[0].id;
+          });
+        } else {
+          setActiveRoomId('');
+        }
+      }
+
+      return profile;
+    } catch (err) {
+      console.error('Error loading user data:', err);
+      return null;
+    }
+  }, []);
 
   // Initialize auth state from Supabase session
   useEffect(() => {
@@ -137,17 +190,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const { data: { session } } = await supabase!.auth.getSession();
         
         if (session?.user) {
-          const profile = await getUserProfile(session.user.id);
-          if (profile) {
-            setCurrentUser({ ...profile, isLoggedIn: true });
-            const userRooms = await getUserRooms(session.user.id);
-            setRooms(userRooms);
-            if (userRooms.length > 0) {
-              setActiveRoomId(userRooms[0].id);
-            }
-            const userNotifications = await getUserNotifications(session.user.id);
-            setNotifications(userNotifications);
-          }
+          await loadUserData(session.user.id);
+        } else {
+          const allCommunity = await getAllRooms();
+          setCommunityRooms(allCommunity);
         }
       } catch (err) {
         console.error('Error initializing auth:', err);
@@ -161,24 +207,37 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        const profile = await getUserProfile(session.user.id);
-        if (profile) {
-          setCurrentUser({ ...profile, isLoggedIn: true });
-          const userRooms = await getUserRooms(session.user.id);
-          setRooms(userRooms);
-          if (userRooms.length > 0) setActiveRoomId(userRooms[0].id);
+        // Only load if not already loaded for this user
+        if (currentUser.id !== session.user.id || !currentUser.isLoggedIn) {
+          await loadUserData(session.user.id);
         }
       } else if (event === 'SIGNED_OUT') {
+        loadingUserIdRef.current = null;
         setCurrentUser(INITIAL_CURRENT_USER);
         setRooms([]);
         setActiveRoomId('');
         setNotifications([]);
+        setIsLandingView(true);
+        const allCommunity = await getAllRooms();
+        setCommunityRooms(allCommunity);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [loadUserData]);
 
+  // Synchronize activeRoomId when rooms change to prevent broken room actions
+  useEffect(() => {
+    if (rooms.length > 0) {
+      if (!activeRoomId || !rooms.some((r) => r.id === activeRoomId)) {
+        setActiveRoomId(rooms[0].id);
+      }
+    } else {
+      if (activeRoomId !== '') {
+        setActiveRoomId('');
+      }
+    }
+  }, [rooms, activeRoomId]);
 
   // Subscribe to realtime updates for active room
   useEffect(() => {
@@ -196,11 +255,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [activeRoomId]);
 
   const refreshRooms = useCallback(async () => {
-    if (!isSupabaseConfigured || !currentUser.id) return;
+    if (!isSupabaseConfigured) return;
     
     try {
-      const userRooms = await getUserRooms(currentUser.id);
-      setRooms(userRooms);
+      const allCommunity = await getAllRooms();
+      setCommunityRooms(allCommunity);
+
+      if (currentUser.id && currentUser.id !== 'usr_main') {
+        const userRooms = await getUserRooms(currentUser.id);
+        setRooms(userRooms);
+        if (userRooms.length > 0) {
+          setActiveRoomId((prev) => {
+            if (prev && userRooms.some((r) => r.id === prev)) return prev;
+            return userRooms[0].id;
+          });
+        }
+      }
     } catch (err) {
       console.error('Error refreshing rooms:', err);
     }
@@ -225,6 +295,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const logout = async () => {
+    loadingUserIdRef.current = null;
     if (isSupabaseConfigured) {
       await signOutUser();
     }
@@ -232,14 +303,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setRooms([]);
     setActiveRoomId('');
     setNotifications([]);
+    setIsLandingView(true);
+    const allCommunity = await getAllRooms();
+    setCommunityRooms(allCommunity);
     setToast({ title: 'Signed Out', message: 'You have been signed out.', type: 'info' });
   };
-
 
   const updateCurrentUser = async (updates: Partial<User>) => {
     setCurrentUser((prev) => ({ ...prev, ...updates }));
     
-    if (isSupabaseConfigured && currentUser.id) {
+    if (isSupabaseConfigured && currentUser.id && currentUser.id !== 'usr_main') {
       await updateUserProfile(currentUser.id, {
         name: updates.name,
         avatar: updates.avatar,
@@ -285,23 +358,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return { success: false, message: error || 'Invalid credentials.' };
     }
 
-    const profile = await getUserProfile(user.id);
+    const profile = await loadUserData(user.id);
     if (!profile) {
-      return { success: false, message: 'User profile not found.' };
+      return { success: false, message: 'User profile not found in database.' };
     }
 
-    setCurrentUser({ ...profile, isLoggedIn: true });
-
-    // Load user's rooms
-    const userRooms = await getUserRooms(user.id);
-    setRooms(userRooms);
-    if (userRooms.length > 0) setActiveRoomId(userRooms[0].id);
-
-    // Load notifications
-    const userNotifications = await getUserNotifications(user.id);
-    setNotifications(userNotifications);
-
-    // Sync LeetCode stats
+    // Sync LeetCode stats asynchronously in background
     fetchLeetCodeProfile(profile.username).then((stats) => {
       if (stats) {
         updateCurrentUser({
@@ -314,7 +376,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setToast({ title: `Welcome back, ${profile.name}!`, message: `Signed in as @${profile.username}`, type: 'success' });
     return { success: true, message: 'Login successful.' };
   };
-
 
   const registerAccount = async (name: string, username: string, password?: string): Promise<{ success: boolean; message: string }> => {
     const cleanUsername = username.trim().toLowerCase();
@@ -331,7 +392,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return { success: false, message: 'Database not configured. Please set up Supabase.' };
     }
 
-    // Check if username already exists
+    // Check if username already exists in lt_users
     const existingUser = await getUserByUsername(cleanUsername);
     if (existingUser) {
       return { success: false, message: `Username "@${cleanUsername}" is already registered.` };
@@ -395,6 +456,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     setCurrentUser(newUser);
+    await loadUserData(user.id, true);
+
     setToast({
       title: 'Account Created!',
       message: `Welcome ${newUser.name}! Verified @${lcStats.username} (${lcStats.totalSolved} solved).`,
@@ -404,7 +467,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return { success: true, message: 'Account registered successfully.' };
   };
 
-
   const switchActiveRoom = (roomId: string) => {
     if (rooms.some((r) => r.id === roomId)) {
       setActiveRoomId(roomId);
@@ -412,7 +474,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const createRoom = async (name: string, description: string, targetDailyGoal = 1): Promise<Room | null> => {
-    if (!isSupabaseConfigured || !currentUser.id) {
+    if (!isSupabaseConfigured || !currentUser.id || currentUser.id === 'usr_main') {
       setToast({ title: 'Error', message: 'Please sign in to create a room.', type: 'error' });
       return null;
     }
@@ -429,8 +491,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return null;
     }
 
-    setRooms((prev) => [room, ...prev]);
+    setRooms((prev) => [room, ...prev.filter((r) => r.id !== room.id)]);
+    setCommunityRooms((prev) => [room, ...prev.filter((r) => r.id !== room.id)]);
     setActiveRoomId(room.id);
+    setIsLandingView(false);
 
     setToast({ title: 'Room Created!', message: `Invite code: ${room.code}`, type: 'success' });
     playAudioNotification();
@@ -449,10 +513,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const { error } = await dbDeleteRoom(roomId);
     if (error) return { success: false, message: error };
 
-    setRooms((prev) => prev.filter((r) => r.id !== roomId));
+    const remaining = rooms.filter((r) => r.id !== roomId);
+    setRooms(remaining);
+    setCommunityRooms((prev) => prev.filter((r) => r.id !== roomId));
     if (activeRoomId === roomId) {
-      const remaining = rooms.filter((r) => r.id !== roomId);
       setActiveRoomId(remaining[0]?.id || '');
+      if (remaining.length === 0) {
+        setIsLandingView(true);
+      }
     }
 
     setToast({ title: 'Room Deleted', message: `"${roomToDelete.name}" has been deleted.`, type: 'warning' });
@@ -460,7 +528,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const joinRoomByCode = async (code: string): Promise<{ success: boolean; message: string }> => {
-    if (!isSupabaseConfigured || !currentUser.id) {
+    if (!isSupabaseConfigured || !currentUser.id || currentUser.id === 'usr_main') {
       return { success: false, message: 'Please sign in to join a room.' };
     }
 
@@ -477,13 +545,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     await refreshRooms();
     setActiveRoomId(targetRoom.id);
+    setIsLandingView(false);
 
     setToast({ title: 'Room Joined!', message: `Welcome to ${targetRoom.name}!`, type: 'success' });
     playAudioNotification();
 
     return { success: true, message: `Joined ${targetRoom.name}` };
   };
-
 
   const postDailyProblem = async (problemData: {
     title: string;
@@ -493,10 +561,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     targetTimeMinutes?: number;
     date?: string;
   }) => {
-    if (!isSupabaseConfigured || !activeRoomId || !currentUser.id) return;
+    const targetRoomId = activeRoomId || activeRoom?.id;
+    if (!isSupabaseConfigured || !targetRoomId || !currentUser.id || currentUser.id === 'usr_main') return;
 
     const { problem, error } = await dbCreateProblem({
-      room_id: activeRoomId,
+      room_id: targetRoomId,
       title: problemData.title,
       url: problemData.url,
       difficulty: problemData.difficulty,
@@ -551,7 +620,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       verifiedLeetCode?: boolean;
     }
   ) => {
-    if (!isSupabaseConfigured || !currentUser.id) return;
+    if (!isSupabaseConfigured || !currentUser.id || currentUser.id === 'usr_main') return;
 
     const targetProblem = activeRoom?.dailyProblems.find((p) => p.id === problemId);
     const existingSubmission = targetProblem?.submissions.find((s) => s.userId === currentUser.id);
@@ -608,9 +677,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     playAudioNotification();
   };
 
-
   const addComment = async (problemId: string, content: string, codeSnippet?: string) => {
-    if (!isSupabaseConfigured || !currentUser.id) return;
+    if (!isSupabaseConfigured || !currentUser.id || currentUser.id === 'usr_main') return;
 
     const { error } = await dbCreateComment({
       problem_id: problemId,
@@ -684,7 +752,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setNotifications((prev) =>
       prev.map((n) => (n.roomId === activeRoomId ? { ...n, read: true } : n))
     );
-    if (isSupabaseConfigured && currentUser.id) {
+    if (isSupabaseConfigured && currentUser.id && currentUser.id !== 'usr_main') {
       await dbMarkAllNotificationsRead(currentUser.id, activeRoomId);
     }
   };
@@ -693,7 +761,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await logout();
     setToast({ title: 'Workspace Reset', message: 'Signed out and cleared local data.', type: 'info' });
   };
-
 
   return (
     <AppContext.Provider
@@ -704,8 +771,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         updateCurrentUser,
         syncUserProfileFromLeetCode,
         rooms,
+        communityRooms,
         activeRoomId,
         activeRoom,
+        isLandingView,
+        setIsLandingView,
         notifications,
         unreadCount,
         soundEnabled,

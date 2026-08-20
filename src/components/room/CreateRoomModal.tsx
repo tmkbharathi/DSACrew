@@ -10,7 +10,7 @@ interface CreateRoomModalProps {
 }
 
 export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const { createRoom } = useApp();
+  const { createRoom, setIsLandingView } = useApp();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [dailyGoal, setDailyGoal] = useState(1);
@@ -27,9 +27,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClos
     onClose();
 
     if (onSuccess) onSuccess();
-    if (typeof (window as any).__setLandingView === 'function') {
-      (window as any).__setLandingView(false);
-    }
+    setIsLandingView(false);
   };
 
   return (

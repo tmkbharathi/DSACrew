@@ -35,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen = false,
   onMobileClose,
 }) => {
-  const { activeRoom, currentUser, isHost, deleteRoom, removeMember, setToast } = useApp();
+  const { activeRoom, currentUser, isHost, deleteRoom, removeMember, setToast, setIsLandingView } = useApp();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDesktopMembersOpen, setIsDesktopMembersOpen] = useState(true);
@@ -129,11 +129,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <div className="flex gap-1.5 pt-0.5">
           <button
-            onClick={() => {
-              if (typeof (window as any).__setLandingView === 'function') {
-                (window as any).__setLandingView(true);
-              }
-            }}
+            onClick={() => setIsLandingView(true)}
             className="flex-1 bg-[#161b22] hover:bg-[#21262d] text-slate-200 border border-[#30363d] rounded-lg py-1.5 flex justify-center items-center gap-1.5 text-xs font-medium transition-colors"
             title="Switch or Join Practice Rooms"
           >

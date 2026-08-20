@@ -35,6 +35,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
     setSoundEnabled,
     resetToDefault,
     signOut,
+    setIsLandingView,
   } = useApp();
 
   const [isPostOpen, setIsPostOpen] = useState(false);
@@ -79,11 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
             {/* Logo */}
             <div
               className="flex items-center gap-2 select-none shrink-0 cursor-pointer"
-              onClick={() => {
-                if (typeof (window as any).__setLandingView === 'function') {
-                  (window as any).__setLandingView(true);
-                }
-              }}
+              onClick={() => setIsLandingView(true)}
               title="Return to Landing Page Overview"
             >
               <div className="w-8 h-8 rounded-lg bg-[#0d1117] border border-[#30363d] flex items-center justify-center text-[#3fb950] font-mono font-bold text-sm shadow-sm">
@@ -97,11 +94,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
             {/* Active Room Indicator Pill */}
             {activeRoom && (
               <div
-                onClick={() => {
-                  if (typeof (window as any).__setLandingView === 'function') {
-                    (window as any).__setLandingView(true);
-                  }
-                }}
+                onClick={() => setIsLandingView(true)}
                 className="flex items-center gap-2 bg-[#0d1117] hover:bg-[#21262d] border border-[#30363d] rounded-lg px-2.5 sm:px-3 py-1.5 transition-colors cursor-pointer max-w-[160px] xs:max-w-[200px] sm:max-w-[280px]"
                 title="Active Room • Click to switch in Rooms Hub"
               >
@@ -242,9 +235,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
 
                     <button
                       onClick={() => {
-                        if (typeof (window as any).__setLandingView === 'function') {
-                          (window as any).__setLandingView(true);
-                        }
+                        setIsLandingView(true);
                         setIsUserMenuOpen(false);
                       }}
                       className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#21262d] text-left transition-colors"

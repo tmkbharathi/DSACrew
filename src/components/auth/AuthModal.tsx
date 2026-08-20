@@ -16,7 +16,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onSuccess,
   defaultRegisterMode = false,
 }) => {
-  const { login, registerAccount } = useApp();
+  const { login, registerAccount, setIsLandingView } = useApp();
   const [isRegisterMode, setIsRegisterMode] = useState(defaultRegisterMode);
   const [usernameInput, setUsernameInput] = useState('');
   const [nameInput, setNameInput] = useState('');
@@ -46,9 +46,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setError('');
       onClose();
       if (onSuccess) onSuccess();
-      if (typeof (window as any).__setLandingView === 'function') {
-        (window as any).__setLandingView(false);
-      }
+      setIsLandingView(false);
     } else {
       setError(res.message);
     }
@@ -74,9 +72,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setError('');
       onClose();
       if (onSuccess) onSuccess();
-      if (typeof (window as any).__setLandingView === 'function') {
-        (window as any).__setLandingView(false);
-      }
+      setIsLandingView(false);
     } else {
       setError(res.message);
     }
