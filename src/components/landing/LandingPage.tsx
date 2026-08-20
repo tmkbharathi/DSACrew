@@ -659,26 +659,52 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
             {/* Left Control Column (Profile + Join by Code + Create Room) */}
             <div className="lg:col-span-5 space-y-5">
               {/* User Profile Card */}
-              <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
+              <div
+                className={`rounded-2xl p-5 sm:p-6 shadow-xl space-y-4 border transition-all ${
+                  isIllustrative
+                    ? 'bg-white border-[#ede4d4] text-[#212d27]'
+                    : 'bg-[#161b22] border-[#30363d] text-white'
+                }`}
+              >
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <img
                       src={currentUser.avatar}
                       alt={currentUser.name}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-[#2ea043]/60 shadow-md"
+                      className="w-16 h-16 rounded-full object-cover border-2 border-[#2d6a4f]/60 shadow-md"
                     />
-                    <div className="absolute -bottom-1 -right-1 bg-[#161b22] rounded-full p-0.5 border border-[#30363d]">
-                      <ShieldCheck className="w-4 h-4 text-[#3fb950]" />
+                    <div
+                      className={`absolute -bottom-1 -right-1 rounded-full p-0.5 border ${
+                        isIllustrative ? 'bg-white border-[#ede4d4]' : 'bg-[#161b22] border-[#30363d]'
+                      }`}
+                    >
+                      <ShieldCheck className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
                     </div>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <h2 className="text-lg sm:text-xl font-bold text-white font-sans truncate">{currentUser.name}</h2>
-                      <span className="bg-[#2ea043]/20 text-[#3fb950] text-[10px] px-2 py-0.5 rounded font-mono font-bold border border-[#2ea043]/30">
+                      <h2
+                        className={`text-lg sm:text-xl font-bold font-sans truncate ${
+                          isIllustrative ? 'text-[#212d27]' : 'text-white'
+                        }`}
+                      >
+                        {currentUser.name}
+                      </h2>
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold border ${
+                          isIllustrative
+                            ? 'bg-[#d8f3dc] text-[#2d6a4f] border-[#b7e4c7]'
+                            : 'bg-[#2ea043]/20 text-[#3fb950] border-[#2ea043]/30'
+                        }`}
+                      >
                         ONLINE
                       </span>
                     </div>
-                    <div className="text-xs text-cyan-400 font-mono mt-1 flex items-center gap-1.5 flex-wrap">
+                    <div
+                      className={`text-xs font-mono mt-1 flex items-center gap-1.5 flex-wrap ${
+                        isIllustrative ? 'text-[#2d6a4f]' : 'text-cyan-400'
+                      }`}
+                    >
                       <span>@{currentUser.username}</span>
                       <span>•</span>
                       <span>{currentUser.leetcodeTotalSolved ? `${currentUser.leetcodeTotalSolved} Solves` : 'Verified Handle'}</span>
@@ -687,36 +713,57 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                 </div>
 
                 {currentUser.streak > 0 && (
-                  <div className="bg-[#0d1117] p-3 rounded-xl border border-[#30363d] flex items-center justify-between text-xs">
-                    <span className="text-slate-300 font-sans flex items-center gap-1.5">
-                      <Flame className="w-4 h-4 text-[#f0883e] fill-[#f0883e]" />
+                  <div
+                    className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
+                      isIllustrative
+                        ? 'bg-[#fbf7ee] border-[#ede4d4]'
+                        : 'bg-[#0d1117] border-[#30363d]'
+                    }`}
+                  >
+                    <span className={`font-sans flex items-center gap-1.5 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-300'}`}>
+                      <Flame className="w-4 h-4 text-[#ea580c] fill-[#ea580c]" />
                       <span>Current Daily Streak</span>
                     </span>
-                    <span className="font-bold text-[#f0883e] font-mono">{currentUser.streak} consecutive days</span>
+                    <span className="font-bold text-[#ea580c] font-mono">{currentUser.streak} consecutive days</span>
                   </div>
                 )}
 
-                <Button
-                  variant="primary"
-                  size="md"
+                <button
+                  type="button"
                   onClick={() => setIsCreateOpen(true)}
-                  leftIcon={<Plus className="w-4 h-4" />}
-                  className="w-full justify-center py-3"
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-xs sm:text-sm shadow-md transition-all active:scale-95 ${
+                    isIllustrative
+                      ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white'
+                      : 'bg-[#2ea043] hover:bg-[#3fb950] text-white'
+                  }`}
                 >
-                  Create New Practice Room
-                </Button>
+                  <Plus className="w-4 h-4" />
+                  <span>Create New Practice Room</span>
+                </button>
               </div>
 
               {/* Join by Code Interactive Box */}
-              <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-5 sm:p-6 shadow-xl space-y-3.5">
+              <div
+                className={`rounded-2xl p-5 sm:p-6 shadow-xl space-y-3.5 border transition-all ${
+                  isIllustrative
+                    ? 'bg-white border-[#ede4d4]'
+                    : 'bg-[#161b22] border-[#30363d]'
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <KeyRound className="w-4 h-4 text-[#3fb950]" />
-                    <h3 className="text-sm sm:text-base font-bold text-white font-sans">
+                    <KeyRound className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
+                    <h3
+                      className={`text-sm sm:text-base font-bold font-sans ${
+                        isIllustrative ? 'text-[#212d27]' : 'text-white'
+                      }`}
+                    >
                       Join Room by Code
                     </h3>
                   </div>
-                  <span className="text-xs text-slate-400 font-mono">6-8 CHAR CODE</span>
+                  <span className={`text-xs font-mono ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
+                    6-8 CHAR CODE
+                  </span>
                 </div>
 
                 <form onSubmit={handleQuickJoin} className="space-y-3">
@@ -731,43 +778,59 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                       }}
                       placeholder="ENTER ROOM CODE (e.g. 7X9K2P)"
                       maxLength={8}
-                      className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-sm sm:text-base text-white font-mono uppercase tracking-wider focus:outline-none focus:border-[#3fb950] transition-colors placeholder-slate-500"
+                      className={`w-full rounded-xl px-4 py-3 text-sm sm:text-base font-mono uppercase tracking-wider focus:outline-none transition-colors ${
+                        isIllustrative
+                          ? 'bg-[#f7f3eb] border border-[#ede4d4] text-[#212d27] placeholder:text-[#8d9a93] focus:border-[#2d6a4f] focus:bg-white'
+                          : 'bg-[#0d1117] border border-[#30363d] text-white placeholder-slate-500 focus:border-[#3fb950]'
+                      }`}
                     />
                   </div>
-                  <Button
-                    variant="primary"
-                    size="md"
+                  <button
                     type="submit"
-                    rightIcon={<ArrowRight className="w-4 h-4" />}
-                    className="w-full justify-center py-2.5"
+                    className={`w-full py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 ${
+                      isIllustrative
+                        ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white'
+                        : 'bg-[#2ea043] hover:bg-[#3fb950] text-white'
+                    }`}
                   >
-                    Join &amp; Enter Room
-                  </Button>
+                    <span>Join &amp; Enter Room</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 </form>
 
                 {joinError && (
-                  <div className="text-xs text-rose-400 bg-rose-950/40 p-2.5 rounded-lg border border-rose-500/30 flex items-center gap-2 font-sans">
-                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                  <div className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200 flex items-center gap-2 font-sans">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
                     <span>{joinError}</span>
                   </div>
                 )}
 
                 {joinSuccess && (
-                  <div className="text-xs text-[#3fb950] bg-[#2ea043]/15 p-2.5 rounded-lg border border-[#2ea043]/30 flex items-center gap-2 font-sans">
-                    <CheckCircle2 className="w-4 h-4 shrink-0 text-[#3fb950]" />
+                  <div className="text-xs text-[#2d6a4f] bg-[#d8f3dc] p-2.5 rounded-lg border border-[#b7e4c7] flex items-center gap-2 font-sans">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-[#2d6a4f]" />
                     <span>{joinSuccess}</span>
                   </div>
                 )}
               </div>
 
               {/* Official Daily Challenge Live Preview */}
-              <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-4 sm:p-5 shadow-xl space-y-3">
+              <div
+                className={`rounded-2xl p-4 sm:p-5 shadow-xl space-y-3 border transition-all ${
+                  isIllustrative
+                    ? 'bg-white border-[#ede4d4]'
+                    : 'bg-[#161b22] border-[#30363d]'
+                }`}
+              >
                 <div className="flex justify-between items-center">
                   <button
                     type="button"
                     onClick={handleFetchDailyPreview}
                     disabled={loadingDaily}
-                    className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1.5 font-mono font-medium"
+                    className={`text-xs transition-colors flex items-center gap-1.5 font-mono font-medium ${
+                      isIllustrative
+                        ? 'text-[#2d6a4f] hover:text-[#1b4332]'
+                        : 'text-cyan-400 hover:text-cyan-300'
+                    }`}
                   >
                     {loadingDaily ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                     <span>Preview Today's Official Daily Challenge</span>
@@ -775,22 +838,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                 </div>
 
                 {quickDaily && (
-                  <div className="p-3.5 bg-[#0d1117] border border-[#30363d] rounded-xl text-xs space-y-1.5">
+                  <div
+                    className={`p-3.5 rounded-xl border text-xs space-y-1.5 ${
+                      isIllustrative
+                        ? 'bg-[#fbf7ee] border-[#ede4d4]'
+                        : 'bg-[#0d1117] border-[#30363d]'
+                    }`}
+                  >
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-white truncate max-w-[260px] font-sans">{quickDaily.title}</span>
+                      <span className={`font-semibold truncate max-w-[260px] font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
+                        {quickDaily.title}
+                      </span>
                       <span
                         className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
                           quickDaily.difficulty === 'Hard'
-                            ? 'text-rose-400 border-rose-500/30'
+                            ? 'text-rose-600 bg-rose-50 border-rose-200'
                             : quickDaily.difficulty === 'Medium'
-                            ? 'text-amber-400 border-amber-500/30'
-                            : 'text-[#3fb950] border-[#2ea043]/30'
+                            ? 'text-amber-700 bg-amber-50 border-amber-200'
+                            : 'text-[#2d6a4f] bg-emerald-50 border-emerald-200'
                         }`}
                       >
                         {quickDaily.difficulty}
                       </span>
                     </div>
-                    <div className="text-[10px] text-slate-400 font-mono">Scheduled: {quickDaily.date}</div>
+                    <div className={`text-[10px] font-mono ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
+                      Scheduled: {quickDaily.date}
+                    </div>
                   </div>
                 )}
               </div>
@@ -800,12 +873,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
             <div className="lg:col-span-7 space-y-5">
               <div className="flex items-center justify-between pb-1">
                 <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-[#3fb950]" />
-                  <h3 className="text-lg sm:text-xl font-bold text-white font-sans">
+                  <Users className={`w-5 h-5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
+                  <h3
+                    className={`text-lg sm:text-xl font-bold font-sans ${
+                      isIllustrative ? 'text-[#212d27]' : 'text-white'
+                    }`}
+                  >
                     Your Active Practice Rooms ({myRooms.length})
                   </h3>
                 </div>
-                <span className="text-xs text-slate-400 font-sans hidden sm:inline">Select a room to enter workspace</span>
+                <span className={`text-xs font-sans hidden sm:inline ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
+                  Select a room to enter workspace
+                </span>
               </div>
 
               {myRooms.length > 0 ? (
@@ -822,42 +901,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                       <div
                         key={room.id}
                         onClick={() => handleSelectRoom(room.id)}
-                        className={`bg-[#161b22] hover:bg-[#1c222b] border rounded-2xl p-5 cursor-pointer transition-all space-y-3.5 group shadow-md hover:border-slate-500 ${
-                          isActive
-                            ? 'border-[#2ea043]/50 ring-1 ring-[#2ea043]/30'
-                            : 'border-[#30363d]'
+                        className={`rounded-2xl p-5 cursor-pointer transition-all space-y-3.5 group shadow-md cozy-card border ${
+                          isIllustrative
+                            ? isActive
+                              ? 'bg-white border-[#2d6a4f] ring-2 ring-[#2d6a4f]/20'
+                              : 'bg-white hover:bg-[#fffdfa] border-[#ede4d4] hover:border-[#d6cbba]'
+                            : isActive
+                              ? 'bg-[#161b22] border-[#2ea043]/50 ring-1 ring-[#2ea043]/30'
+                              : 'bg-[#161b22] hover:bg-[#1c222b] border-[#30363d] hover:border-slate-500'
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <h4 className="font-bold text-base text-white font-sans truncate group-hover:text-[#3fb950] transition-colors">
+                              <h4
+                                className={`font-bold text-base font-sans truncate transition-colors ${
+                                  isIllustrative
+                                    ? 'text-[#212d27] group-hover:text-[#2d6a4f]'
+                                    : 'text-white group-hover:text-[#3fb950]'
+                                }`}
+                              >
                                 {room.name}
                               </h4>
                               {isHost ? (
-                                <span className="bg-purple-500/20 text-purple-300 text-[10px] px-2 py-0.5 rounded font-bold border border-purple-500/30 font-mono shrink-0">
+                                <span className="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded font-bold border border-purple-200 font-mono shrink-0">
                                   HOST
                                 </span>
                               ) : (
-                                <span className="bg-slate-800 text-slate-300 text-[10px] px-2 py-0.5 rounded font-mono shrink-0 border border-slate-700">
+                                <span className="bg-slate-100 text-slate-700 text-[10px] px-2 py-0.5 rounded font-mono shrink-0 border border-slate-200">
                                   MEMBER
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-slate-400 line-clamp-1 mt-1 font-sans">
+                            <p className={`text-xs line-clamp-1 mt-1 font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
                               {room.description || 'Collaborative daily practice room.'}
                             </p>
                           </div>
 
                           <button
                             onClick={(e) => handleCopyCode(room.code, e)}
-                            className="bg-[#21262d] hover:bg-[#30363d] text-slate-200 font-mono text-[11px] px-2.5 py-1 rounded-lg border border-[#30363d] flex items-center gap-1.5 shrink-0 transition-colors"
+                            className={`font-mono text-[11px] px-2.5 py-1 rounded-lg border flex items-center gap-1.5 shrink-0 transition-colors ${
+                              isIllustrative
+                                ? 'bg-[#f7f3eb] hover:bg-[#ede4d4] text-[#212d27] border-[#ede4d4]'
+                                : 'bg-[#21262d] hover:bg-[#30363d] text-slate-200 border-[#30363d]'
+                            }`}
                             title="Copy Room Invite Code"
                             aria-label="Copy Room Code"
                           >
                             <span>{room.code}</span>
                             {copiedRoomCode === room.code ? (
-                              <Check className="w-3 h-3 text-[#3fb950]" />
+                              <Check className="w-3 h-3 text-[#2d6a4f]" />
                             ) : (
                               <Copy className="w-3 h-3 text-slate-400" />
                             )}
@@ -865,43 +958,63 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                         </div>
 
                         {todayProblem ? (
-                          <div className="bg-[#0d1117] px-3 py-2 rounded-xl border border-[#30363d] text-xs flex items-center justify-between">
-                            <span className="text-slate-300 truncate max-w-[200px] font-sans">
-                              Challenge: <strong className="text-white">{todayProblem.title}</strong>
+                          <div
+                            className={`px-3 py-2 rounded-xl border text-xs flex items-center justify-between ${
+                              isIllustrative
+                                ? 'bg-[#fbf7ee] border-[#ede4d4]'
+                                : 'bg-[#0d1117] border-[#30363d]'
+                            }`}
+                          >
+                            <span className={`truncate max-w-[200px] font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-300'}`}>
+                              Challenge: <strong className={isIllustrative ? 'text-[#212d27]' : 'text-white'}>{todayProblem.title}</strong>
                             </span>
                             <span
                               className={`font-mono font-semibold text-[11px] ${
                                 todayProblem.difficulty === 'Hard'
-                                  ? 'text-rose-400'
+                                  ? 'text-rose-600'
                                   : todayProblem.difficulty === 'Medium'
-                                  ? 'text-amber-400'
-                                  : 'text-[#3fb950]'
+                                  ? 'text-amber-700'
+                                  : isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'
                               }`}
                             >
                               {todayProblem.difficulty}
                             </span>
                           </div>
                         ) : (
-                          <div className="bg-[#0d1117] px-3 py-2 rounded-xl border border-[#30363d] text-xs text-slate-400 font-sans flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                          <div
+                            className={`px-3 py-2 rounded-xl border text-xs font-sans flex items-center gap-1.5 ${
+                              isIllustrative
+                                ? 'bg-[#fbf7ee] border-[#ede4d4] text-[#8d9a93]'
+                                : 'bg-[#0d1117] border-[#30363d] text-slate-400'
+                            }`}
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
                             <span>Auto-fetch daily challenge on entry</span>
                           </div>
                         )}
 
-                        <div className="flex items-center justify-between text-xs text-slate-400 border-t border-[#30363d]/60 pt-3">
+                        <div
+                          className={`flex items-center justify-between text-xs border-t pt-3 ${
+                            isIllustrative ? 'border-[#ede4d4] text-[#5c6b63]' : 'border-[#30363d]/60 text-slate-400'
+                          }`}
+                        >
                           <div className="flex items-center gap-3">
                             <span className="flex items-center gap-1">
-                              <Users className="w-3.5 h-3.5 text-slate-400" />
-                              <strong className="text-slate-200 font-sans">{room.members.length}</strong>{' '}
+                              <Users className="w-3.5 h-3.5" />
+                              <strong className={isIllustrative ? 'text-[#212d27]' : 'text-slate-200'}>{room.members.length}</strong>{' '}
                               {room.members.length === 1 ? 'member' : 'members'}
                             </span>
                             <span className="flex items-center gap-1">
-                              <Target className="w-3.5 h-3.5 text-[#3fb950]" />
-                              <strong className="text-slate-200 font-sans">{room.targetDailyGoal || 1}</strong>/day
+                              <Target className={`w-3.5 h-3.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
+                              <strong className={isIllustrative ? 'text-[#212d27]' : 'text-slate-200'}>{room.targetDailyGoal || 1}</strong>/day
                             </span>
                           </div>
 
-                          <span className="text-[#3fb950] font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform text-xs font-sans">
+                          <span
+                            className={`font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform text-xs font-sans ${
+                              isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'
+                            }`}
+                          >
                             Enter Workspace <ArrowRight className="w-3.5 h-3.5" />
                           </span>
                         </div>
@@ -911,25 +1024,42 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                 </div>
               ) : (
                 /* Empty state when no joined rooms */
-                <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-8 sm:p-12 text-center space-y-4 shadow-xl">
-                  <div className="w-14 h-14 rounded-2xl bg-[#2ea043]/15 text-[#3fb950] flex items-center justify-center mx-auto border border-[#2ea043]/30">
+                <div
+                  className={`rounded-2xl p-8 sm:p-12 text-center space-y-4 shadow-xl border ${
+                    isIllustrative
+                      ? 'bg-white border-[#ede4d4]'
+                      : 'bg-[#161b22] border-[#30363d]'
+                  }`}
+                >
+                  <div
+                    className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto border ${
+                      isIllustrative
+                        ? 'bg-[#d8f3dc] text-[#2d6a4f] border-[#b7e4c7]'
+                        : 'bg-[#2ea043]/15 text-[#3fb950] border-[#2ea043]/30'
+                    }`}
+                  >
                     <Users className="w-7 h-7" />
                   </div>
                   <div className="space-y-1.5 max-w-md mx-auto">
-                    <h4 className="font-bold text-lg text-white font-sans">No Active Practice Rooms Yet</h4>
-                    <p className="text-xs sm:text-sm text-slate-400 font-sans leading-relaxed">
+                    <h4 className={`font-bold text-lg font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
+                      No Active Practice Rooms Yet
+                    </h4>
+                    <p className={`text-xs sm:text-sm font-sans leading-relaxed ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
                       You haven't joined or created any practice rooms. Enter an invite code from your squad on the left, or create your first room!
                     </p>
                   </div>
                   <div className="pt-2 flex justify-center">
-                    <Button
-                      variant="primary"
-                      size="md"
+                    <button
                       onClick={() => setIsCreateOpen(true)}
-                      leftIcon={<Plus className="w-4 h-4" />}
+                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm shadow-md transition-all active:scale-95 ${
+                        isIllustrative
+                          ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white'
+                          : 'bg-[#2ea043] hover:bg-[#3fb950] text-white'
+                      }`}
                     >
-                      Create Your First Room
-                    </Button>
+                      <Plus className="w-4 h-4" />
+                      <span>Create Your First Room</span>
+                    </button>
                   </div>
                 </div>
               )}
