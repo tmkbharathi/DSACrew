@@ -4,6 +4,15 @@ class SoundManager {
   private ctx: AudioContext | null = null;
   public enabled: boolean = true;
 
+  constructor() {
+    try {
+      const saved = localStorage.getItem('leettracker_snake_spider_muted');
+      if (saved !== null) {
+        this.enabled = saved !== 'true';
+      }
+    } catch {}
+  }
+
   private initCtx() {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;

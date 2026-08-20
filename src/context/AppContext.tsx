@@ -120,7 +120,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activeRoomId, setActiveRoomId] = useState<string>('');
   const [isLandingView, setIsLandingView] = useState<boolean>(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [soundEnabled, setSoundEnabledState] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('leettracker_sound_enabled');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+      return true;
+    } catch {
+      return true;
+    }
+  });
+
+  const setSoundEnabled = useCallback((enabled: boolean) => {
+    setSoundEnabledState(enabled);
+    try {
+      localStorage.setItem('leettracker_sound_enabled', String(enabled));
+    } catch {}
+  }, []);
+
   const [toast, setToast] = useState<{ title: string; message: string; type?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

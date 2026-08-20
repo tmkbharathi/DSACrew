@@ -26,8 +26,24 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
   });
 
   const [isHovered, setIsHovered] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
+  const [isMuted, setIsMuted] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('leettracker_snake_spider_muted') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [isVisible, setIsVisible] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('leettracker_snake_spider_visible');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+      return true;
+    } catch {
+      return true;
+    }
+  });
   const [showNotification, setShowNotification] = useState(true);
 
   const targetRef = useRef<{ x: number; y: number }>({ x: 200, y: 200 });
@@ -164,12 +180,22 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
   };
 
   const toggleVisibility = () => {
-    setIsVisible((prev) => !prev);
+    setIsVisible((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('leettracker_snake_spider_visible', String(next));
+      } catch {}
+      return next;
+    });
   };
 
   const toggleMute = () => {
-    sounds.enabled = isMuted;
-    setIsMuted(!isMuted);
+    const next = !isMuted;
+    sounds.enabled = !next;
+    setIsMuted(next);
+    try {
+      localStorage.setItem('leettracker_snake_spider_muted', String(next));
+    } catch {}
   };
 
   return (
@@ -353,31 +379,45 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
       )}
 
       {/* Discrete Corner Relaxation / Spider Controls Floating Bar */}
-      <div className="fixed bottom-4 right-4 z-30 flex items-center gap-1.5 bg-[#161b22]/90 border border-[#30363d] px-2.5 py-1.5 rounded-full shadow-lg backdrop-blur-md text-xs text-slate-300">
-        <button
-          onClick={onOpenSnakeGame}
-          className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 transition-all text-[11px] font-medium"
-          title="Open Classic Snake Game"
-        >
-          <Gamepad2 className="w-3.5 h-3.5" />
-          <span>Play Snake</span>
-        </button>
+      <div className="fixed bottom-4 right-4 z-30 flex items-center gap-1.5 bg-[#161b22]/90 border border-[#30363d] p-1.5 rounded-full shadow-lg backdrop-blur-md text-xs text-slate-300">
+        {isVisible ? (
+          <>
+            <button
+              onClick={onOpenSnakeGame}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 transition-all text-[11px] font-medium"
+              title="Open Classic Snake Game"
+            >
+              <Gamepad2 className="w-3.5 h-3.5" />
+              <span>Play Snake</span>
+            </button>
 
-        <button
-          onClick={toggleVisibility}
-          className="p-1 rounded-full hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-          title={isVisible ? 'Hide Spider' : 'Show Spider'}
-        >
-          {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
-        </button>
+            <button
+              onClick={toggleVisibility}
+              className="p-1 rounded-full hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+              title="Hide Snake & Spider"
+            >
+              <Eye className="w-3.5 h-3.5" />
+            </button>
 
-        <button
-          onClick={toggleMute}
-          className="p-1 rounded-full hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-          title={isMuted ? 'Unmute Game Sounds' : 'Mute Game Sounds'}
-        >
-          {isMuted ? <VolumeX className="w-3.5 h-3.5 text-slate-500" /> : <Volume2 className="w-3.5 h-3.5" />}
-        </button>
+            <button
+              onClick={toggleMute}
+              className="p-1 rounded-full hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+              title={isMuted ? 'Unmute Game Sounds' : 'Mute Game Sounds'}
+            >
+              {isMuted ? <VolumeX className="w-3.5 h-3.5 text-slate-500" /> : <Volume2 className="w-3.5 h-3.5" />}
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={toggleVisibility}
+            className="p-1 px-2.5 rounded-full hover:bg-[#21262d] text-slate-400 hover:text-emerald-400 transition-colors flex items-center gap-1.5 text-[11px] font-medium"
+            title="Unhide Snake & Spider Relaxer"
+          >
+            <Gamepad2 className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="text-[11px] text-slate-400 hover:text-white">Play Snake</span>
+            <EyeOff className="w-3 h-3 text-slate-500 ml-0.5" />
+          </button>
+        )}
       </div>
 
       {/* Custom keyframe styles for spider leg animations */}
