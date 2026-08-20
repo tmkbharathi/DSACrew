@@ -69,7 +69,8 @@ const RANDOM_BANK = [
 ];
 
 export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: initialProblem }) => {
-  const { currentUser, activeRoom, deleteProblem, postDailyProblem, setActiveProblemId, setToast, isHost } = useApp();
+  const { currentUser, activeRoom, deleteProblem, postDailyProblem, setActiveProblemId, setToast, isHost, theme } = useApp();
+  const isIllustrative = theme === 'illustrative';
 
   const getTodayStr = () => new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState<string>(initialProblem?.date || getTodayStr());
@@ -232,10 +233,18 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
   return (
     <div className="space-y-4">
       {/* 7-Day Interactive Date Navigation Bar */}
-      <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-sm">
+      <div
+        className={`rounded-2xl p-2.5 flex items-center justify-between gap-2 shadow-sm transition-all ${
+          isIllustrative
+            ? 'bg-white border border-[#ede4d4]'
+            : 'bg-[#161b22] border border-[#30363d]'
+        }`}
+      >
         <button
           onClick={handlePrevDay}
-          className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#21262d] transition-colors shrink-0"
+          className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+            isIllustrative ? 'text-slate-400 hover:text-black hover:bg-[#fbf7ee]' : 'text-slate-400 hover:text-white hover:bg-[#21262d]'
+          }`}
           title="Previous Day"
           aria-label="Previous Day"
         >
@@ -253,25 +262,29 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
               <button
                 key={dStr}
                 onClick={() => setSelectedDate(dStr)}
-                className={`flex flex-col items-center justify-center min-w-[50px] sm:min-w-[70px] py-1 px-1.5 sm:px-2 rounded-lg border text-xs transition-all relative ${
+                className={`flex flex-col items-center justify-center min-w-[50px] sm:min-w-[70px] py-1.5 px-2 rounded-xl border text-xs transition-all relative ${
                   isSelected
-                    ? 'bg-[#2ea043]/20 border-[#2ea043]/60 text-white font-bold shadow-sm'
+                    ? isIllustrative
+                      ? 'bg-[#52b788] border-[#2d6a4f] text-white font-bold shadow-sm'
+                      : 'bg-[#2ea043]/20 border-[#2ea043]/60 text-white font-bold shadow-sm'
+                    : isIllustrative
+                    ? 'bg-[#fbf7ee] border-[#ede4d4] text-[#212d27] hover:bg-white hover:border-[#2d6a4f]/40'
                     : 'bg-[#0d1117] border-[#30363d] text-slate-300 hover:text-white hover:border-slate-500'
                 }`}
               >
-                <span className={`text-[10px] font-sans font-medium ${isSelected ? 'text-[#3fb950]' : 'text-slate-400'}`}>
+                <span className={`text-[10px] font-sans font-medium ${isSelected ? 'text-white' : isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
                   {isToday ? 'Today' : new Date(dStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' })}
                 </span>
-                <span className="text-xs font-mono font-bold text-white flex items-center gap-1">
+                <span className={`text-xs font-mono font-bold flex items-center gap-1 ${isSelected ? 'text-white' : isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
                   {new Date(dStr + 'T00:00:00').getDate()}
                   {dayProblems.length > 1 && (
-                    <span className="text-[9px] font-normal text-slate-400 font-mono">({dayProblems.length})</span>
+                    <span className={`text-[9px] font-normal font-mono ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>({dayProblems.length})</span>
                   )}
                 </span>
 
                 {/* Solved Status Indicator Dot */}
                 {userSolved && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950] absolute top-1 right-1 ring-1 ring-[#161b22]" />
+                  <span className={`w-1.5 h-1.5 rounded-full absolute top-1 right-1 ring-1 ring-white ${isIllustrative ? 'bg-[#2d6a4f]' : 'bg-[#3fb950]'}`} />
                 )}
               </button>
             );
@@ -280,7 +293,9 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
 
         <button
           onClick={handleNextDay}
-          className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#21262d] transition-colors shrink-0"
+          className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+            isIllustrative ? 'text-slate-400 hover:text-black hover:bg-[#fbf7ee]' : 'text-slate-400 hover:text-white hover:bg-[#21262d]'
+          }`}
           title="Next Day"
           aria-label="Next Day"
         >
@@ -290,14 +305,24 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
 
       {/* Main Challenge Card or Empty State */}
       {!activeProblem ? (
-        <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 sm:p-8 flex flex-col items-center justify-center text-center shadow-lg relative overflow-hidden">
-          <div className="w-10 h-10 rounded-xl bg-[#2ea043]/10 text-[#3fb950] flex items-center justify-center mb-3 border border-[#2ea043]/20">
+        <div
+          className={`rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center text-center shadow-md relative overflow-hidden border ${
+            isIllustrative
+              ? 'bg-white border-[#ede4d4]'
+              : 'bg-[#161b22] border-[#30363d]'
+          }`}
+        >
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 border ${
+            isIllustrative ? 'bg-[#d8f3dc] text-[#2d6a4f] border-[#b7e4c7]' : 'bg-[#2ea043]/10 text-[#3fb950] border-[#2ea043]/20'
+          }`}>
             <Sparkles className="w-5 h-5" />
           </div>
 
-          <h3 className="text-base sm:text-lg font-bold text-white font-sans mb-1">Ready for today's challenge?</h3>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto mb-4 leading-relaxed font-sans">
-            No challenges scheduled for <span className="text-[#3fb950] font-semibold">{formatDisplayDate(selectedDate)}</span> yet. Choose a problem or fetch today's LeetCode challenge.
+          <h3 className={`text-base sm:text-lg font-bold font-sans mb-1 ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
+            Ready for today's challenge?
+          </h3>
+          <p className={`text-xs sm:text-sm max-w-md mx-auto mb-4 leading-relaxed font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+            No challenges scheduled for <span className={`font-semibold ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`}>{formatDisplayDate(selectedDate)}</span> yet. Choose a problem or fetch today's LeetCode challenge.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-2.5">
@@ -332,27 +357,43 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
         </div>
       ) : isCardHidden ? (
         /* Collapsed / Hidden Challenge Strip */
-        <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-4 sm:p-4.5 flex items-center justify-between shadow-md gap-3">
+        <div
+          className={`rounded-2xl p-4 sm:p-4.5 flex items-center justify-between shadow-md gap-3 border ${
+            isIllustrative
+              ? 'bg-white border-[#ede4d4]'
+              : 'bg-[#161b22] border-[#30363d]'
+          }`}
+        >
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#3fb950] shrink-0 animate-pulse" />
+            <div className={`w-2.5 h-2.5 rounded-full shrink-0 animate-pulse ${isIllustrative ? 'bg-[#2d6a4f]' : 'bg-[#3fb950]'}`} />
             
             {allProblems.length > 1 && (
-              <div className="flex items-center gap-1 bg-[#0d1117] border border-[#30363d] rounded-lg p-0.5 shrink-0">
+              <div
+                className={`flex items-center gap-1 rounded-lg p-0.5 shrink-0 border ${
+                  isIllustrative
+                    ? 'bg-[#fbf7ee] border-[#ede4d4]'
+                    : 'bg-[#0d1117] border-[#30363d]'
+                }`}
+              >
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handlePrevProblem(); }}
-                  className="p-1 text-slate-400 hover:text-white hover:bg-[#21262d] rounded transition-colors"
+                  className={`p-1 rounded transition-colors ${
+                    isIllustrative ? 'text-slate-400 hover:text-black hover:bg-white' : 'text-slate-400 hover:text-white hover:bg-[#21262d]'
+                  }`}
                   title="Previous Problem"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-[10px] font-mono text-slate-300 font-bold px-1">
+                <span className={`text-[10px] font-mono font-bold px-1 ${isIllustrative ? 'text-[#212d27]' : 'text-slate-300'}`}>
                   {(currentProblemIndex >= 0 ? currentProblemIndex + 1 : 1)}/{allProblems.length}
                 </span>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleNextProblem(); }}
-                  className="p-1 text-slate-400 hover:text-white hover:bg-[#21262d] rounded transition-colors"
+                  className={`p-1 rounded transition-colors ${
+                    isIllustrative ? 'text-slate-400 hover:text-black hover:bg-white' : 'text-slate-400 hover:text-white hover:bg-[#21262d]'
+                  }`}
                   title="Next Problem"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -361,18 +402,22 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
             )}
 
             <div className="min-w-0 flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-medium text-slate-400 font-sans">
+              <span className={`text-xs font-medium font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
                 {selectedDate === todayStr ? "Today's Challenge:" : `Challenge (${formatDisplayDate(selectedDate)}):`}
               </span>
-              <span className="text-xs sm:text-sm font-bold text-white truncate max-w-[200px] sm:max-w-md font-sans">
+              <span className={`text-xs sm:text-sm font-bold truncate max-w-[200px] sm:max-w-md font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
                 {activeProblem.title}
               </span>
               <Badge variant={difficultyVariant} size="sm">
                 {activeProblem.difficulty}
               </Badge>
               {isSolved && (
-                <span className="bg-[#2ea043]/20 text-[#3fb950] text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-[#2ea043]/30">
-                  SOLVED
+                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
+                  isIllustrative
+                    ? 'bg-[#d8f3dc] text-[#2d6a4f] border-[#b7e4c7]'
+                    : 'bg-[#2ea043]/20 text-[#3fb950] border-[#2ea043]/30'
+                }`}>
+                  • SOLVED
                 </span>
               )}
             </div>
@@ -381,7 +426,11 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={toggleHideCard}
-              className="flex items-center gap-1.5 text-xs text-[#3fb950] hover:text-[#4ade80] font-semibold px-3 py-1.5 rounded-xl bg-[#2ea043]/10 hover:bg-[#2ea043]/20 border border-[#2ea043]/30 transition-all shadow-sm"
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all shadow-sm ${
+                isIllustrative
+                  ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white'
+                  : 'bg-[#2ea043] hover:bg-[#3fb950] text-white'
+              }`}
               title="Expand Challenge Details"
             >
               <Eye className="w-3.5 h-3.5" />
@@ -390,11 +439,17 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
           </div>
         </div>
       ) : (
-        <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-5 sm:p-6 relative overflow-hidden shadow-lg space-y-4">
+        <div
+          className={`rounded-2xl p-5 sm:p-6 relative overflow-hidden shadow-md space-y-4 border ${
+            isIllustrative
+              ? 'bg-white border-[#ede4d4]'
+              : 'bg-[#161b22] border-[#30363d]'
+          }`}
+        >
           {/* Header Bar with Date, Difficulty, Arrow Switcher & Actions */}
-          <div className="flex items-center justify-between gap-2 flex-wrap pb-3 border-b border-[#30363d]">
+          <div className={`flex items-center justify-between gap-2 flex-wrap pb-3 border-b ${isIllustrative ? 'border-[#ede4d4]' : 'border-[#30363d]'}`}>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <span className={`text-xs font-bold uppercase tracking-wider ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
                 {selectedDate === todayStr ? "TODAY'S CHALLENGE" : `SCHEDULED: ${activeProblem.date}`}
               </span>
               <span className="text-slate-600">•</span>

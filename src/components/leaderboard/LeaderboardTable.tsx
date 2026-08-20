@@ -5,8 +5,9 @@ import { Trophy, Flame, Zap, ShieldCheck, UserPlus, Users, UserX, ExternalLink }
 import { Button } from '../ui/Button';
 
 export const LeaderboardTable: React.FC = () => {
-  const { activeRoom, currentUser, removeMember, isHost } = useApp();
+  const { activeRoom, currentUser, removeMember, isHost, theme } = useApp();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const isIllustrative = theme === 'illustrative';
 
   if (!activeRoom) return null;
 
@@ -31,38 +32,80 @@ export const LeaderboardTable: React.FC = () => {
   const getRankBadge = (index: number) => {
     switch (index) {
       case 0:
-        return <span className="text-sm font-bold text-amber-400 bg-amber-400/15 px-2 py-0.5 rounded border border-amber-400/30 font-mono">#1</span>;
+        return (
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-lg border font-mono ${
+            isIllustrative
+              ? 'bg-[#fef3c7] text-[#d97706] border-[#fde68a]'
+              : 'text-amber-400 bg-amber-400/15 border-amber-400/30'
+          }`}>
+            #1
+          </span>
+        );
       case 1:
-        return <span className="text-sm font-bold text-slate-200 bg-slate-400/15 px-2 py-0.5 rounded border border-slate-400/30 font-mono">#2</span>;
+        return (
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-lg border font-mono ${
+            isIllustrative
+              ? 'bg-slate-100 text-slate-700 border-slate-200'
+              : 'text-slate-200 bg-slate-400/15 border-slate-400/30'
+          }`}>
+            #2
+          </span>
+        );
       case 2:
-        return <span className="text-sm font-bold text-amber-600 bg-amber-700/15 px-2 py-0.5 rounded border border-amber-700/30 font-mono">#3</span>;
+        return (
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-lg border font-mono ${
+            isIllustrative
+              ? 'bg-amber-100 text-amber-800 border-amber-200'
+              : 'text-amber-600 bg-amber-700/15 border-amber-700/30'
+          }`}>
+            #3
+          </span>
+        );
       default:
-        return <span className="font-mono text-xs font-semibold text-slate-400">#{index + 1}</span>;
+        return <span className={`font-mono text-xs font-semibold ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>#{index + 1}</span>;
     }
   };
 
   return (
-    <div className="bg-[#161b22] rounded-xl border border-[#30363d] overflow-hidden flex flex-col shadow-lg relative z-10">
+    <div
+      className={`rounded-2xl border overflow-hidden flex flex-col shadow-md relative z-10 ${
+        isIllustrative
+          ? 'bg-white border-[#ede4d4]'
+          : 'bg-[#161b22] border-[#30363d]'
+      }`}
+    >
       {/* Table Header */}
-      <div className="p-4 sm:p-5 border-b border-[#30363d] flex justify-between items-center bg-[#0d1117]">
+      <div
+        className={`p-4 sm:p-5 border-b flex justify-between items-center ${
+          isIllustrative
+            ? 'bg-[#fbf7ee] border-[#ede4d4]'
+            : 'bg-[#0d1117] border-[#30363d]'
+        }`}
+      >
         <div className="flex items-center gap-2.5">
-          <Trophy className="w-5 h-5 text-[#d29922]" />
-          <h3 className="text-base sm:text-lg font-bold text-white font-sans m-0 leading-none">
+          <Trophy className="w-5 h-5 text-[#d97706]" />
+          <h3 className={`text-base sm:text-lg font-bold font-sans m-0 leading-none ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
             Room Leaderboard
           </h3>
         </div>
-        <span className="text-xs font-sans text-slate-300 font-medium bg-[#161b22] px-2.5 py-1 rounded-md border border-[#30363d]">
+        <span
+          className={`text-xs font-sans font-medium px-2.5 py-1 rounded-xl border ${
+            isIllustrative
+              ? 'bg-white text-[#5c6b63] border-[#ede4d4]'
+              : 'bg-[#161b22] text-slate-300 border-[#30363d]'
+          }`}
+        >
           {sortedMembers.length} {sortedMembers.length === 1 ? 'Member' : 'Members'}
         </span>
       </div>
 
       {sortedMembers.length === 0 ? (
-        <div className="p-10 sm:p-12 text-center flex flex-col items-center justify-center space-y-3 bg-[#161b22]">
-          <div className="w-12 h-12 rounded-xl bg-[#d29922]/10 text-[#d29922] flex items-center justify-center border border-[#d29922]/20">
+        <div className={`p-10 sm:p-12 text-center flex flex-col items-center justify-center space-y-3 ${isIllustrative ? 'bg-white' : 'bg-[#161b22]'}`}>
+          <div className="w-12 h-12 rounded-xl bg-[#fef3c7] text-[#d97706] flex items-center justify-center border border-[#fde68a]">
             <Users className="w-6 h-6" />
           </div>
-          <h4 className="text-sm font-bold text-white font-sans">No members yet</h4>
-          <p className="text-xs text-slate-400 max-w-sm font-sans">
+          <h4 className={`text-sm font-bold font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>No members yet</h4>
+          <p className={`text-xs max-w-sm font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
             Invite teammates to start competing, tracking daily problems, and climbing the room leaderboard.
           </p>
           <Button
@@ -78,7 +121,13 @@ export const LeaderboardTable: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[540px]">
             <thead>
-              <tr className="border-b border-[#30363d] bg-[#161b22] text-xs font-semibold text-slate-200 uppercase tracking-wider">
+              <tr
+                className={`border-b text-xs font-semibold uppercase tracking-wider ${
+                  isIllustrative
+                    ? 'bg-[#f7f3eb] text-[#5c6b63] border-[#ede4d4]'
+                    : 'bg-[#161b22] text-slate-200 border-[#30363d]'
+                }`}
+              >
                 <th className="py-3 px-4 sm:px-5 w-16 text-center">RANK</th>
                 <th className="py-3 px-3 sm:px-4">MEMBER</th>
                 <th className="py-3 px-3 text-center">HANDLE</th>
@@ -88,7 +137,7 @@ export const LeaderboardTable: React.FC = () => {
                 {isHost && <th className="py-3 px-3 text-center w-12">ACTION</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#30363d]/60 font-sans">
+            <tbody className={`divide-y font-sans ${isIllustrative ? 'divide-[#ede4d4]' : 'divide-[#30363d]/60'}`}>
               {sortedMembers.map((member, idx) => {
                 const isCurrent = member.id === currentUser.id || (currentUser.username && member.username?.toLowerCase() === currentUser.username?.toLowerCase());
                 const memberIsHost = isUserHostOfRoom(activeRoom, member);
@@ -97,7 +146,13 @@ export const LeaderboardTable: React.FC = () => {
                   <tr
                     key={member.id}
                     className={`transition-colors ${
-                      isCurrent ? 'bg-[#2ea043]/5 hover:bg-[#2ea043]/10' : 'hover:bg-[#21262d]/40'
+                      isCurrent
+                        ? isIllustrative
+                          ? 'bg-[#f0fdf4] hover:bg-[#dcfce7]'
+                          : 'bg-[#2ea043]/5 hover:bg-[#2ea043]/10'
+                        : isIllustrative
+                        ? 'hover:bg-[#fbf7ee]'
+                        : 'hover:bg-[#21262d]/40'
                     }`}
                   >
                     {/* Rank */}
@@ -111,20 +166,22 @@ export const LeaderboardTable: React.FC = () => {
                         <img
                           src={member.avatar}
                           alt=""
-                          className="w-8 h-8 rounded-full object-cover border border-[#30363d] shrink-0"
+                          className={`w-8 h-8 rounded-full object-cover border shrink-0 ${isIllustrative ? 'border-[#ede4d4]' : 'border-[#30363d]'}`}
                         />
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5 font-sans">
-                            <span className="text-xs sm:text-sm font-semibold text-white truncate max-w-[130px] sm:max-w-[180px]">
+                            <span className={`text-xs sm:text-sm font-semibold truncate max-w-[130px] sm:max-w-[180px] ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
                               {isCurrent ? `${currentUser.name} (You)` : member.name}
                             </span>
                             {memberIsHost && (
-                              <span className="bg-purple-500/20 text-purple-300 text-[9px] px-1.5 py-0.2 rounded font-bold border border-purple-500/30 shrink-0 font-mono">
+                              <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold border shrink-0 font-mono ${
+                                isIllustrative ? 'bg-purple-100 text-purple-800 border-purple-200' : 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                              }`}>
                                 HOST
                               </span>
                             )}
                           </div>
-                          <span className="text-xs text-slate-400 font-sans">
+                          <span className={`text-xs font-sans ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
                             Joined {member.joinedAt}
                           </span>
                         </div>
@@ -138,22 +195,30 @@ export const LeaderboardTable: React.FC = () => {
                           href={`https://leetcode.com/${member.username}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-mono text-cyan-400 hover:text-cyan-300 hover:underline bg-[#0d1117] hover:bg-[#21262d] px-2.5 py-1 rounded-md border border-[#30363d] transition-all shadow-sm group"
+                          className={`inline-flex items-center gap-1 text-xs font-mono px-2.5 py-1 rounded-xl border transition-all shadow-sm group ${
+                            isIllustrative
+                              ? 'bg-[#fbf7ee] text-[#2d6a4f] hover:bg-white border-[#ede4d4] hover:text-[#1b4332]'
+                              : 'text-cyan-400 hover:text-cyan-300 hover:underline bg-[#0d1117] hover:bg-[#21262d] border-[#30363d]'
+                          }`}
                           title={`Open @${member.username} on LeetCode.com`}
                         >
-                          <ShieldCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                          <ShieldCheck className={`w-3.5 h-3.5 shrink-0 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-cyan-400'}`} />
                           <span>@{member.username}</span>
-                          <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-cyan-300 ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <ExternalLink className={`w-3 h-3 ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-500'}`} />
                         </a>
                       ) : (
-                        <span className="text-xs text-slate-500 font-mono">Unlinked</span>
+                        <span className={`text-xs font-mono ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-500'}`}>Unlinked</span>
                       )}
                     </td>
 
                     {/* Streak */}
                     <td className="py-3 px-3 text-center">
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-[#f0883e] bg-[#f0883e]/10 px-2.5 py-0.5 rounded-full border border-[#f0883e]/30 font-mono">
-                        <Flame className="w-3.5 h-3.5 fill-[#f0883e] text-[#f0883e] shrink-0" />
+                      <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full border font-mono ${
+                        isIllustrative
+                          ? 'text-[#ea580c] bg-[#ffedd5] border-[#fed7aa]'
+                          : 'text-[#f0883e] bg-[#f0883e]/10 border-[#f0883e]/30'
+                      }`}>
+                        <Flame className="w-3.5 h-3.5 fill-[#ea580c] text-[#ea580c] shrink-0" />
                         {member.streak}d
                       </span>
                     </td>
@@ -161,12 +226,14 @@ export const LeaderboardTable: React.FC = () => {
                     {/* Problems Solved in Room */}
                     <td className="py-3 px-3 text-center">
                       <div className="flex flex-col items-center justify-center">
-                        <span className="text-xs font-bold text-[#3fb950] flex items-center justify-center gap-1 font-mono">
-                          <Zap className="w-3.5 h-3.5 text-[#3fb950] shrink-0" />
-                          {member.roomSolvedCount ?? 0}
+                        <span className={`text-xs font-bold flex items-center justify-center gap-1 font-mono ${
+                          isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'
+                        }`}>
+                          <Zap className="w-3.5 h-3.5 shrink-0" />
+                          {member.roomSolvedCount ?? 0} AC
                         </span>
                         {member.leetcodeTotalSolved ? (
-                          <span className="text-[10px] text-slate-400 font-mono">
+                          <span className={`text-[10px] font-mono ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
                             {member.leetcodeTotalSolved} LC
                           </span>
                         ) : null}
@@ -175,7 +242,9 @@ export const LeaderboardTable: React.FC = () => {
 
                     {/* Points */}
                     <td className="py-3 px-4 sm:px-5 text-right">
-                      <span className="text-xs sm:text-sm font-extrabold text-[#d29922] font-sans">
+                      <span className={`text-xs sm:text-sm font-extrabold font-sans ${
+                        isIllustrative ? 'text-[#d97706]' : 'text-[#d29922]'
+                      }`}>
                         {member.points} pts
                       </span>
                     </td>
