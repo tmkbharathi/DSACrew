@@ -150,6 +150,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     try {
       document.documentElement.setAttribute('data-theme', theme);
+      const isLight = theme === 'illustrative';
+      const faviconLinks = document.querySelectorAll("link[rel*='icon']");
+      faviconLinks.forEach((link) => {
+        const linkEl = link as HTMLLinkElement;
+        if (linkEl.type === 'image/svg+xml') {
+          linkEl.href = isLight ? '/favicon-light.svg' : '/favicon-dark.svg';
+        } else if (linkEl.type === 'image/png') {
+          linkEl.href = isLight ? '/favicon-light.png' : '/favicon-dark.png';
+        }
+      });
     } catch {}
   }, [theme]);
 
