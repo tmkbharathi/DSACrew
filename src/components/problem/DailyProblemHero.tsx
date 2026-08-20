@@ -83,9 +83,9 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = ({ problem: ini
       if (saved !== null) {
         return saved === 'true';
       }
-      return true; // Default is hidden
+      return false; // Default is visible
     } catch {
-      return true;
+      return false;
     }
   });
 

@@ -651,6 +651,9 @@ export function unsubscribeFromChannel(channel: any) {
 // =====================================================
 
 function dbUserToAppUser(dbUser: any): User {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isSolvedToday = Boolean(dbUser.last_solved_date && dbUser.last_solved_date === todayStr);
+
   return {
     id: dbUser.id,
     name: dbUser.name,
@@ -664,8 +667,8 @@ function dbUserToAppUser(dbUser: any): User {
     roomSolvedCount: dbUser.solved_count || 0,
     leetcodeTotalSolved: dbUser.leetcode_total_solved || 0,
     lastSolvedDate: dbUser.last_solved_date,
-    solvedToday: false,
-    joinedAt: dbUser.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+    solvedToday: isSolvedToday,
+    joinedAt: dbUser.created_at?.split('T')[0] || todayStr,
     isLoggedIn: true,
   };
 }
