@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useApp, isUserHostOfRoom } from '../../context/AppContext';
 import { InviteModal } from '../room/InviteModal';
 import { EditRoomLogoModal } from '../room/EditRoomLogoModal';
+import { CurrentRoomCard } from '../room/CurrentRoomCard';
+import { RoomInfoModal } from '../room/RoomInfoModal';
 import {
   LayoutDashboard,
   Flame,
@@ -35,6 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { activeRoom, currentUser, isHost, deleteRoom, removeMember, setToast, setIsLandingView, theme, onlineUserIds } = useApp();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isRoomInfoOpen, setIsRoomInfoOpen] = useState(false);
   const [isEditLogoOpen, setIsEditLogoOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDesktopMembersOpen, setIsDesktopMembersOpen] = useState(true);
@@ -76,94 +79,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         isIllustrative ? 'bg-[#faf5ea]/90 text-[#212d27]' : 'bg-[#161b22] text-white'
       }`}
     >
-      {/* Active Room Metadata Card */}
-      <div
-        className={`rounded-2xl p-3.5 border space-y-2.5 shadow-sm transition-all ${
-          isIllustrative
-            ? 'bg-white border-[#ede4d4]'
-            : 'bg-[#0d1117] border-[#30363d]'
-        }`}
-      >
-        <div className="flex gap-2.5 items-center">
-          {/* Room Camp/Study Graphic with Change Logo Trigger */}
-          <div
-            onClick={() => setIsEditLogoOpen(true)}
-            className="group relative w-12 h-12 rounded-xl bg-[#d8f3dc] border border-[#b7e4c7] flex items-center justify-center text-xl shrink-0 shadow-inner cursor-pointer overflow-hidden transition-transform hover:scale-105"
-            title="Click to change room logo"
-          >
-            {isImageLogo ? (
-              <img
-                src={activeRoom.logoUrl}
-                alt={activeRoom.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span>{activeRoom.logoUrl || '⛺'}</span>
-            )}
-
-            {/* Hover overlay with camera icon */}
-            <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-              <Camera className="w-4 h-4" />
-            </div>
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <span className={`text-[9px] font-mono uppercase tracking-wider block ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
-              CURRENT ROOM
-            </span>
-            <div className="flex items-center gap-1.5 mt-0.5 truncate">
-              <h2
-                className={`font-bold text-xs sm:text-sm font-sans truncate ${
-                  isIllustrative ? 'text-[#212d27]' : 'text-white'
-                }`}
-              >
-                {activeRoom.name}
-              </h2>
-            </div>
-            <div className={`text-[10px] flex items-center gap-2 mt-0.5 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
-              <span>• {uniqueMembers.length} members</span>
-              <span>• {activeRoom.targetDailyGoal || 1} / day</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-1.5 pt-1">
-          <button
-            onClick={() => setIsLandingView(true)}
-            className={`flex-1 py-1.5 px-2 rounded-xl border flex justify-center items-center gap-1 text-[11px] font-medium transition-colors ${
-              isIllustrative
-                ? 'bg-[#fbf7ee] hover:bg-[#ede4d4] text-[#212d27] border-[#ede4d4]'
-                : 'bg-[#161b22] hover:bg-[#21262d] text-slate-200 border-[#30363d]'
-            }`}
-            title="Switch or View Room Info"
-          >
-            <Info className="w-3 h-3 text-[#2d6a4f]" />
-            <span>Room Info</span>
-          </button>
-
-          <button
-            onClick={() => setIsInviteOpen(true)}
-            className={`flex-1 py-1.5 px-2 rounded-xl flex justify-center items-center gap-1 text-[11px] font-semibold transition-colors shadow-sm ${
-              isIllustrative
-                ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white'
-                : 'bg-[#2ea043] hover:bg-[#3fb950] text-white'
-            }`}
-          >
-            <UserPlus className="w-3 h-3" />
-            <span>Invite</span>
-          </button>
-
-          {isHost && (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="bg-rose-50 hover:bg-rose-100 text-rose-600 p-1.5 rounded-xl border border-rose-200 transition-colors flex items-center justify-center shrink-0"
-              title="Delete Active Room (Host)"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
+      {/* Current Room Card (Exact Recreation Matching Design Specification) */}
+      <CurrentRoomCard
+        room={activeRoom}
+        onOpenRoomInfo={() => setIsRoomInfoOpen(true)}
+        onOpenJoinCode={() => setIsInviteOpen(true)}
+        onEditLogo={() => setIsEditLogoOpen(true)}
+      />
 
       {/* Navigation Links */}
       <nav className="space-y-1">
@@ -364,6 +286,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             room={activeRoom}
             isOpen={isInviteOpen}
             onClose={() => setIsInviteOpen(false)}
+          />
+          <RoomInfoModal
+            room={activeRoom}
+            isOpen={isRoomInfoOpen}
+            onClose={() => setIsRoomInfoOpen(false)}
+            onOpenInvite={() => setIsInviteOpen(true)}
           />
           <EditRoomLogoModal
             isOpen={isEditLogoOpen}

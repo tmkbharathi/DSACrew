@@ -20,6 +20,7 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
   const [verifiedStatus, setVerifiedStatus] = useState<boolean | null>(null);
   const [verifyMessage, setVerifyMessage] = useState('');
   const isIllustrative = theme === 'illustrative';
+
   React.useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -29,15 +30,15 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
-  const handleVerifyLeetCode = async () => {
+  const handleVerifyLeetCode = React.useCallback(async (showNotification = true) => {
     if (!currentUser.username) {
-      setToast({
-        title: 'Handle Required',
-        message: 'Please link your LeetCode handle in Profile settings first to verify submissions.',
-        type: 'warning',
-      });
+      if (showNotification) {
+        setToast({
+          title: 'Handle Required',
+          message: 'Please link your LeetCode handle in Profile settings first to verify submissions.',
+          type: 'warning',
+        });
+      }
       return;
     }
 
@@ -47,16 +48,33 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
     setVerifiedStatus(result.verified);
     setVerifyMessage(result.message);
 
-    if (result.verified && !notes) {
-      setNotes(`Accepted solution verified via LeetCode @${currentUser.username}`);
+    if (result.verified) {
+      setNotes((prev) => prev || `Accepted solution verified via LeetCode @${currentUser.username}`);
     }
 
-    setToast({
-      title: result.verified ? 'Verified on LeetCode! ✨' : 'Verification Notice',
-      message: result.message,
-      type: result.verified ? 'success' : 'info',
-    });
-  };
+    if (showNotification) {
+      setToast({
+        title: result.verified ? 'Verified on LeetCode! ✨' : 'Verification Notice',
+        message: result.message,
+        type: result.verified ? 'success' : 'info',
+      });
+    }
+  }, [currentUser.username, problem.title, setToast]);
+
+  // Automatically trigger LeetCode verification upon opening modal
+  React.useEffect(() => {
+    if (isOpen) {
+      setVerifiedStatus(null);
+      setVerifyMessage('');
+      setSubmissionUrl('');
+      setNotes('');
+      if (currentUser.username) {
+        handleVerifyLeetCode(false);
+      }
+    }
+  }, [isOpen, currentUser.username, handleVerifyLeetCode]);
+
+  if (!isOpen) return null;
 
   const handleSubmissionUrlChange = async (urlVal: string) => {
     setSubmissionUrl(urlVal);

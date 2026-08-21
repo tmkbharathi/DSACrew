@@ -13,7 +13,6 @@ import { LandingPage } from './components/landing/LandingPage';
 import { SpiderCrawler } from './components/fun/SpiderCrawler';
 import { SnakeGameModal } from './components/fun/SnakeGameModal';
 import { getLocalTodayStr } from './utils/dateUtils';
-import { Flame, Trophy, Zap, Target } from 'lucide-react';
 
 export const App = () => {
   const { activeRoom, currentUser, isLoggedIn, isLandingView, setIsLandingView, theme } = useApp();
@@ -45,21 +44,6 @@ export const App = () => {
     activeRoom.dailyProblems.find((p) => p.id === activeRoom.activeProblemId) ||
     activeRoom.dailyProblems.find((p) => p.date === todayStr);
 
-  const isGoalComplete =
-    activeProblem?.submissions?.some((s) => s.userId === currentUser.id && s.status === 'Accepted') ||
-    currentUser.solvedToday;
-
-  const pointsThisWeek = activeRoom.dailyProblems.reduce((sum, p) => {
-    const userSub = p.submissions.find((s) => s.userId === currentUser.id && s.status === 'Accepted');
-    if (userSub) {
-      return sum + (p.difficulty === 'Hard' ? 100 : p.difficulty === 'Medium' ? 60 : 30);
-    }
-    return sum;
-  }, 0);
-
-  const roomSolvesCount = currentUser.roomSolvedCount ?? currentUser.solvedCount ?? 0;
-  const targetGoal = activeRoom.targetDailyGoal || 1;
-
   return (
     <div
       className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${
@@ -85,167 +69,6 @@ export const App = () => {
           }`}
         >
           <div className="max-w-7xl xl:max-w-[1500px] 2xl:max-w-[1880px] w-full mx-auto space-y-6 2xl:space-y-8">
-            {/* Top Stat Summary (Standardized 4 Cards with Character Stickers) */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 2xl:gap-6 relative z-10">
-              {/* 1. STREAK */}
-              <div
-                className={`rounded-2xl p-4 sm:p-5 border flex items-center justify-between gap-3 shadow-sm transition-all cozy-card ${
-                  isIllustrative
-                    ? 'bg-white border-[#ede4d4]'
-                    : 'bg-[#161b22] border-[#30363d] hover:border-[#f0883e]/40'
-                }`}
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div
-                    className={`w-11 h-11 2xl:w-12 2xl:h-12 rounded-xl flex items-center justify-center shrink-0 border ${
-                      isIllustrative
-                        ? 'bg-[#ffedd5] text-[#ea580c] border-[#fed7aa]'
-                        : 'bg-[#f0883e]/10 text-[#f0883e] border-[#f0883e]/20'
-                    }`}
-                  >
-                    <Flame className="w-5 h-5 2xl:w-6 2xl:h-6 fill-current" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className={`text-xs 2xl:text-sm font-medium ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
-                      Streak
-                    </div>
-                    <div className="text-base sm:text-lg 2xl:text-xl font-bold text-[#ea580c] font-sans truncate leading-tight mt-0.5">
-                      {currentUser.streak} {currentUser.streak === 1 ? 'day' : 'days'}
-                    </div>
-                    <div className={`text-xs truncate mt-0.5 ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
-                      {currentUser.streak > 0 ? 'Keep it up! 🔥' : 'Solve today to start!'}
-                    </div>
-                  </div>
-                </div>
-
-                {isIllustrative && (
-                  <div className="text-3xl shrink-0 select-none hidden sm:block">
-                    👦
-                  </div>
-                )}
-              </div>
-
-              {/* 2. POINTS */}
-              <div
-                className={`rounded-2xl p-4 sm:p-5 border flex items-center justify-between gap-3 shadow-sm transition-all cozy-card ${
-                  isIllustrative
-                    ? 'bg-white border-[#ede4d4]'
-                    : 'bg-[#161b22] border-[#30363d] hover:border-[#d29922]/40'
-                }`}
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div
-                    className={`w-11 h-11 2xl:w-12 2xl:h-12 rounded-xl flex items-center justify-center shrink-0 border ${
-                      isIllustrative
-                        ? 'bg-[#fef3c7] text-[#d97706] border-[#fde68a]'
-                        : 'bg-[#d29922]/10 text-[#d29922] border-[#d29922]/20'
-                    }`}
-                  >
-                    <Trophy className="w-5 h-5 2xl:w-6 2xl:h-6" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className={`text-xs 2xl:text-sm font-medium ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
-                      Points
-                    </div>
-                    <div className="text-base sm:text-lg 2xl:text-xl font-bold text-[#d97706] font-sans truncate leading-tight mt-0.5">
-                      {currentUser.points} pts
-                    </div>
-                    <div className={`text-xs truncate mt-0.5 ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
-                      {pointsThisWeek > 0 ? `This week: +${pointsThisWeek} pts` : 'Earn +30 to +100'}
-                    </div>
-                  </div>
-                </div>
-
-                {isIllustrative && (
-                  <div className="text-2xl shrink-0 select-none text-amber-400 hidden sm:block">
-                    ✨
-                  </div>
-                )}
-              </div>
-
-              {/* 3. SOLVED */}
-              <div
-                className={`rounded-2xl p-4 sm:p-5 border flex items-center justify-between gap-3 shadow-sm transition-all cozy-card ${
-                  isIllustrative
-                    ? 'bg-white border-[#ede4d4]'
-                    : 'bg-[#161b22] border-[#30363d] hover:border-[#3fb950]/40'
-                }`}
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div
-                    className={`w-11 h-11 2xl:w-12 2xl:h-12 rounded-xl flex items-center justify-center shrink-0 border ${
-                      isIllustrative
-                        ? 'bg-[#d8f3dc] text-[#2d6a4f] border-[#b7e4c7]'
-                        : 'bg-[#2ea043]/10 text-[#3fb950] border-[#2ea043]/20'
-                    }`}
-                  >
-                    <Zap className="w-5 h-5 2xl:w-6 2xl:h-6" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className={`text-xs 2xl:text-sm font-medium ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
-                      Room Solves
-                    </div>
-                    <div className={`text-base sm:text-lg 2xl:text-xl font-bold font-sans truncate leading-tight mt-0.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`}>
-                      {roomSolvesCount}
-                    </div>
-                    <div className={`text-xs truncate mt-0.5 ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
-                      {activeRoom.dailyProblems.length} challenges passed
-                    </div>
-                  </div>
-                </div>
-
-                {isIllustrative && (
-                  <div className="text-3xl shrink-0 select-none hidden sm:block">
-                    👧
-                  </div>
-                )}
-              </div>
-
-              {/* 4. DAILY GOAL */}
-              <div
-                className={`rounded-2xl p-4 sm:p-5 border flex items-center justify-between gap-3 shadow-sm transition-all cozy-card ${
-                  isIllustrative
-                    ? 'bg-white border-[#ede4d4]'
-                    : 'bg-[#161b22] border-[#30363d] hover:border-cyan-500/40'
-                }`}
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div
-                    className={`w-11 h-11 2xl:w-12 2xl:h-12 rounded-xl flex items-center justify-center shrink-0 border ${
-                      isIllustrative
-                        ? 'bg-[#e0f2fe] text-[#0284c7] border-[#bae6fd]'
-                        : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
-                    }`}
-                  >
-                    <Target className="w-5 h-5 2xl:w-6 2xl:h-6" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className={`text-xs 2xl:text-sm font-medium ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
-                      Daily Goal
-                    </div>
-                    <div
-                      className={`text-base sm:text-lg 2xl:text-xl font-bold font-sans truncate leading-tight mt-0.5 ${
-                        isGoalComplete
-                          ? (isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]')
-                          : 'text-amber-500'
-                      }`}
-                    >
-                      {isGoalComplete ? `${targetGoal} / ${targetGoal} Met! 🎉` : `0 / ${targetGoal} Pending`}
-                    </div>
-                    <div className={`text-xs truncate mt-0.5 ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-400'}`}>
-                      {isGoalComplete ? 'Daily target achieved' : 'Solve today to achieve'}
-                    </div>
-                  </div>
-                </div>
-
-                {isIllustrative && (
-                  <div className="text-3xl shrink-0 select-none hidden sm:block">
-                    🧑‍💻
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* Dynamic Tab Views */}
             {activeTab === 'dashboard' && (
               <div className="space-y-6">

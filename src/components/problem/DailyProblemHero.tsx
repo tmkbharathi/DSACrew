@@ -239,60 +239,104 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
 
   return (
     <div className="space-y-4">
-      {/* 7-Day Interactive Date Navigation Bar */}
+      {/* 7-Day Interactive Date Navigation Strip (Compact & Sleek) */}
       <div
-        className={`rounded-2xl p-2.5 flex items-center justify-between gap-2 shadow-sm transition-all ${
+        className={`rounded-xl sm:rounded-2xl p-2 sm:p-2.5 px-2.5 sm:px-3.5 flex items-center justify-between gap-1.5 sm:gap-2.5 shadow-xs transition-all ${
           isIllustrative
-            ? 'bg-white border border-[#ede4d4]'
-            : 'bg-[#161b22] border border-[#30363d]'
+            ? 'bg-[#FAF6EE] border border-[#EDE4D4]'
+            : 'bg-[#0F141C] border border-[#232B36]'
         }`}
       >
         <button
           onClick={handlePrevDay}
-          className={`p-1.5 rounded-lg transition-colors shrink-0 ${
-            isIllustrative ? 'text-slate-400 hover:text-black hover:bg-[#fbf7ee]' : 'text-slate-400 hover:text-white hover:bg-[#21262d]'
+          className={`p-1.5 rounded-full transition-colors shrink-0 flex items-center justify-center cursor-pointer ${
+            isIllustrative
+              ? 'text-[#5C6B63] hover:text-[#1F2933] hover:bg-black/5'
+              : 'text-[#8E9892] hover:text-white hover:bg-white/5'
           }`}
           title="Previous Day"
           aria-label="Previous Day"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4 stroke-[2]" />
         </button>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-0.5 justify-center flex-1">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-0.5 justify-center flex-1 no-scrollbar">
           {getDateStrip().map((dStr) => {
             const isToday = dStr === todayStr;
             const isSelected = dStr === selectedDate;
             const dayProblems = activeRoom?.dailyProblems.filter((p) => p.date === dStr) || [];
-            const userSolved = dayProblems.some((p) => p.submissions?.some((s) => s.userId === currentUser.id && s.status === 'Accepted'));
+            const hasProblemsOrSolved = dayProblems.length > 0;
             const dateObj = parseLocalDate(dStr);
 
             return (
               <button
                 key={dStr}
+                type="button"
                 onClick={() => setSelectedDate(dStr)}
-                className={`flex flex-col items-center justify-center min-w-[50px] sm:min-w-[70px] py-1.5 px-2 rounded-xl border text-xs transition-all relative ${
+                className={`flex-1 min-w-[48px] sm:min-w-[62px] max-w-[80px] h-[52px] sm:h-[58px] rounded-xl flex flex-col items-center justify-center relative cursor-pointer select-none transition-all duration-200 border ${
                   isSelected
                     ? isIllustrative
-                      ? 'bg-[#52b788] border-[#2d6a4f] text-white font-bold shadow-sm'
-                      : 'bg-[#2ea043]/20 border-[#2ea043]/60 text-white font-bold shadow-sm'
+                      ? 'bg-[#EEF7F0] border-[#68B684] shadow-xs'
+                      : 'bg-[#1A2E22] border-[#3FA862] shadow-xs'
                     : isIllustrative
-                    ? 'bg-[#fbf7ee] border-[#ede4d4] text-[#212d27] hover:bg-white hover:border-[#2d6a4f]/40'
-                    : 'bg-[#0d1117] border-[#30363d] text-slate-300 hover:text-white hover:border-slate-500'
+                    ? 'bg-white border-[#E8E3D8] hover:border-[#D0C8B8]'
+                    : 'bg-[#181E27] border-[#262F3C] hover:border-[#384354]'
                 }`}
               >
-                <span className={`text-[10px] font-sans font-medium ${isSelected ? 'text-white' : isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                {/* Weekday text (Tue, Wed, Thu, Today, Sat, Sun, Mon) */}
+                <span
+                  className={`text-[10px] sm:text-[11px] font-semibold leading-none mb-1 ${
+                    isSelected
+                      ? isIllustrative
+                        ? 'text-[#2D6A4F] font-bold'
+                        : 'text-[#4ADE80] font-bold'
+                      : isIllustrative
+                      ? 'text-[#5C6B63]'
+                      : 'text-[#8E9892]'
+                  }`}
+                >
                   {isToday ? 'Today' : dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
                 </span>
-                <span className={`text-xs font-mono font-bold flex items-center gap-1 ${isSelected ? 'text-white' : isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
-                  {dateObj.getDate()}
-                  {dayProblems.length > 1 && (
-                    <span className={`text-[9px] font-normal font-mono ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>({dayProblems.length})</span>
-                  )}
-                </span>
 
-                {/* Solved Status Indicator Dot */}
-                {userSolved && (
-                  <span className={`w-1.5 h-1.5 rounded-full absolute top-1 right-1 ring-1 ring-white ${isIllustrative ? 'bg-[#2d6a4f]' : 'bg-[#3fb950]'}`} />
+                {/* Date Number + (Count) */}
+                <div
+                  className={`text-sm sm:text-base leading-none flex items-center font-sans ${
+                    isSelected
+                      ? isIllustrative
+                        ? 'text-[#2D6A4F] font-black'
+                        : 'text-[#4ADE80] font-black'
+                      : isIllustrative
+                      ? 'text-[#1F2933] font-bold'
+                      : 'text-[#F2F4F1] font-bold'
+                  }`}
+                >
+                  <span>{dateObj.getDate()}</span>
+                  {dayProblems.length > 0 && (
+                    <span
+                      className={`text-[9px] sm:text-[10px] ml-0.5 font-sans ${
+                        isSelected
+                          ? isIllustrative
+                            ? 'text-[#2D6A4F] font-semibold'
+                            : 'text-[#4ADE80] font-semibold'
+                          : isIllustrative
+                          ? 'text-[#5C6B63] font-normal'
+                          : 'text-[#8E9892] font-normal'
+                      }`}
+                    >
+                      ({dayProblems.length})
+                    </span>
+                  )}
+                </div>
+
+                {/* Status Indicator Dot (Top Right) */}
+                {hasProblemsOrSolved && (
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full absolute top-1.5 right-1.5 ${
+                      isIllustrative
+                        ? 'bg-[#2D6A4F]'
+                        : 'bg-[#4ADE80]'
+                    }`}
+                  />
                 )}
               </button>
             );
@@ -301,13 +345,15 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
 
         <button
           onClick={handleNextDay}
-          className={`p-1.5 rounded-lg transition-colors shrink-0 ${
-            isIllustrative ? 'text-slate-400 hover:text-black hover:bg-[#fbf7ee]' : 'text-slate-400 hover:text-white hover:bg-[#21262d]'
+          className={`p-1.5 rounded-full transition-colors shrink-0 flex items-center justify-center cursor-pointer ${
+            isIllustrative
+              ? 'text-[#5C6B63] hover:text-[#1F2933] hover:bg-black/5'
+              : 'text-[#8E9892] hover:text-white hover:bg-white/5'
           }`}
           title="Next Day"
           aria-label="Next Day"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-4 h-4 stroke-[2]" />
         </button>
       </div>
 
