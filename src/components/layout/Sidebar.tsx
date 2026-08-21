@@ -307,22 +307,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Bottom Mascot Card (Matching Mockup) */}
+      {/* Bottom Crew Banner Image (Theme Adaptive) */}
       <div
-        className={`rounded-2xl p-3 border shadow-sm relative overflow-hidden flex items-center gap-2.5 ${
+        className={`mt-auto rounded-2xl overflow-hidden border shadow-sm transition-all duration-300 group ${
           isIllustrative
-            ? 'bg-gradient-to-r from-[#eef8f1] to-[#f4fbf6] border-[#d8f3dc]'
+            ? 'bg-white border-[#ede4d4]'
             : 'bg-[#0d1117] border-[#30363d]'
         }`}
       >
-        <div className="w-10 h-10 rounded-xl bg-[#d8f3dc] border border-[#b7e4c7] flex items-center justify-center text-xl shrink-0">
-          🐲
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold text-[#1b4332] leading-tight">
-            Consistency today, Cracked tomorrow! 💚
-          </p>
-        </div>
+        <img
+          src={isIllustrative ? '/room_banner_light.png' : '/room_banner_dark.png'}
+          alt="Collaborate with your crew and level up together"
+          className="w-full h-auto object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.02]"
+        />
       </div>
     </div>
   );

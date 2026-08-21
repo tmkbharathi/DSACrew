@@ -320,11 +320,11 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
               : 'bg-[#161b22] border-[#30363d]'
           }`}
         >
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 border ${
-            isIllustrative ? 'bg-[#d8f3dc] text-[#2d6a4f] border-[#b7e4c7]' : 'bg-[#2ea043]/10 text-[#3fb950] border-[#2ea043]/20'
-          }`}>
-            <Sparkles className="w-5 h-5" />
-          </div>
+          <img
+            src={isIllustrative ? '/crew_chars_light.png' : '/crew_chars_dark.png'}
+            alt="Study Crew"
+            className="w-44 sm:w-52 h-auto object-contain mb-3 drop-shadow-sm rounded-lg"
+          />
 
           <h3 className={`text-base sm:text-lg font-bold font-sans mb-1 ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
             Ready for today's challenge?
