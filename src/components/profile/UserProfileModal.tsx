@@ -30,7 +30,18 @@ interface UserProfileModalProps {
 }
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) => {
-  const { currentUser, updateCurrentUser, theme, setTheme, soundEnabled, setSoundEnabled, setToast } = useApp();
+  const {
+    currentUser,
+    updateCurrentUser,
+    theme,
+    setTheme,
+    soundEnabled,
+    setSoundEnabled,
+    spiderVisible,
+    setSpiderVisible,
+    setToast,
+  } = useApp();
+  const isIllustrative = theme === 'illustrative';
 
   const [name, setName] = useState(currentUser.name);
   const [username, setUsername] = useState(currentUser.username);
@@ -43,9 +54,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   const [prefSound, setPrefSound] = useState<boolean>(
     typeof currentUser.preferences?.soundEnabled === 'boolean' ? currentUser.preferences.soundEnabled : soundEnabled
   );
-  const [prefSpider, setPrefSpider] = useState<boolean>(
-    typeof currentUser.preferences?.spiderVisible === 'boolean' ? currentUser.preferences.spiderVisible : true
-  );
+  const [prefSpider, setPrefSpider] = useState<boolean>(spiderVisible);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -56,9 +65,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       setLcStats(null);
       setPrefTheme(currentUser.preferences?.theme || theme);
       setPrefSound(typeof currentUser.preferences?.soundEnabled === 'boolean' ? currentUser.preferences.soundEnabled : soundEnabled);
-      setPrefSpider(typeof currentUser.preferences?.spiderVisible === 'boolean' ? currentUser.preferences.spiderVisible : true);
+      setPrefSpider(spiderVisible);
     }
-  }, [isOpen, currentUser, theme, soundEnabled]);
+  }, [isOpen, currentUser, theme, soundEnabled, spiderVisible]);
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -73,40 +82,44 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
 
   const handleSyncLeetCode = async () => {
     if (!username.trim()) {
-      setToast({ title: 'Input Required', message: 'Enter your LeetCode username handle first.', type: 'warning' });
+      setSyncError('Please enter a LeetCode username.');
       return;
     }
+
     setLoadingSync(true);
     setSyncError('');
-    const stats = await fetchLeetCodeProfile(username.trim());
-    setLoadingSync(false);
+    try {
+      const stats = await fetchLeetCodeProfile(username.trim());
+      if (!stats) {
+        setSyncError('Could not find LeetCode profile. Please check the handle.');
+        setLoadingSync(false);
+        return;
+      }
 
-    if (stats) {
       setLcStats(stats);
-      if (stats.avatar) setAvatar(stats.avatar);
-      if (stats.realName && (!name || name === 'You')) setName(stats.realName);
+      if (stats.avatar) {
+        setAvatar(stats.avatar);
+      }
       setToast({
-        title: 'LeetCode Stats Synced!',
-        message: `Verified @${stats.username}: avatar and stats synced from LeetCode.`,
+        title: 'Synced with LeetCode',
+        message: `Successfully verified @${stats.username} with ${stats.totalSolved} solved problems!`,
         type: 'success',
       });
-    } else {
-      setSyncError(`Could not find LeetCode profile for "@${username.trim()}". Check handle spelling.`);
-      setToast({
-        title: 'User Not Found',
-        message: `No public LeetCode user found for "${username.trim()}".`,
-        type: 'warning',
-      });
+    } catch {
+      setSyncError('Failed to fetch LeetCode profile. Try again later.');
+    } finally {
+      setLoadingSync(false);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) return;
+
     updateCurrentUser({
-      name: name.trim() || (lcStats?.realName) || (lcStats?.username) || currentUser.name || 'User',
+      name: name.trim(),
       username: username.trim(),
       avatar,
-      leetcodeTotalSolved: lcStats ? lcStats.totalSolved : currentUser.leetcodeTotalSolved,
       preferences: {
         theme: prefTheme,
         soundEnabled: prefSound,
@@ -114,8 +127,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       },
     });
 
+    setSoundEnabled(prefSound);
+    setSpiderVisible(prefSpider);
     if (prefTheme !== theme) setTheme(prefTheme);
-    if (prefSound !== soundEnabled) setSoundEnabled(prefSound);
 
     setToast({ title: 'Profile & Settings Saved', message: 'Your preferences have been updated.', type: 'success' });
     onClose();
@@ -123,36 +137,64 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
-      <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md" onClick={onClose} />
+      <div
+        className={`fixed inset-0 backdrop-blur-md transition-colors ${
+          isIllustrative ? 'bg-slate-900/40' : 'bg-slate-950/80'
+        }`}
+        onClick={onClose}
+      />
 
-      <div className="relative w-full max-w-md bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl p-6 z-10 overflow-hidden mx-3">
+      <div
+        className={`relative w-full max-w-md rounded-2xl shadow-2xl p-6 z-10 overflow-hidden mx-3 border transition-all ${
+          isIllustrative
+            ? 'bg-white border-[#ede4d4] text-[#212d27]'
+            : 'bg-[#161b22] border-[#30363d] text-white'
+        }`}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#30363d] pb-3 mb-4">
+        <div className={`flex items-center justify-between border-b pb-3 mb-4 ${isIllustrative ? 'border-[#ede4d4]' : 'border-[#30363d]'}`}>
           <div className="flex items-center gap-2">
-            <User className="w-5 h-5 text-[#3fb950]" />
-            <h3 className="font-bold text-base sm:text-lg text-white font-sans">Profile &amp; Settings</h3>
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isIllustrative ? 'bg-[#d8f3dc] text-[#2d6a4f]' : 'bg-[#2ea043]/20 text-[#4ade80]'}`}>
+              <User className="w-4 h-4" />
+            </div>
+            <h3 className={`font-bold text-base sm:text-lg font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
+              Profile &amp; Settings
+            </h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#21262d]">
+          <button
+            onClick={onClose}
+            className={`p-1 rounded-lg transition-colors ${
+              isIllustrative ? 'text-[#8d9a93] hover:text-[#212d27] hover:bg-[#fbf7ee]' : 'text-slate-400 hover:text-white hover:bg-[#21262d]'
+            }`}
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Avatar (Attached from LeetCode only) */}
-          <div className="bg-[#0d1117] border border-[#30363d] rounded-xl p-3.5 flex items-center gap-3.5 shadow-sm">
+          <div className={`border rounded-xl p-3.5 flex items-center gap-3.5 shadow-sm transition-colors ${
+            isIllustrative ? 'bg-[#fbf7ee] border-[#ede4d4]' : 'bg-[#0d1117] border-[#30363d]'
+          }`}>
             <div className="relative shrink-0">
               <img
                 src={avatar}
                 alt="LeetCode Avatar"
-                className="w-14 h-14 rounded-full object-cover border-2 border-[#2ea043]/60 shadow-md"
+                className={`w-14 h-14 rounded-full object-cover border-2 shadow-md ${
+                  isIllustrative ? 'border-[#2d6a4f]/60' : 'border-[#2ea043]/60'
+                }`}
               />
-              <div className="absolute -bottom-1 -right-1 bg-[#161b22] rounded-full p-0.5 border border-[#30363d]">
-                <ShieldCheck className="w-4 h-4 text-[#3fb950]" />
+              <div className={`absolute -bottom-1 -right-1 rounded-full p-0.5 border ${
+                isIllustrative ? 'bg-[#fbf7ee] border-[#ede4d4]' : 'bg-[#161b22] border-[#30363d]'
+              }`}>
+                <ShieldCheck className={`w-4 h-4 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
               </div>
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-semibold text-white font-sans">LeetCode Profile Image</div>
-              <p className="text-[11px] text-slate-400 leading-tight mt-0.5 font-sans">
+              <div className={`text-xs font-semibold font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-white'}`}>
+                LeetCode Profile Image
+              </div>
+              <p className={`text-[11px] leading-tight mt-0.5 font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
                 Profile pictures are automatically attached and synchronized from your official LeetCode account.
               </p>
             </div>
@@ -160,23 +202,31 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
 
           {/* Display Name */}
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1 font-sans">Display Name</label>
+            <label className={`block text-xs font-medium mb-1 font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-300'}`}>
+              Display Name
+            </label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#3fb950] font-sans"
+              className={`w-full border rounded-lg px-3.5 py-2 text-xs sm:text-sm focus:outline-none font-sans transition-colors ${
+                isIllustrative
+                  ? 'bg-[#fbf7ee] border-[#ede4d4] text-[#212d27] focus:border-[#2d6a4f]'
+                  : 'bg-[#0d1117] border-[#30363d] text-white focus:border-[#3fb950]'
+              }`}
               placeholder="Your Display Name"
             />
           </div>
 
           {/* LeetCode Handle */}
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1 font-sans">LeetCode Username / Handle</label>
+            <label className={`block text-xs font-medium mb-1 font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-300'}`}>
+              LeetCode Username / Handle
+            </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Code2 className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <Code2 className={`w-4 h-4 absolute left-3 top-2.5 ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-500'}`} />
                 <input
                   type="text"
                   value={username}
@@ -184,7 +234,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                     setUsername(e.target.value);
                     setSyncError('');
                   }}
-                  className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#3fb950] font-mono"
+                  className={`w-full border rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm focus:outline-none font-mono transition-colors ${
+                    isIllustrative
+                      ? 'bg-[#fbf7ee] border-[#ede4d4] text-[#212d27] focus:border-[#2d6a4f]'
+                      : 'bg-[#0d1117] border-[#30363d] text-white focus:border-[#3fb950]'
+                  }`}
                   placeholder="e.g. tourist or neal_wu"
                 />
               </div>
@@ -208,74 +262,90 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           </div>
 
           {/* Stats Summary */}
-          <div className="bg-[#0d1117] border border-[#30363d] rounded-xl p-3.5 grid grid-cols-3 gap-2 text-center">
+          <div className={`border rounded-xl p-3.5 grid grid-cols-3 gap-2 text-center transition-colors ${
+            isIllustrative ? 'bg-[#fbf7ee] border-[#ede4d4]' : 'bg-[#0d1117] border-[#30363d]'
+          }`}>
             <div>
-              <div className="text-[11px] font-sans text-slate-400 flex items-center justify-center gap-1">
-                <Award className="w-3 h-3 text-[#d29922]" /> Points
+              <div className={`text-[11px] font-sans flex items-center justify-center gap-1 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                <Award className={`w-3 h-3 ${isIllustrative ? 'text-[#b07d3b]' : 'text-[#d29922]'}`} /> Points
               </div>
-              <div className="text-sm font-bold text-[#d29922] mt-0.5 font-sans">{currentUser.points}</div>
+              <div className={`text-sm font-bold mt-0.5 font-sans ${isIllustrative ? 'text-[#b07d3b]' : 'text-[#d29922]'}`}>
+                {currentUser.points}
+              </div>
             </div>
             <div>
-              <div className="text-[11px] font-sans text-slate-400 flex items-center justify-center gap-1">
-                <Flame className="w-3 h-3 text-[#f0883e]" /> Streak
+              <div className={`text-[11px] font-sans flex items-center justify-center gap-1 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                <Flame className={`w-3 h-3 ${isIllustrative ? 'text-[#d97706]' : 'text-[#f0883e]'}`} /> Streak
               </div>
-              <div className="text-sm font-bold text-[#f0883e] mt-0.5 font-mono">{currentUser.streak}d</div>
+              <div className={`text-sm font-bold mt-0.5 font-mono ${isIllustrative ? 'text-[#d97706]' : 'text-[#f0883e]'}`}>
+                {currentUser.streak}d
+              </div>
             </div>
             <div>
-              <div className="text-[11px] font-sans text-slate-400 flex items-center justify-center gap-1">
-                <Zap className="w-3 h-3 text-[#3fb950]" /> Solved
+              <div className={`text-[11px] font-sans flex items-center justify-center gap-1 ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>
+                <Zap className={`w-3 h-3 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} /> Solved
               </div>
-              <div className="text-sm font-bold text-[#3fb950] mt-0.5 font-mono">
+              <div className={`text-sm font-bold mt-0.5 font-mono ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`}>
                 {currentUser.roomSolvedCount ?? 0}
               </div>
             </div>
           </div>
 
           {lcStats && (
-            <div className="bg-[#0d1117] border border-[#2ea043]/30 rounded-xl p-3 text-xs text-[#3fb950] space-y-1">
+            <div className={`border rounded-xl p-3 text-xs space-y-1 transition-colors ${
+              isIllustrative
+                ? 'bg-[#d8f3dc]/30 border-[#b7e4c7] text-[#2d6a4f]'
+                : 'bg-[#0d1117] border-[#2ea043]/30 text-[#3fb950]'
+            }`}>
               <div className="flex items-center gap-2 font-bold font-sans">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>Verified @{lcStats.username}</span>
                 {lcStats.ranking > 0 && (
-                  <span className="text-[10px] bg-[#161b22] px-2 py-0.5 rounded text-slate-300 ml-auto flex items-center gap-1 font-mono">
-                    <Trophy className="w-3 h-3 text-[#d29922]" /> Rank #{lcStats.ranking.toLocaleString()}
+                  <span className={`text-[10px] px-2 py-0.5 rounded ml-auto flex items-center gap-1 font-mono ${
+                    isIllustrative ? 'bg-white text-[#212d27] border border-[#b7e4c7]' : 'bg-[#161b22] text-slate-300'
+                  }`}>
+                    <Trophy className={`w-3 h-3 ${isIllustrative ? 'text-[#b07d3b]' : 'text-[#d29922]'}`} /> Rank #{lcStats.ranking.toLocaleString()}
                   </span>
                 )}
               </div>
-              <div className="text-xs text-slate-300 pt-1 flex gap-3 flex-wrap font-mono">
-                <span className="text-[#3fb950] font-semibold">Easy: {lcStats.easySolved}</span>
-                <span className="text-amber-400 font-semibold">Med: {lcStats.mediumSolved}</span>
-                <span className="text-rose-400 font-semibold">Hard: {lcStats.hardSolved}</span>
-                <span className="text-cyan-400 font-bold">Total: {lcStats.totalSolved}</span>
+              <div className={`text-xs pt-1 flex gap-3 flex-wrap font-mono ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-300'}`}>
+                <span className={`${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'} font-semibold`}>Easy: {lcStats.easySolved}</span>
+                <span className="text-amber-500 font-semibold">Med: {lcStats.mediumSolved}</span>
+                <span className="text-rose-500 font-semibold">Hard: {lcStats.hardSolved}</span>
+                <span className={`${isIllustrative ? 'text-[#2d6a4f]' : 'text-cyan-400'} font-bold`}>Total: {lcStats.totalSolved}</span>
               </div>
             </div>
           )}
 
           {/* Account Preferences (Theme, Sound, Spider Relaxer) */}
-          <div className="bg-[#0d1117] border border-[#30363d] rounded-xl p-3.5 space-y-3">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
+          <div className={`border rounded-xl p-3.5 space-y-3 transition-colors ${
+            isIllustrative ? 'bg-[#fbf7ee] border-[#ede4d4]' : 'bg-[#0d1117] border-[#30363d]'
+          }`}>
+            <div className={`flex items-center gap-1.5 text-xs font-semibold ${isIllustrative ? 'text-[#212d27]' : 'text-slate-200'}`}>
               <Settings className="w-3.5 h-3.5 text-purple-400" />
               <span>Account Preferences</span>
-              <span className="text-[10px] text-slate-500 font-mono ml-auto">Saved to Account</span>
+              <span className={`text-[10px] font-mono ml-auto ${isIllustrative ? 'text-[#8d9a93]' : 'text-slate-500'}`}>Saved to Account</span>
             </div>
 
             {/* Theme Toggle */}
-            <div className="flex items-center justify-between py-1 border-b border-[#30363d]/50">
+            <div className={`flex items-center justify-between py-1 border-b ${isIllustrative ? 'border-[#ede4d4]' : 'border-[#30363d]/50'}`}>
               <div className="flex items-center gap-2">
-                <Palette className="w-3.5 h-3.5 text-amber-400" />
+                <Palette className="w-3.5 h-3.5 text-amber-500" />
                 <div>
-                  <div className="text-xs text-slate-200 font-medium font-sans">Workspace Theme</div>
-                  <div className="text-[10px] text-slate-400 font-sans">Illustrative (Warm) or Dark Mode</div>
+                  <div className={`text-xs font-medium font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-slate-200'}`}>Workspace Theme</div>
+                  <div className={`text-[10px] font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>Illustrative (Warm) or Dark Mode</div>
                 </div>
               </div>
-              <div className="flex items-center bg-[#161b22] border border-[#30363d] rounded-lg p-0.5 text-[11px]">
+              <div className={`flex items-center border rounded-lg p-0.5 text-[11px] ${
+                isIllustrative ? 'bg-white border-[#ede4d4]' : 'bg-[#161b22] border-[#30363d]'
+              }`}>
                 <button
                   type="button"
                   onClick={() => setPrefTheme('illustrative')}
                   className={`px-2 py-1 rounded font-medium transition-colors ${
                     prefTheme === 'illustrative'
-                      ? 'bg-[#2d6a4f] text-white font-bold'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-[#2d6a4f] text-white font-bold shadow-sm'
+                      : isIllustrative ? 'text-[#5c6b63] hover:text-[#212d27]' : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   Warm
@@ -285,8 +355,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                   onClick={() => setPrefTheme('dark')}
                   className={`px-2 py-1 rounded font-medium transition-colors ${
                     prefTheme === 'dark'
-                      ? 'bg-[#21262d] text-emerald-400 font-bold border border-emerald-500/30'
-                      : 'text-slate-400 hover:text-white'
+                      ? isIllustrative ? 'bg-[#2d6a4f] text-white font-bold shadow-sm' : 'bg-[#21262d] text-emerald-400 font-bold border border-emerald-500/30'
+                      : isIllustrative ? 'text-[#5c6b63] hover:text-[#212d27]' : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   Dark
@@ -295,12 +365,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
             </div>
 
             {/* Audio Effects Toggle */}
-            <div className="flex items-center justify-between py-1 border-b border-[#30363d]/50">
+            <div className={`flex items-center justify-between py-1 border-b ${isIllustrative ? 'border-[#ede4d4]' : 'border-[#30363d]/50'}`}>
               <div className="flex items-center gap-2">
-                {prefSound ? <Volume2 className="w-3.5 h-3.5 text-emerald-400" /> : <VolumeX className="w-3.5 h-3.5 text-slate-500" />}
+                {prefSound ? <Volume2 className={`w-3.5 h-3.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-emerald-400'}`} /> : <VolumeX className="w-3.5 h-3.5 text-slate-400" />}
                 <div>
-                  <div className="text-xs text-slate-200 font-medium font-sans">Sound Effects &amp; Audio</div>
-                  <div className="text-[10px] text-slate-400 font-sans">Snake game &amp; notification chimes</div>
+                  <div className={`text-xs font-medium font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-slate-200'}`}>Sound Effects &amp; Audio</div>
+                  <div className={`text-[10px] font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>Snake game &amp; notification chimes</div>
                 </div>
               </div>
               <button
@@ -308,7 +378,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                 onClick={() => setPrefSound(!prefSound)}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors flex items-center gap-1.5 ${
                   prefSound
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                    ? isIllustrative
+                      ? 'bg-[#d8f3dc] text-[#2d6a4f] border-[#b7e4c7]'
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                    : isIllustrative
+                    ? 'bg-white text-[#5c6b63] border-[#ede4d4] hover:text-[#212d27]'
                     : 'bg-[#161b22] text-slate-400 border-[#30363d] hover:text-white'
                 }`}
               >
@@ -320,10 +394,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
             {/* Spider Relaxer Toggle */}
             <div className="flex items-center justify-between py-1">
               <div className="flex items-center gap-2">
-                <Gamepad2 className="w-3.5 h-3.5 text-[#3fb950]" />
+                <Gamepad2 className={`w-3.5 h-3.5 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-[#3fb950]'}`} />
                 <div>
-                  <div className="text-xs text-slate-200 font-medium font-sans">Spider Relaxer</div>
-                  <div className="text-[10px] text-slate-400 font-sans">Interactive crawler in bottom corner</div>
+                  <div className={`text-xs font-medium font-sans ${isIllustrative ? 'text-[#212d27]' : 'text-slate-200'}`}>Spider Relaxer</div>
+                  <div className={`text-[10px] font-sans ${isIllustrative ? 'text-[#5c6b63]' : 'text-slate-400'}`}>Interactive crawler in bottom corner</div>
                 </div>
               </div>
               <button
@@ -331,11 +405,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                 onClick={() => setPrefSpider(!prefSpider)}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors flex items-center gap-1.5 ${
                   prefSpider
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                    ? isIllustrative
+                      ? 'bg-[#d8f3dc] text-[#2d6a4f] border-[#b7e4c7]'
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                    : isIllustrative
+                    ? 'bg-white text-[#5c6b63] border-[#ede4d4] hover:text-[#212d27]'
                     : 'bg-[#161b22] text-slate-400 border-[#30363d] hover:text-white'
                 }`}
               >
-                {prefSpider ? <Eye className="w-3 h-3 text-emerald-400" /> : <EyeOff className="w-3 h-3 text-slate-500" />}
+                {prefSpider ? <Eye className={`w-3 h-3 ${isIllustrative ? 'text-[#2d6a4f]' : 'text-emerald-400'}`} /> : <EyeOff className="w-3 h-3 text-slate-400" />}
                 <span>{prefSpider ? 'Visible' : 'Hidden'}</span>
               </button>
             </div>

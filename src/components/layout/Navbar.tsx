@@ -43,6 +43,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
     setIsLandingView,
     theme,
     setTheme,
+    spiderVisible,
+    setSpiderVisible,
   } = useApp();
 
   const [isPostOpen, setIsPostOpen] = useState(false);
@@ -112,11 +114,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
             </div>
           </div>
 
-          {/* Actions & Profile Group - 7 Compact Uniform Elements */}
+          {/* Actions & Profile Group - 7 Compact Uniform Elements (Curvy / Rounded-full) */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* 1. Streak Counter */}
             <div
-              className={`h-8 flex items-center gap-1.5 px-2.5 rounded-lg border text-xs font-mono font-bold shadow-sm select-none ${
+              className={`h-8 flex items-center gap-1.5 px-3 rounded-full border text-xs font-mono font-bold shadow-sm select-none ${
                 isIllustrative
                   ? 'bg-[#ffedd5] text-[#ea580c] border-[#fed7aa]'
                   : 'bg-[#0d1117] text-[#f0883e] border-[#30363d]'
@@ -134,7 +136,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
             {/* 2. Post Problem Action Button */}
             <button
               onClick={() => setIsPostOpen(true)}
-              className={`h-8 flex items-center gap-1 px-2.5 sm:px-3 rounded-lg font-semibold text-xs shadow-sm transition-all active:scale-95 ${
+              className={`h-8 flex items-center gap-1 px-3.5 rounded-full font-semibold text-xs shadow-sm transition-all active:scale-95 ${
                 isIllustrative
                   ? 'bg-[#2d6a4f] hover:bg-[#1b4332] text-white'
                   : 'bg-[#2ea043] hover:bg-[#3fb950] text-white'
@@ -148,7 +150,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
             {activeRoom && (
               <button
                 onClick={() => setIsInviteOpen(true)}
-                className={`h-8 hidden sm:flex items-center gap-1 px-2.5 sm:px-3 rounded-lg font-semibold text-xs border transition-colors ${
+                className={`h-8 hidden sm:flex items-center gap-1.5 px-3.5 rounded-full font-semibold text-xs border transition-colors ${
                   isIllustrative
                     ? 'bg-[#f4ede0] hover:bg-[#ede4d4] text-[#212d27] border-[#ede4d4]'
                     : 'bg-[#21262d] hover:bg-[#30363d] text-slate-200 border-[#30363d]'
@@ -159,48 +161,49 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
               </button>
             )}
 
-            {/* 4. Dual Sun / Moon Toggle Switch Pill */}
+            {/* 4. Dual Sun / Moon Toggle Switch Pill (identical to Overview room page) */}
             <button
               onClick={() => setTheme(isIllustrative ? 'dark' : 'illustrative')}
-              className={`h-8 w-12 relative flex items-center p-0.5 rounded-lg border transition-all duration-300 shadow-inner select-none shrink-0 ${
+              className={`relative flex items-center p-0.5 rounded-full border transition-all duration-300 shadow-inner select-none shrink-0 cursor-pointer ${
                 isIllustrative
                   ? 'bg-[#ede4d4]/70 border-[#d8cbba]'
                   : 'bg-[#0d1117] border-[#30363d]'
               }`}
+              title={`Switch to ${isIllustrative ? 'Dark Mode' : 'Warm Illustrative Mode'}`}
               aria-label="Toggle Theme"
             >
               {/* Sliding Pill Indicator */}
               <div
-                className={`absolute top-0.5 bottom-0.5 w-[20px] rounded-md transition-transform duration-300 shadow-sm flex items-center justify-center ${
+                className={`absolute top-0.5 bottom-0.5 w-6 rounded-full transition-transform duration-300 shadow-sm flex items-center justify-center ${
                   isIllustrative
                     ? 'left-0.5 translate-x-0 bg-white text-[#2d6a4f]'
-                    : 'left-0.5 translate-x-5 bg-[#238636] text-white'
+                    : 'left-0.5 translate-x-6 bg-[#238636] text-white'
                 }`}
               />
 
               {/* Sun Icon (Illustrative / Light) */}
               <div
-                className={`relative z-10 w-5 h-full flex items-center justify-center transition-colors duration-200 ${
+                className={`relative z-10 w-6 h-6 flex items-center justify-center transition-colors duration-200 ${
                   isIllustrative ? 'text-[#2d6a4f]' : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
-                <Sun className="w-3 h-3" />
+                <Sun className="w-3.5 h-3.5" />
               </div>
 
               {/* Moon Icon (Dark Mode) */}
               <div
-                className={`relative z-10 w-5 h-full flex items-center justify-center transition-colors duration-200 ${
+                className={`relative z-10 w-6 h-6 flex items-center justify-center transition-colors duration-200 ${
                   !isIllustrative ? 'text-white' : 'text-[#8d9a93] hover:text-[#212d27]'
                 }`}
               >
-                <Moon className="w-3 h-3" />
+                <Moon className="w-3.5 h-3.5" />
               </div>
             </button>
 
             {/* 5. Notifications Bell */}
             <button
               onClick={() => setIsNotifOpen(true)}
-              className={`h-8 w-8 flex items-center justify-center relative rounded-lg transition-colors border shrink-0 ${
+              className={`h-8 w-8 flex items-center justify-center relative rounded-full transition-colors border shrink-0 ${
                 isIllustrative
                   ? 'bg-[#fbf7ee] hover:bg-[#f4ede0] border-[#ede4d4] text-slate-600'
                   : 'bg-[#0d1117] hover:bg-[#21262d] border-[#30363d] text-slate-400'
@@ -216,7 +219,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
             {/* 6. Sound Toggle */}
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`h-8 w-8 hidden sm:flex items-center justify-center rounded-lg transition-colors border shrink-0 ${
+              className={`h-8 w-8 hidden sm:flex items-center justify-center rounded-full transition-colors border shrink-0 ${
                 isIllustrative
                   ? 'bg-[#fbf7ee] hover:bg-[#f4ede0] border-[#ede4d4] text-slate-600'
                   : 'bg-[#0d1117] hover:bg-[#21262d] border-[#30363d] text-slate-400'
@@ -234,7 +237,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
             <div className="relative shrink-0" ref={userMenuRef}>
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className={`h-8 w-8 flex items-center justify-center rounded-lg border transition-all overflow-hidden p-0.5 ${
+                className={`h-8 w-8 flex items-center justify-center rounded-full border transition-all overflow-hidden p-0.5 ${
                   isIllustrative
                     ? 'bg-white border-[#ede4d4] hover:border-[#2d6a4f]'
                     : 'bg-[#0d1117] border-[#30363d] hover:border-[#3fb950]'
@@ -244,7 +247,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
                 <img
                   src={currentUser.avatar}
                   alt={currentUser.name}
-                  className="w-full h-full rounded-[5px] object-cover"
+                  className="w-full h-full rounded-full object-cover"
                 />
               </button>
 
@@ -328,25 +331,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onMobileMenuToggle }) => {
 
                     <button
                       onClick={() => {
-                        const isCurrentlyVisible = currentUser?.preferences?.spiderVisible !== false;
-                        updateCurrentUser({
-                          preferences: {
-                            ...currentUser.preferences,
-                            spiderVisible: !isCurrentlyVisible,
-                          },
-                        });
+                        setSpiderVisible(!spiderVisible);
                       }}
                       className={`w-full flex items-center gap-2.5 p-2 rounded-lg text-left transition-colors ${
                         isIllustrative ? 'hover:bg-[#f4ede0]' : 'hover:bg-[#21262d]'
                       }`}
                     >
-                      {currentUser?.preferences?.spiderVisible !== false ? (
+                      {spiderVisible ? (
                         <EyeOff className="w-4 h-4 text-slate-400" />
                       ) : (
                         <Eye className="w-4 h-4 text-emerald-500" />
                       )}
                       <span>
-                        {currentUser?.preferences?.spiderVisible !== false ? 'Hide Spider' : 'Show Spider'}
+                        {spiderVisible ? 'Hide Spider' : 'Show Spider'}
                       </span>
                     </button>
 

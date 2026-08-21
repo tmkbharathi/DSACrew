@@ -98,6 +98,10 @@ interface AppContextType {
   refreshRooms: () => Promise<void>;
   theme: 'dark' | 'illustrative';
   setTheme: (theme: 'dark' | 'illustrative') => void;
+  soundEnabled: boolean;
+  setSoundEnabled: (enabled: boolean) => void;
+  spiderVisible: boolean;
+  setSpiderVisible: (visible: boolean) => void;
   selectedDate: string;
   setSelectedDate: (date: string) => void;
   onlineUserIds: string[];
@@ -184,6 +188,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch {}
   }, []);
 
+  const [spiderVisible, setSpiderVisibleState] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('leettracker_spider_visible');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+      return true;
+    } catch {
+      return true;
+    }
+  });
+
+  const setSpiderVisible = useCallback((visible: boolean) => {
+    setSpiderVisibleState(visible);
+    try {
+      localStorage.setItem('leettracker_spider_visible', String(visible));
+    } catch {}
+    setCurrentUser((prev) => ({
+      ...prev,
+      preferences: {
+        ...prev.preferences,
+        spiderVisible: visible,
+      },
+    }));
+  }, []);
+
   const [toast, setToast] = useState<{ title: string; message: string; type?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -209,7 +239,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
 
       if (profile) {
-        setCurrentUser({ ...profile, isLoggedIn: true });
+        setCurrentUser({
+          ...profile,
+          isLoggedIn: true,
+          preferences: {
+            theme,
+            soundEnabled,
+            spiderVisible,
+            ...profile.preferences,
+          },
+        });
       }
 
       const [userRooms, allCommunity, userNotifs] = await Promise.all([
@@ -452,7 +491,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const updateCurrentUser = async (updates: Partial<User>) => {
-    setCurrentUser((prev) => ({ ...prev, ...updates }));
+    if (updates.preferences?.spiderVisible !== undefined) {
+      setSpiderVisibleState(updates.preferences.spiderVisible);
+      try {
+        localStorage.setItem('leettracker_spider_visible', String(updates.preferences.spiderVisible));
+      } catch {}
+    }
+    if (updates.preferences?.soundEnabled !== undefined) {
+      setSoundEnabledState(updates.preferences.soundEnabled);
+      try {
+        localStorage.setItem('leettracker_sound_enabled', String(updates.preferences.soundEnabled));
+      } catch {}
+    }
+    if (updates.preferences?.theme !== undefined) {
+      setThemeState(updates.preferences.theme);
+      try {
+        localStorage.setItem('leettracker_theme', updates.preferences.theme);
+      } catch {}
+    }
+
+    setCurrentUser((prev) => ({
+      ...prev,
+      ...updates,
+      preferences: {
+        theme,
+        soundEnabled,
+        spiderVisible,
+        ...prev.preferences,
+        ...updates.preferences,
+      },
+    }));
     
     if (isSupabaseConfigured && currentUser.id && currentUser.id !== 'usr_main') {
       await updateUserProfile(currentUser.id, {
@@ -1016,6 +1084,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         refreshRooms,
         theme,
         setTheme,
+        spiderVisible,
+        setSpiderVisible,
         selectedDate,
         setSelectedDate,
         onlineUserIds,

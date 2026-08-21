@@ -16,9 +16,9 @@ interface SpiderPos {
 }
 
 export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame }) => {
-  const { currentUser, soundEnabled, theme } = useApp();
+  const { currentUser, soundEnabled, theme, spiderVisible } = useApp();
   const isIllustrative = theme === 'illustrative';
-  const isVisible = currentUser?.preferences?.spiderVisible !== false;
+  const isVisible = spiderVisible ?? (currentUser?.preferences?.spiderVisible !== false);
 
   useEffect(() => {
     sounds.enabled = soundEnabled;
@@ -196,11 +196,12 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
     onOpenSnakeGame();
   };
 
+  if (!isVisible) return null;
+
   return (
     <>
       {/* Spider Canvas / Container (Pointer events none so it never blocks workspace clicks, spider itself has pointer-events-auto) */}
-      {isVisible && (
-        <div className="fixed inset-0 pointer-events-none z-40 overflow-hidden select-none">
+      <div className="fixed inset-0 pointer-events-none z-40 overflow-hidden select-none">
           {/* Silk Web Line if dangling from ceiling */}
           {pos.isDangling && pos.y > 10 && (
             <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 39 }}>
@@ -356,7 +357,6 @@ export const SpiderCrawler: React.FC<SpiderCrawlerProps> = ({ onOpenSnakeGame })
             </svg>
           </div>
         </div>
-      )}
 
       {/* Custom keyframe styles for spider leg animations */}
       <style>{`
