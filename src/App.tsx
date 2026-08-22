@@ -15,7 +15,7 @@ import { SnakeGameModal } from './components/fun/SnakeGameModal';
 import { getLocalTodayStr } from './utils/dateUtils';
 
 export const App = () => {
-  const { activeRoom, currentUser, isLoggedIn, isLandingView, setIsLandingView, theme } = useApp();
+  const { activeRoom, isLoggedIn, isLandingView, setIsLandingView, theme } = useApp();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isSnakeOpen, setIsSnakeOpen] = useState(false);

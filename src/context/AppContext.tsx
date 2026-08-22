@@ -48,8 +48,6 @@ interface AppContextType {
   setIsLandingView: (val: boolean) => void;
   notifications: Notification[];
   unreadCount: number;
-  soundEnabled: boolean;
-  setSoundEnabled: (enabled: boolean) => void;
   toast: { title: string; message: string; type?: string } | null;
   setToast: (toast: { title: string; message: string; type?: string } | null) => void;
   isCloudConnected: boolean;

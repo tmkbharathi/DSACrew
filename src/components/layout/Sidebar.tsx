@@ -10,15 +10,12 @@ import {
   Trophy,
   History,
   MessageSquare,
-  UserPlus,
   Trash2,
   UserX,
   ChevronDown,
   ChevronUp,
   X,
   Bookmark,
-  Info,
-  Camera,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -35,7 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen = false,
   onMobileClose,
 }) => {
-  const { activeRoom, currentUser, isHost, deleteRoom, removeMember, setToast, setIsLandingView, theme, onlineUserIds } = useApp();
+  const { activeRoom, currentUser, isHost, deleteRoom, removeMember, setToast, theme, onlineUserIds } = useApp();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isRoomInfoOpen, setIsRoomInfoOpen] = useState(false);
   const [isEditLogoOpen, setIsEditLogoOpen] = useState(false);
@@ -70,8 +67,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   });
   const uniqueMembers = Array.from(memberMap.values());
-
-  const isImageLogo = activeRoom.logoUrl && (activeRoom.logoUrl.startsWith('http') || activeRoom.logoUrl.startsWith('data:image'));
 
   const sidebarContent = (
     <div

@@ -14,10 +14,7 @@ import {
   Sparkles,
   Trash2,
   Users,
-  Code2,
-  Clock,
-  Award,
-  Flame,
+  Target,
   CheckCircle2,
   Code,
   Eye,
@@ -218,7 +215,6 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
   };
 
   const isSolved = Boolean(activeProblem?.submissions?.some((s) => s.userId === currentUser.id && s.status === 'Accepted'));
-  const isMissed = selectedDate < todayStr && !isSolved;
 
   const difficultyVariant =
     activeProblem?.difficulty === 'Easy'
@@ -593,7 +589,6 @@ export const DailyProblemHero: React.FC<DailyProblemHeroProps> = () => {
               <div className="flex items-center gap-2 flex-wrap">
                 {problemsOnDate.map((prob, idx) => {
                   const isSelected = prob.id === activeProblem?.id;
-                  const probSolved = prob.submissions?.some((s) => s.userId === currentUser.id);
                   const diffVar = prob.difficulty === 'Easy' ? 'easy' : prob.difficulty === 'Medium' ? 'medium' : 'hard';
 
                   return (

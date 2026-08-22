@@ -160,7 +160,7 @@ export const SubmitSolutionModal: React.FC<SubmitSolutionModalProps> = ({ proble
             </div>
             <button
               type="button"
-              onClick={handleVerifyLeetCode}
+              onClick={() => handleVerifyLeetCode()}
               disabled={verifying}
               className={`text-xs px-3 py-1.5 rounded-xl font-semibold flex items-center gap-1.5 transition-colors shrink-0 font-mono shadow-sm ${
                 isIllustrative

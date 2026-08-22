@@ -1,7 +1,7 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import type { Room } from '../../types';
-import { X, Info, Target, Users, Calendar, Award, Shield, Key } from 'lucide-react';
+import { X, Info, Target, Users, Key } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 interface RoomInfoModalProps {
@@ -161,7 +161,7 @@ export const RoomInfoModal: React.FC<RoomInfoModalProps> = ({
                 Daily Goal
               </span>
               <strong className="font-semibold">
-                {room.targetDailyProblems || 1} problem/day
+                {room.targetDailyGoal || 1} problem/day
               </strong>
             </div>
           </div>
