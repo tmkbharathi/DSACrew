@@ -186,3 +186,82 @@ CREATE TRIGGER update_lt_users_updated_at BEFORE UPDATE ON lt_users
 
 CREATE TRIGGER update_lt_rooms_updated_at BEFORE UPDATE ON lt_rooms
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- ADMIN / OWNER PASSWORD RESET FUNCTION
+-- =====================================================
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Config table for app settings (e.g. owner admin key)
+CREATE TABLE IF NOT EXISTS lt_config (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Default Admin Recovery Key ('admin123')
+INSERT INTO lt_config (key, value)
+VALUES ('admin_recovery_key', 'admin123')
+ON CONFLICT (key) DO NOTHING;
+
+-- Secure lt_config with RLS (no direct public access; only accessible via SECURITY DEFINER functions)
+ALTER TABLE lt_config ENABLE ROW LEVEL SECURITY;
+
+CREATE OR REPLACE FUNCTION reset_user_password_with_admin_key(
+  target_username TEXT,
+  provided_admin_key TEXT,
+  new_password TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions, auth
+AS $$
+DECLARE
+  v_user_id UUID;
+  v_expected_key TEXT;
+BEGIN
+  -- 1. Validate inputs
+  IF target_username IS NULL OR trim(target_username) = '' THEN
+    RETURN jsonb_build_object('success', false, 'message', 'Username is required.');
+  END IF;
+
+  IF provided_admin_key IS NULL OR trim(provided_admin_key) = '' THEN
+    RETURN jsonb_build_object('success', false, 'message', 'Admin / Owner Key is required.');
+  END IF;
+
+  IF new_password IS NULL OR length(trim(new_password)) < 6 THEN
+    RETURN jsonb_build_object('success', false, 'message', 'New password must be at least 6 characters.');
+  END IF;
+
+  -- 2. Fetch expected admin key from lt_config (fallback to 'admin123')
+  SELECT value INTO v_expected_key FROM public.lt_config WHERE key = 'admin_recovery_key';
+  IF v_expected_key IS NULL THEN
+    v_expected_key := 'admin123';
+  END IF;
+
+  IF trim(provided_admin_key) != trim(v_expected_key) THEN
+    RETURN jsonb_build_object('success', false, 'message', 'Incorrect Admin / Owner Key.');
+  END IF;
+
+  -- 3. Find user id by username
+  SELECT id INTO v_user_id FROM public.lt_users WHERE LOWER(username) = LOWER(trim(target_username));
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'message', 'User with handle "' || target_username || '" does not exist.');
+  END IF;
+
+  -- 4. Update encrypted password in auth.users
+  UPDATE auth.users
+  SET encrypted_password = crypt(trim(new_password), gen_salt('bf')),
+      updated_at = NOW()
+  WHERE id = v_user_id;
+
+  RETURN jsonb_build_object('success', true, 'message', 'Password updated successfully! You can now log in.');
+END;
+$$;
+
+-- Grant execution to anon and authenticated roles
+GRANT EXECUTE ON FUNCTION reset_user_password_with_admin_key(TEXT, TEXT, TEXT) TO anon, authenticated, service_role;
+

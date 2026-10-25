@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { X, LogIn, UserPlus, ShieldCheck, RefreshCw, Lock, Eye, EyeOff, User as UserIcon } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { ForgotPasswordModal } from './ForgotPasswordModal';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const { login, registerAccount, setIsLandingView, theme } = useApp();
   const [isRegisterMode, setIsRegisterMode] = useState(defaultRegisterMode);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [rememberMe, setRememberMe] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem('leettracker_remember_me');
@@ -266,15 +268,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     Remember credentials
                   </span>
                 </label>
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPasswordOpen(true)}
+                  className={`font-sans transition-colors hover:underline ${
+                    isIllustrative ? 'text-[#2d6a4f] hover:text-[#1b4332]' : 'text-[#4ade80] hover:text-[#22c55e]'
+                  }`}
+                >
+                  Forgot password?
+                </button>
               </div>
 
               {error && (
-                <div className={`text-xs p-2.5 rounded-xl border font-sans ${
+                <div className={`text-xs p-2.5 rounded-xl border font-sans flex items-center justify-between gap-2 ${
                   isIllustrative
                     ? 'bg-rose-50 text-rose-700 border-rose-200'
                     : 'text-rose-400 bg-rose-950/40 border-rose-500/30'
                 }`}>
-                  {error}
+                  <span>{error}</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotPasswordOpen(true)}
+                    className="font-bold underline hover:opacity-80 transition-opacity ml-auto shrink-0 cursor-pointer"
+                  >
+                    reset?
+                  </button>
                 </div>
               )}
 
@@ -382,6 +400,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           )}
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={isForgotPasswordOpen}
+        onClose={() => setIsForgotPasswordOpen(false)}
+        initialUsername={usernameInput}
+        onSuccess={(recoveredUser) => {
+          setUsernameInput(recoveredUser);
+          setPasswordInput('');
+        }}
+      />
     </div>
   );
 };

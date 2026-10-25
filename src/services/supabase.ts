@@ -65,6 +65,37 @@ export async function getCurrentSession() {
   return data.session;
 }
 
+export async function resetPasswordWithAdminKey(
+  username: string,
+  adminKey: string,
+  newPassword: string
+): Promise<{ success: boolean; message: string }> {
+  if (!supabase) return { success: false, message: 'Supabase is not configured' };
+
+  try {
+    const { data, error } = await supabase.rpc('reset_user_password_with_admin_key', {
+      target_username: username.trim(),
+      provided_admin_key: adminKey.trim(),
+      new_password: newPassword.trim(),
+    });
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    if (data && typeof data === 'object') {
+      return {
+        success: Boolean(data.success),
+        message: data.message || (data.success ? 'Password reset successfully.' : 'Password reset failed.'),
+      };
+    }
+
+    return { success: false, message: 'Unexpected response from server.' };
+  } catch (err: any) {
+    return { success: false, message: err?.message || 'Network error during password reset.' };
+  }
+}
+
 // =====================================================
 // USER PROFILE FUNCTIONS
 // =====================================================

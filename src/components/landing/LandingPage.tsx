@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp, isUserInRoom } from '../../context/AppContext';
 import { getLocalTodayStr } from '../../utils/dateUtils';
 import { AuthModal } from '../auth/AuthModal';
+import { ForgotPasswordModal } from '../auth/ForgotPasswordModal';
 import { CreateRoomModal } from '../room/CreateRoomModal';
 import { JoinRoomModal } from '../room/JoinRoomModal';
 import { CrewIllustration } from '../illustrations/CrewIllustration';
@@ -97,6 +98,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
   const [showPassword, setShowPassword] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
 
   const [shakeAuthCard, setShakeAuthCard] = useState(false);
 
@@ -670,11 +672,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
                         Remember credentials
                       </span>
                     </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsForgotPasswordOpen(true)}
+                      className={`font-sans transition-colors hover:underline ${
+                        isIllustrative ? 'text-[#2d6a4f] hover:text-[#1b4332]' : 'text-[#4ade80] hover:text-[#22c55e]'
+                      }`}
+                    >
+                      Forgot password?
+                    </button>
                   </div>
 
                   {loginError && (
-                    <div className="text-xs text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-200 leading-relaxed font-sans">
-                      {loginError}
+                    <div className="text-xs text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-200 leading-relaxed font-sans flex items-center justify-between gap-2">
+                      <span>{loginError}</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsForgotPasswordOpen(true)}
+                        className="font-bold underline text-rose-700 hover:text-rose-900 transition-colors ml-auto shrink-0 cursor-pointer"
+                      >
+                        reset?
+                      </button>
                     </div>
                   )}
 
@@ -1347,6 +1365,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterRoom, onEnterWo
         defaultRegisterMode={authDefaultRegister}
         onSuccess={() => {
           setIsAuthOpen(false);
+        }}
+      />
+      <ForgotPasswordModal
+        isOpen={isForgotPasswordOpen}
+        onClose={() => setIsForgotPasswordOpen(false)}
+        initialUsername={loginHandleInput}
+        onSuccess={(recoveredUser) => {
+          setLoginHandleInput(recoveredUser);
+          setLoginPasswordInput('');
         }}
       />
       <CreateRoomModal
